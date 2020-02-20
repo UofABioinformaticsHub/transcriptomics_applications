@@ -34,6 +34,7 @@ pracs <- tribble(
     5, "2020-03-30", "Statistical Techniques", "Stephen Pederson", "", "Basic Statistics in R", "",
     6, "2020-04-06", "RNA-Seq", "Zhipeng Qu", "", "Alignments and Visualisation", "",
     NA_integer_, "2020-04-13", "**Mid-Semester Break**", "No Lectures", "", "", "",
+    NA_integer_, "2020-04-20", "**Mid-Semester Break**", "No Lectures", "", "", "",
     7, "2020-04-27", "Alignment and Quantification", "Nathan Watson-Haigh", "", "Introduction to `limma` and `edgeR`", "",
     8, "2020-05-04", "Statistics for RNA-Seq", "Stephen Pederson", "", "Introduction to `limma` and `edgeR`", "",
     9, "2020-05-11", "Enrichment Analysis", "Stephen Pederson", "", "Enrichment Strategies", "",
@@ -66,7 +67,7 @@ pracs %>%
         `Week Starting` = as_date(`Week Starting`), 
         Lecture = case_when(
             !grepl("\\*\\*", Lecture) ~ paste0("[", Lecture, "](", LecUrl, ")", "<br>(", Lecturer, ")"),
-            grepl("\\*\\*", Lecture) ~ paste0(Lecture, "<br>(", Lecturer, ")")
+            grepl("\\*\\*", Lecture) ~ paste0(Lecture, " (", Lecturer, ")")
         ),
         Practical = paste0("[", Practical, "](", PracUrl, ")")
     ) %>%
