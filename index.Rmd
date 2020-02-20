@@ -68,24 +68,39 @@ pracs %>%
         Practical = paste0("[", Practical, "](", Url, ")")
     ) %>%
     dplyr::select(-Lecturer,-Url) %>%
-    pander()
+    pander(
+        justify = "rrll"
+    )
 ```
 
 
 
 # Assessments
 
-## Assessment Task
+```{r}
+ass <- tribble(
+    ~Url, ~Topic, ~`Due Date`,
+    "", "", ""
+) %>%
+    mutate(
+        Assessment = paste("Assessment", seq_len(nrow(.)) - 1)
+    )
+```
 
-| **Assessment**                                    | **Subject**         |
-|---------------------------------------------------|---------------------|
-| [Assessment 0]()        |  |
-| [Assessment 1]()        |  |
-| [Assessment 2]()        |  |
-| [Assessment 3]()        |  |
-| [Assessment 4]()        |  |
-| [Assessment 5]()        |  |
-| [Project]() (BIOINF7160 only)   |  |
+
+## Assessment Tasks
+
+```{r}
+ass %>%
+    mutate(
+        Assessment = paste0("[", Assessment, "](", Url, ")")
+    ) %>%
+    dplyr::select(Assessment, Topic, `Due Date`) %>%
+    pander(
+        justify = "llr"
+    )
+```
+
 
 ## Assessment Checklist
 
