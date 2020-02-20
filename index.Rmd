@@ -8,10 +8,70 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(
+    echo = FALSE,
+    message = FALSE,
+    warning = FALSE
+    )
 ```
 
-# Practical Timetable
+```{r}
+library(tidyverse)
+library(lubridate)
+library(pander)
+panderOptions("table.style", "rmarkdown")
+panderOptions("table.split.table", Inf)
+panderOptions("missing", "")
+```
+
+```{r}
+pracs <- tribble(
+    ~Week, ~`Week Starting`, ~Lecture, ~Lecturer, ~Practical, ~Url,
+    1, "2020-03-02", "Introduction", "Stephen Pederson", "Introduction to R and `rmarkdown`", "",
+    2, "2020-03-09", "**Adelaide Cup Day**", "No Lecture", "Importing Data with the `tidyverse`", "",
+    3, "2020-03-16", "Quantification Strategies", "Stephen Pederson", "Data Visualisation with `ggplot2`", "",
+    4, "2020-03-23", "Microarray Technology", "Stephen Pederson", "Using Git with RStudio", "",
+    5, "2020-03-30", "Statistical Techniques", "Stephen Pederson", "Basic Statistics in R", "",
+    6, "2020-04-06", "RNA-Seq", "Zhipeng Qu", "Alignments and Visualisation", "",
+    NA_integer_, "2020-04-13", "**Mid-Semester Break**", "No Lectures", "", "",
+    7, "2020-04-27", "Alignment and Quantification", "Nathan Watson-Haigh", "Introduction to `limma` and `edgeR`", "",
+    8, "2020-05-04", "Statistics for RNA-Seq", "Stephen Pederson", "Introduction to `limma` and `edgeR`", "",
+    9, "2020-05-11", "Enrichment Analysis", "Stephen Pederson", "Enrichment Strategies", "",
+    10, "2020-05-18", "Single Cell RNA-Seq", "Stephen Pederson", "WGCNA", "",
+    11, "2020-05-25", "Network Analysis", "Nathan Watson-Haigh", "WGCNA", "",
+    12, "2020-06-01", "Transcriptome Assembly", "Terry Bertozzi", "", "",
+    13, "2020-06-07", "Challenges in RNA-Seq", "Stephen Pederson", "", ""
+)
+```
+
+
+
+# Timetable
+
+- **Lectures**
+    - Monday 9:10am - 10:00am, Ingkarni Wardli, Room B18
+- **Practicals**
+    - Wednesday 9:10am - 11:00am, Johnson Building, Room 111
+    - Friday 9:10am - 11:00am, Johnson Building, Room 111
+
+Lectures for this course are held on a Monday, and will clash with **two Public Holidays** in Semester 1.
+
+1. Week 2, March 9^th^, Adelaide Cup Day: **No Lecture in Week 2**
+2. Week 13, June 7^th^, Queen's Birthday: An alternative lecture time may be found for this week. This will be announced closer to the date.
+
+
+```{r}
+pracs %>%
+    mutate(
+        `Week Starting` = as_date(`Week Starting`), 
+        Lecture = paste0(Lecture, "<br>(", Lecturer, ")"),
+        Practical = paste0("[", Practical, "](", Url, ")")
+    ) %>%
+    dplyr::select(-Lecturer,-Url) %>%
+    pander()
+```
+
+
 
 # Assessments
 
