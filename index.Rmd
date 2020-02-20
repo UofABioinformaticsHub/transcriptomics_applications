@@ -1,0 +1,49 @@
+---
+title: "BIOINF3005/7160: Transcriptomics Applications"
+subtitle: "Course Homepage"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+# Practical Timetable
+
+# Assessments
+
+## Assessment Task
+
+| **Assessment**                                    | **Subject**         |
+|---------------------------------------------------|---------------------|
+| [Assessment 0]()        |  |
+| [Assessment 1]()        |  |
+| [Assessment 2]()        |  |
+| [Assessment 3]()        |  |
+| [Assessment 4]()        |  |
+| [Assessment 5]()        |  |
+| [Project]() (BIOINF7160 only)   |  |
+
+## Assessment Checklist
+
+Have you:
+
+- [ ] Answered all the questions?
+- [ ] Followed naming conventions for Assessments?
+- [ ] Checked that you have not breached the [Academic Honesty Policy](http://www.adelaide.edu.au/policies/230/).
+- [ ] Identified the work as yours?
+	- Emails should have the course and assessment task names.
+	- Documents should be named with your name, the course name and the assessment task.
+	- Printed documents should have you name and the course and assessment task in the text/footer/header.
+- [ ] Used appropriate electronic communication with assessors?
+	- Emails should have a meaningful subject.
+- [ ] Handed in the assignment before the due time (see MyUni)?
+
+# Useful Links
+
+[How To Ask Questions The Smart Way](http://www.catb.org/esr/faqs/smart-questions.html)
+
+[How to write a good bug report](https://musescore.org/en/developers-handbook/how-write-good-bug-report-step-step-instructions)
