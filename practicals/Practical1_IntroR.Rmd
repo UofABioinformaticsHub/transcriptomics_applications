@@ -1,0 +1,248 @@
+---
+title: "BIOINF3005/7160: Transcriptomics Applications"
+subtitle: "Introduction to R"
+date: "4^th^ March, 2020"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE,
+    message = FALSE,
+    warning = FALSE
+    )
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(pander)
+panderOptions("table.style", "rmarkdown")
+panderOptions("table.split.table", Inf)
+panderOptions("missing", "")
+```
+
+
+# Introduction
+
+For the majority of this practical course, we will be working with the language R using the RStudio IDE.
+You have all been assigned a Virtual Machine (VM) which will be yours for the entirety of this course, but will be shut down once the course is completed.
+We have provided all of the software on this machine that you will require for the course, however be aware that all data on the machines will be lost once they are shut down.
+
+During this course, we strongly encourage you to a) **read all of the notes carefully**, and b) **manually type all of the code**, unless directed otherwise.
+This will provide you with the the most benefit.
+Making mistakes is a fundamental learning experience, and this will also equip you for the future when you will have to develop your own code and perform your own analysis.
+
+## Connecting to Your VM
+
+**Please follow these instructions very carefully**
+
+You will be provided with an IP address associated with your student ID, which looks something like `10.150.xx.xxx`.
+
+1. Using your IP address, use your favourite Internet browser to navigate to `10.150.xx.xxx:8787`. 
+We recommend Chrome or Firefox for this, but Safari or Explorer may work satisfactorily if you must use these.
+2. You will see a login screen asking you to sign in to RStudio.
+    - If you have already set a new password during a Genomics Applications practical, please login use this and skip to the [following section](#what-is-r).
+    - If you **have not** accessed your VM before please read on
+3. Use your Username and Password provided to login to RStudio, which is already running on the VM. 
+This should take you to the following screen:
+
+![](images/RStudio_VM.png)
+
+## Setting a new password
+
+Now you have connected to the RStudio session, you are actually logged into your VM.
+As the password provided is not secure, we need to change this immediately.
+We understand that the approach we use here will be new for many of you, so again, please follow carefully.
+At this point, it is important to note that everything we type here will be *case-sensitive*.
+
+
+1. In the top left of RStudio you will see a `Terminal` tab. Please click on this and you should see a flashing cursor next to your machine id. (This id will look similar to `student@bioinf-2020s1-20200218-1:~$`.)
+We are actually going to use an environment called `bash` here, but we'll come back to `bash` a bit later in the course. For now just follow along.
+2. Type `passwd` followed by the <kbd>Enter</kbd> key.
+**PLEASE NOTE THAT NOTHING WILL APPEAR AS YOU ENTER YOUR PASSWORD**. This is normal and is a security feature of this method.
+3. Enter your old password followed by <kbd>Enter</kbd>
+4. Now enter a **new password** followed by <kbd>Enter</kbd> and repeat to confirm. If you make a mistake, *the password will not be changed*, so just go back to step 2 and repeat all steps until you successfully enter the new password twice.
+Please note that simple passwords will also be disallowed, so please choose something better than `password`.
+5. Log out from RStudio by using the sign-out icon at the top right of your screen. This is the ![](images/signout.png) symbol next to the 'power button'.
+6. Login again using your new password and you are down with the hard section for today!
+
+Please note, course instructors will be able to access your machine for the entire course.
+If we detect an unchanged password, your machine will **immediately be shut down**.
+
+
+# Introduction to R and the R Studio environment
+
+## What is R?
+
+R is one of the most commonly used languages/environments in modern biological research.
+Whilst originally developed as a statistical teaching tool in the 1990s, a large and diverse ecosystem of packages has been developed enabling analysis of everything from financial markets, to election polls to biological research.
+There is truly too much to cover in a 12 week practical course, but hopefully we'll get you over the initial hurdle of unfamiliarity.
+
+There is no such thing as a perfect programming language, and R has many features (or 'quirks') that are based in its historical origins.
+However, it can be a very useful tool.
+An important concept to remember from these sessions, is that we write code for two primary reasons.
+
+1. To instruct a machine to perform the computational task
+2. To communicate with other people (including yourself!)
+
+A key advantage of R over software like Excel, is that everything you do is recorded as a script.
+Every change you make to your data can be seen and revisited months or years later.
+Every analysis or figure can also be recreated at a later stage, or easily modified as more data points are collected.
+If you accidentally 'break' or modify your data in Excel, there will literally be no record of this event, with cut and paste errors being essentially undetectable.
+In R, these mistakes are (generally) easy to find and correct, ensuring reproducible and robust analysis, as well as enabling collaboration between researchers.
+
+R is an *open source language*, meaning there is no software giant like Microsoft or Apple forcing you to buy their software, and hiding all the code so you don't really know what it's doing.
+Instead, all of the code that runs R is publicly visible, and maintained by what is essentially a volunteer community, consisting mainly of academics spread throughout the world.
+
+Some examples of trivial R code might be as follows.
+Don't worry about typing these just yet.
+Instead, have a look and try to understand everything you see at this point.
+
+```{r firstExamples, echo=TRUE, results='markup'}
+x <- 1:5
+print(x)
+sqrt(x)
+x + 1
+```
+
+We'll come back and actually run these examples later, but for now you may be able to see that in the first line `x <- 1:5` we've created an object called `x` which now has the values `1:5`.
+We used the `<-` symbol, which was specifically designed to look like an arrow, **to put those values into** `x`.
+
+After that we performed a few operations on `x` such as showing what values are in `x` (`print(x)`), finding the square root of all of the values in `x` (`sqrt(x)`), or adding one to all of the values `x + 1`.
+Again, we'll come back to this very soon.
+
+R will always print the position of the values which start the line too, so that is why you see `[1]` at the start of each of these examples.
+This can be very handy when printing tens or hundreds of values.
+You will also see the `##` symbol at the start of each line to clearly denote this is R output.
+This is non-essential, but is a common convention.
+
+## What is R Studio?
+
+Whilst R itself is the language we use, we mostly interact with R using an Integrated Development Environment (IDE) called R Studio.
+We can almost think of R Studio as being like the cabin of a car, and R itself is the engine.
+Though we can tell the engine (R) exactly what to do from the cabin (R Studio), R Studio also has many features that don't directly interact with R, but that our make our lives more safe and convenient, just like a cabin will usually have a radio, air-conditioning and seat belts.
+We can use R Studio as a file browser, text editor and `bash` interface as well as running version control software like `git`
+For today, we'll stick to the text editor (where we write our code) and file browser, although we will return to `bash` more and more as the course progresses.
+
+Interestingly, R Studio is produced by a company (called R Studio) and as such doesn't have some of the same open source features.
+However, it is still [free software](https://github.com/rstudio/rstudio).
+You have already been through the login process, and this is the point where you first saw what R Studio looks like to a user.
+
+```{r, echo = FALSE, out.width='100%', fig.cap="*The main RStudio interface*", results='asis'}
+knitr::include_graphics("images/RStudio_VM.png")
+```
+
+The main window you can see on the left has a few tabs available so **ensure the tab with the word Console** is now active.
+*This is where we can interact directly with R itself.*
+At the top you'll see the R Version listed along with a few other pieces of information, whilst underneath this you'll see the `>` symbol.
+The `>` is the R prompt and this is where can type our code that we want to execute.
+
+On the top right you'll see another pane with three tabs.
+We'll explore some of these as we go, and we'll find that  the **Environment** and **History** tabs can be very useful.
+
+On the bottom right you'll see another pane with tabs for **Files**, **Plots**, **Help** and a few other things.
+We'll definitely use those three a great deal, but the other two won't get much of a run.
+
+## The R Console
+
+To get a feel for how R works, let's try typing a few things directly into the R Console.
+At the `>` prompt, type the following:
+
+```{r}
+x <- 1:5
+```
+
+As we discussed earlier, we've now created an object called `x` which contains the numbers `1` to `5`.
+This is an R object, known as a *vector*.
+We won't really spend much time talking about vectors today, but here it's a string of numbers, which you can think of as being *like a single column in a spreadsheet*.
+
+We can view the contents of this R object either by typing it's name, or by using the function `print()`.
+Mostly we don't need the `print()` function but it does come in handy sometimes.
+Let's try both methods.
+
+```{r, eval=FALSE}
+x
+print(x)
+```
+
+Just like you might call the Excel function `AVERAGE()` and select a range of values to place between the braces `()` and find the mean, we can do this in R using the equivalent function `mean()`.
+
+```{r}
+mean(x)
+```
+
+We can use all sorts of mathematical functions like `sum()`, `max()`, `min()`, `sqrt()`, `median()`, `var()` or `sd()` on our vector.
+The important point to notice is that when we call the function, we pass the R object to the function by including the object between the braces `()`, just like we did with our calls to `print()` and `mean()`.
+This is very similar to how the Excel functions work, but instead of passing a range of cells, we pass an R object to the function.
+**Try a few of the above commands to see how you go.**
+
+We can also perform mathematical operations directly on our R object, which, as you can see, is much easier than highlighting a range of cells in Excel.
+
+```{r, eval=FALSE}
+x + 1
+x*2
+x^2
+1/x
+```
+
+## The R Environment
+
+When working with Excel and calling a function on a range of cells, we would usually write the output to another cell in the spreadsheet.
+However, in the above we just wrote the output of each function directly to the `Console` **without modifying `x`**, or **without saving the output anywhere**.
+
+Have a look at your **Environment** Tab in the top right pane, and note that you can see the object `x` there.
+The R Environment is where we created the object `x` and this is like our workspace where we can store any R objects.
+As an example, let's save our output from that last mathematical operation where we calculated $x^2$.
+
+```{r}
+x_sq <- x^2
+```
+
+Notice that the results of `x^2` were no longer printed to the console, and we now have two objects in our R Environment (both `x` and `x_sq`).
+**How would we view the contents of `x_sq`?**
+
+## Creating a Vector
+
+In the above, we initially created our object `x` by giving it the values 1 to 5.
+R interprets the `:` symbol as a quick way to create a sequence from the first up to the second value, in steps of 1.
+A far more common method for creating vectors is to enclose all the values we need inside the function `c()`.
+This function stands for *combine*, and example may be:
+
+```{r}
+fib <- c(0, 1, 1, 2, 3, 5)
+```
+
+This example is just the start of the Fibonacci sequence, but we can use any values we want.
+Notice that these were all numbers (or integers to be even more correct).
+We can also specify character (*i.e.* text) vectors by quoting the supplied values.
+
+```{r}
+pets <- c("dog", "cat", "bird")
+```
+
+R has a convention that text strings must be quoted.
+If you see text which is not quoted, this must refer to an R object, or sometimes it can be the column name of a spreadsheet-like object we're working with. 
+
+As an important technical note, R *can only create vectors where all values are the same type*.
+Character vectors will always display with quotes around the values when you print them in the R console.
+If you mix numbers amongst text values, the numbers will be coerced to text strings and will also appear with quotes, indicating they have been stored as the alpha-numeric symbols for those numbers, but with no implicit numeric value.
+*This is a key point of difference to Excel* where each value is treated in isolation, but once you get used to it, it's actually very useful.
+
+
+## Getting Help
+
+Finally for this section, if you're not sure how a function works, the easiest way to call up the help page is to type the name of the function into the R Console, but with a `?` beforehand.
+As an example, try typing `?sd` into the console.
+This will call up the help page for `sd()` (which calculates the standard deviation of a vector).
+
+This function takes two arguments.
+
+1. Any numeric vector (referred to as `x` by the function)
+2. Instructions on how to handling missing values (`na.rm = FALSE`).
+
+Some help pages can be a little harder to understand than this one but the more you use `R`, the clearer they become.
+We'll check a few more throughout the course and hopefully you'll be able to make sense of them by the end of the course.

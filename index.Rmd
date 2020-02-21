@@ -27,14 +27,14 @@ panderOptions("missing", "")
 ```{r}
 pracs <- tribble(
     ~Week, ~`Week Starting`, ~Lecture, ~Lecturer, ~LecUrl, ~Practical, ~PracUrl,
-    1, "2020-03-02", "Introduction", "Stephen Pederson", "", "Introduction to R and `rmarkdown`", "",
+    1, "2020-03-02", "Introduction", "Stephen Pederson", "", "Introduction to R and `rmarkdown`", "practicals/Practical1_IntroR.html",
     2, "2020-03-09", "**Adelaide Cup Day**", "No Lecture", "", "Importing Data with the `tidyverse`", "",
     3, "2020-03-16", "Quantification Strategies", "Stephen Pederson", "", "Data Visualisation with `ggplot2`", "",
     4, "2020-03-23", "Microarray Technology", "Stephen Pederson", "", "Using Git with RStudio", "",
     5, "2020-03-30", "Statistical Techniques", "Stephen Pederson", "", "Basic Statistics in R", "",
     6, "2020-04-06", "RNA-Seq", "Zhipeng Qu", "", "Alignments and Visualisation", "",
-    NA_integer_, "2020-04-13", "**Mid-Semester Break**", "No Lectures", "", "", "",
-    NA_integer_, "2020-04-20", "**Mid-Semester Break**", "No Lectures", "", "", "",
+    NA_integer_, "2020-04-13", "**Mid-Semester Break**", "No Lecture", "", "", "",
+    NA_integer_, "2020-04-20", "**Mid-Semester Break**", "No Lecture", "", "", "",
     7, "2020-04-27", "Alignment and Quantification", "Nathan Watson-Haigh", "", "Introduction to `limma` and `edgeR`", "",
     8, "2020-05-04", "Statistics for RNA-Seq", "Stephen Pederson", "", "Introduction to `limma` and `edgeR`", "",
     9, "2020-05-11", "Enrichment Analysis", "Stephen Pederson", "", "Enrichment Strategies", "",
