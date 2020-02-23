@@ -7,6 +7,16 @@ output:
     toc: yes
     toc_float: yes
 ---
+<script>
+function myFunction(i) {
+  var x = document.getElementById(i);
+  if (x.style.display === "none") {
+    x.style.display = "block";
+  } else {
+    x.style.display = "none";
+  }
+}
+</script>
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
@@ -73,6 +83,17 @@ Please note that simple passwords will also be disallowed, so please choose some
 Please note, course instructors will be able to access your machine for the entire course.
 If we detect an unchanged password, your machine will **immediately be shut down**.
 
+## What is on the VM
+
+For those who are interested, each VM is running the Ubuntu 18.04 operating system.
+Ubuntu is one of the flavours of Linux and is the most common Linux flavour being used by bioinformaticians.
+Without getting to deeply into this, Linux and MacOS share many features with regards to the architecture of the file system, and these are both quite different to Windows.
+We'll gradually walk you through this during the course, but at no stage will we interact with our VM using a conventional Desktop.
+Ubuntu does come with one, but we've not been satisfied with any of the software clients that are available to connect to the Desktop.
+There are plenty of alternative approaches which we commonly use in bioinformatics, such as `bash` which we glimpsed above, and the RStudio Server interface which will be our main method for connecting to our VM.
+
+It's also very importnt to note, that these VMs are **only accessible from a University of Adelaide campus**, or when connecting using the **University of Adelaide VPN**.
+If you try to connect outside of the University network, your connection will time out.
 
 # Introduction to R and the R Studio environment
 
@@ -246,3 +267,130 @@ This function takes two arguments.
 
 Some help pages can be a little harder to understand than this one but the more you use `R`, the clearer they become.
 We'll check a few more throughout the course and hopefully you'll be able to make sense of them by the end of the course.
+
+# Maintaining our code
+
+## R Scripts
+
+In the above section we worked exclusively in the Console and just executed code 'on the fly'.
+This can be appropriate for very simple calculations, and some people even use R as their default calculator instead of the more flashy GUIs that come installed with most operating systems.
+However, this provides no real advantage over Excel and can lead to significant errors.
+R does provide a short record of the last few hundred lines of code, but these are are transient records.
+Click on the **History** tab next to the **Environment** tab, and you'll see all of the code that we have executed today.
+This is actually stored in your folder, within a file called `.Rhistory`.
+
+
+In bioinformatics, keeping track of our code is a fundamental requirement, with many analyses being performed over weeks, months or years.
+Clearly, relying on the few hundred lines in the `.Rhistory` file would be inappropriate.
+The strategies for recording all steps from an analysis can be varied, and would typically involve some form of electronic record keeping, or version control.
+However, the most basic form of record-keeping involves recording our code in a linear form, along with any other important information related to the analysis we are performed.
+
+Before the release of RStudio in 2012, most people would write R Scripts, and these are still a common format.
+We advocate using RMarkdown as a superior alternative to R Scripts, but let's have a quick look at an R Script first.
+A classic script would look like the following, and would probably be saved as a file called `create_x.R`.
+(There's no need to create this file).
+
+```{r, eval=FALSE}
+# Create an object called x
+x <- 1:5
+# Find the largest value
+max(x)
+# Hmm. That's exactly what I expected
+```
+
+There are a few important points to note here:
+
+- This would be a plain text file, able to opened with TextWrangler, Notepad, Notepad++, SublimeText, Atom, vim, nano, emacs or any other text editor. 
+**Do you think the file `create_x.R` could be opened with MS Word?**
+- There are three lines here which are messages to ourselves, or to our collaborators.
+These are known as *comments*, and start with the `#` symbol. 
+Once R sees this symbol, everything after it is ignored until the <kbd>Enter</kbd> or `end-of-line` (EOL) symbol is given to the Console, so these lines contain no code that will be executed.
+- Beyond the comments, there are two lines of code that would be executed.
+**If you can't identify these two lines, please ask a tutor.**
+
+### Comments
+
+We won't explore the R Script format any further, however the concept of a comment needs a little further explanation.
+Commonly, we'll need to share our analysis with a collaborator or supervisor who won't have access to your brain as it was while you performed the analysis.
+We'll need to communicate why we're doing something in plain English, and identify any concerns and strategies for resolving these.
+Alternatively, you may like to consider that for many analyses, you'll have to return to them after a considerable break, and you also won't have access to your brain as it was while you performed the analysis.
+Comments are also an excellent way of communicating to yourself and reminding yourself why you did something.
+
+<button onclick="myFunction('myDIV')">Click Me For A Hot Tip!</button>  
+<div id="myDIV" style="display: none;">
+
+**Hot Tip: No, you won't always remember why you did something! Don't kid yourself. Why on earth would you want to make your life harder by not commenting your code?**  
+
+</div>
+
+
+When we write code for an analysis, there are two essential functions that we are performing.
+
+1. We are telling the computer what calculations to perform, and what steps to take in what order.
+2. We are communicating with every person involved in the project. 
+This point is often overlooked by naive programmers and **ALWAYS** leads to frustration, and often to a lack of reproducibility.
+
+## R Projects
+
+As we're actually about to start saving files to our VMs, let's take a moment to get ourselves organised.
+When working on an analysis, a very helpful strategy is to keep all of your raw data, analytic code and output in a dedicated folder.
+In RStudio, a system called `R Projects` has been implemented, which is an extremely simple but effective way to keep yourself organised.
+There is no magic to these, but they do help us develop good practice.
+
+In your VM, you'll notice that in the **Files** pane, it will be telling you that you're in your **Home** (![](images/home.png)) directory.
+A common symbol used to represent this is `~`, so whenever you see `~` in a file path, this represents your home folder.
+We'll learn more about file paths as we go through this course.
+
+### Create a New Project
+
+In the top right of your RStudio screen, you'll see the following symbol: ![](images/rproject_arrow.png).
+
+1. Click the arrow
+2. New Project... (choose `Don't Save` when prompted)
+3. 
+
+
+## Introducing R Markdown
+
+The primary record-keeping format we'll use for this course is R Markdown.
+This is another plain text format which allows us to write our code, but instead of using comments, we can use formatted paragraphs in plain language to explain what we're doing to our collaborators and to our future selves.
+
+
+Note that in the above toy example of an R Script, there were no results embedded.
+If we'd wanted to include the output from `max(x)`, we would've had to copy the output from the Console, and place it in our script as a comment.
+In addition to simple code/paragraph format of R Markdown, we can actually embed our results, including tables and figures in our final document.
+Essentially, we can produce a beautifully formatted report as we're building our analysis.
+
+R Markdown itself is an extension of the common `markdown` format in which simple formatting is encoded into a plain text document.
+The R Markdown format, simply allows ambedding of R code alongside our clearly formatted, paragraphs and sections.
+
+As we'll see, when we create an R Markdown document we have our code in one document, which we then compile into a PDF, HTML report, `ioslides` or even an MS Word document or PowerPoint presentation.
+As we compile our final document, we can include results that are generated as the document is created.
+
+## Creating an R Markdown Document
+
+First we’ll show a complete document, then we’ll piece together one ourselves throughout the remainder of the week.
+
+1. Go to the File drop-down menu in R Studio
+2. New File -> R Markdown...
+
+![](images/NewRMarkdown.png)
+
+
+Once you have that New R Markdown form open
+
+1. Change the Title to: My First Report
+2. Change the Author to your own name
+3. Leave everything else as it is and hit OK
+4. Save the file as RMarkdownTutorial.Rmd
+
+![](images/knit.png)
+
+Notice there are a few different colours here indicating sections and R code.
+We'll explore this in detail next, but in essence this is all just plain text. 
+From here, click the <kbd>Knit</kbd> button at the top of the R Markdown document, and this will produce a beautifully formatted HTML report.
+
+
+
+
+
