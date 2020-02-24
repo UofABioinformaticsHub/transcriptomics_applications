@@ -20,13 +20,13 @@ function myFunction(i) {
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-    echo = FALSE,
+    echo = TRUE,
     message = FALSE,
     warning = FALSE
     )
 ```
 
-```{r}
+```{r, echo=FALSE}
 library(tidyverse)
 library(lubridate)
 library(pander)
@@ -92,7 +92,7 @@ We'll gradually walk you through this during the course, but at no stage will we
 Ubuntu does come with one, but we've not been satisfied with any of the software clients that are available to connect to the Desktop.
 There are plenty of alternative approaches which we commonly use in bioinformatics, such as `bash` which we glimpsed above, and the RStudio Server interface which will be our main method for connecting to our VM.
 
-It's also very importnt to note, that these VMs are **only accessible from a University of Adelaide campus**, or when connecting using the **University of Adelaide VPN**.
+It's also very important to note, that these VMs are **only accessible from a University of Adelaide campus**, or when connecting using the **University of Adelaide VPN**.
 If you try to connect outside of the University network, your connection will time out.
 
 # Introduction to R and the R Studio environment
@@ -123,7 +123,7 @@ Some examples of trivial R code might be as follows.
 Don't worry about typing these just yet.
 Instead, have a look and try to understand everything you see at this point.
 
-```{r firstExamples, echo=TRUE, results='markup'}
+```{r firstExamples, results='markup'}
 x <- 1:5
 print(x)
 sqrt(x)
@@ -185,14 +185,14 @@ We can view the contents of this R object either by typing it's name, or by usin
 Mostly we don't need the `print()` function but it does come in handy sometimes.
 Let's try both methods.
 
-```{r, eval=FALSE}
+```{r, results='hide'}
 x
 print(x)
 ```
 
 Just like you might call the Excel function `AVERAGE()` and select a range of values to place between the braces `()` and find the mean, we can do this in R using the equivalent function `mean()`.
 
-```{r}
+```{r, results='hide'}
 mean(x)
 ```
 
@@ -203,7 +203,7 @@ This is very similar to how the Excel functions work, but instead of passing a r
 
 We can also perform mathematical operations directly on our R object, which, as you can see, is much easier than highlighting a range of cells in Excel.
 
-```{r, eval=FALSE}
+```{r, results='hide'}
 x + 1
 x*2
 x^2
@@ -257,7 +257,7 @@ If you mix numbers amongst text values, the numbers will be coerced to text stri
 ## Getting Help
 
 Finally for this section, if you're not sure how a function works, the easiest way to call up the help page is to type the name of the function into the R Console, but with a `?` beforehand.
-As an example, try typing `?sd` into the console.
+As an example, try typing `?sd` into the console, followed by <kbd>Enter</kbd>.
 This will call up the help page for `sd()` (which calculates the standard deviation of a vector).
 
 This function takes two arguments.
@@ -285,8 +285,8 @@ Clearly, relying on the few hundred lines in the `.Rhistory` file would be inapp
 The strategies for recording all steps from an analysis can be varied, and would typically involve some form of electronic record keeping, or version control.
 However, the most basic form of record-keeping involves recording our code in a linear form, along with any other important information related to the analysis we are performed.
 
-Before the release of RStudio in 2012, most people would write R Scripts, and these are still a common format.
-We advocate using RMarkdown as a superior alternative to R Scripts, but let's have a quick look at an R Script first.
+Before the release of RStudio in 2011, most people would write R Scripts, and these are still a common format.
+We advocate using R Markdown as a superior alternative to R Scripts, and will introduce these later today, but first, let's have a quick look at an R Script.
 A classic script would look like the following, and would probably be saved as a file called `create_x.R`.
 (There's no need to create this file).
 
@@ -313,13 +313,13 @@ Once R sees this symbol, everything after it is ignored until the <kbd>Enter</kb
 We won't explore the R Script format any further, however the concept of a comment needs a little further explanation.
 Commonly, we'll need to share our analysis with a collaborator or supervisor who won't have access to your brain as it was while you performed the analysis.
 We'll need to communicate why we're doing something in plain English, and identify any concerns and strategies for resolving these.
-Alternatively, you may like to consider that for many analyses, you'll have to return to them after a considerable break, and you also won't have access to your brain as it was while you performed the analysis.
+Alternatively, you may like to consider that for many analyses, you'll return to them after a considerable break, and you also won't have access to your brain as it was while you performed the analysis.
 Comments are also an excellent way of communicating to yourself and reminding yourself why you did something.
 
 <button onclick="myFunction('myDIV')">Click Me For A Hot Tip!</button>  
 <div id="myDIV" style="display: none;">
 
-**Hot Tip: No, you won't always remember why you did something! Don't kid yourself. Why on earth would you want to make your life harder by not commenting your code?**  
+**Hot Tip: No, you won't remember why you did something! Don't kid yourself.**  
 
 </div>
 
@@ -335,36 +335,58 @@ This point is often overlooked by naive programmers and **ALWAYS** leads to frus
 As we're actually about to start saving files to our VMs, let's take a moment to get ourselves organised.
 When working on an analysis, a very helpful strategy is to keep all of your raw data, analytic code and output in a dedicated folder.
 In RStudio, a system called `R Projects` has been implemented, which is an extremely simple but effective way to keep yourself organised.
-There is no magic to these, but they do help us develop good practice.
+There is no mystery or magic to these as they are little more than a shortcut to a folder, but they do help us develop good practice.
 
 In your VM, you'll notice that in the **Files** pane, it will be telling you that you're in your **Home** (![](images/home.png)) directory.
 A common symbol used to represent this is `~`, so whenever you see `~` in a file path, this represents your home folder.
 We'll learn more about file paths as we go through this course.
 
+In the **Files** pane, we can actually create new directories.
+Directly below the word **Files**, you'll see a `New Folder` icon (![](images/NewFolder.png)).
+Click on this and type `transcriptomic_applications`, ensuring everything is lower case and you use an underscore between words, **NOT** white-space.
+We'll use this folder in the next section, and we an include all of our course content here.
+
+
 ### Create a New Project
 
-In the top right of your RStudio screen, you'll see the following symbol: ![](images/rproject_arrow.png).
+Now we have a suitable folder for our R Project, in the top right of your RStudio screen, you'll see the following symbol: ![](images/rproject_arrow.png){ width=120px }.
 
 1. Click the arrow
 2. New Project... (choose `Don't Save` when prompted)
-3. 
+3. New Directory
+4. New Project
+
+This will get you to this form:
+
+![](images/NewProject.png)
+
+The cursor should be flashing in the `Directory name` field, so please click the <kbd>Browse</kbd> button then enter the `transcriptomic_applications` directory, followed by <kbd>Choose</kbd>.
+The cursor will once again be flashing in the `Directory name` field so please enter `practical_1` as the directory name, followed by <kbd>Create Project</kbd>.
+
+This will start a clean R session, where have no records of our previous work, and you'll notice that in the **Files** pane we are now in the directory `~/transcriptomic_applications/practical_1`.
+Inside this directory will be the file `practical_1.Rproj` which functions as a shortcut to this directory, but can also be used to store any customisations you make to the project.
+We won't look at these today, but may tweak things later during the course.
+These `.Rproj` files are also useful for setting correct file paths during an analysis.
+
+NB: If you are not in the exact directory `~/transcriptomic_applications/practical_1`, **you may be disadvantaging yourself for the remainder of the course and for any assessments that are set**. 
+**Please ensure you have this completely correct**, and call an instructor over if you cannot figure the above steps out. 
 
 
 ## Introducing R Markdown
 
 The primary record-keeping format we'll use for this course is R Markdown.
-This is another plain text format which allows us to write our code, but instead of using comments, we can use formatted paragraphs in plain language to explain what we're doing to our collaborators and to our future selves.
+This is another plain text format which allows us to write our code, but instead of using comments, we can use *formatted paragraphs in plain language* to explain what we're doing to our collaborators and to our future selves.
 
 
 Note that in the above toy example of an R Script, there were no results embedded.
-If we'd wanted to include the output from `max(x)`, we would've had to copy the output from the Console, and place it in our script as a comment.
+If we'd wanted to include the output from `max(x)` in our R Script, we would've had to copy the output from the Console, and place it in the script as a comment.
 In addition to simple code/paragraph format of R Markdown, we can actually embed our results, including tables and figures in our final document.
 Essentially, we can produce a beautifully formatted report as we're building our analysis.
 
 R Markdown itself is an extension of the common `markdown` format in which simple formatting is encoded into a plain text document.
-The R Markdown format, simply allows ambedding of R code alongside our clearly formatted, paragraphs and sections.
+The R Markdown format, simply allows embedding of R code alongside our clearly formatted, paragraphs and sections.
 
-As we'll see, when we create an R Markdown document we have our code in one document, which we then compile into a PDF, HTML report, `ioslides` or even an MS Word document or PowerPoint presentation.
+As we'll see, when we create an R Markdown document we have our code in one document, which we then compile into a PDF, HTML report, slide presentation or even an MS Word document or PowerPoint presentation.
 As we compile our final document, we can include results that are generated as the document is created.
 
 ## Creating an R Markdown Document
@@ -384,13 +406,93 @@ Once you have that New R Markdown form open
 3. Leave everything else as it is and hit OK
 4. Save the file as RMarkdownTutorial.Rmd
 
+Notice that by default, you will be asked to save this in the project root directory `~/transcriptomic_applications/practical_1`.
+This is a simple example of how using an R Project helps us to save files in intelligent places and manage our analysis without losing track of where our files are.
+Many analyses involve dozens or hundreds of files, so managing all of those can become a non-trivial undertaking if you don't learn good practice from the beginning.
+
 ![](images/knit.png)
 
-Notice there are a few different colours here indicating sections and R code.
-We'll explore this in detail next, but in essence this is all just plain text. 
+Notice there are a few different colours here indicating section headings (in blue) and R code (with a grey background).
+We'll explore this in detail next, but in essence this is all just plain text that RStudio is making look pretty for us.
 From here, click the <kbd>Knit</kbd> button at the top of the R Markdown document, and this will produce a beautifully formatted HTML report.
 
+A new html window should open (be careful of any pop-up blockers you have running) so let's go through this in detail and see what we've actually done.
 
+## Understanding R Markdown
+
+### The YAML Header
+
+At the top of our R Markdown document is our YAML header.
+YAML stands for YAML Ain't Markup Language, which is one of those stupid recursive acronyms that programming nerds find hilarious.
+We don't have to worry about the acronym, but the key points are
+
+1. The YAML header is contained between the two sets of `---` lines at the beginning of the document.
+2. Nothing can appear before this header!!!
+3. We can set the title, author and date here. Notice how these are printed at the top of your html document.
+4. We can also define our output format here. By default we chose an `html_document`, but could also choose `pdf_document` or `word_document`
+
+Try changing the output format by clicking the down arrow next to the word **Knit** and selecting `Knit to PDF`, then `Knit to Word`.
+Notice that by doing this, the YAML header was automatically changed by RStudio.
+Let's reset this back to `html_document` by deleting those changes and manually setting the last line of the YAML header to be `output: html_document`.
+Test your compiling again to make sure everything works, and you should see the original html report open up again.
+
+### Code Chunks
+
+The YAML header is probably the hardest thing about R Markdown, and it's not that hard really, so let's keep looking.
+Lines 8-10 are what we refer to as a code chunk.
+
+    ```{r setup, include=FALSE}`r ''`
+    knitr::opts_chunk$set(echo = TRUE)
+    ```
+
+Code chunks always start with with `` ```{r} `` and  end with `` ``` ``, whilst executed `R` code goes between these two delineators.
+There's no real need to worry about what this exact code chunk is doing, but if you're still following along, it's setting the behaviour for all code chunks below it, where `echo = FALSE` means that all code will be visible in your final report.
+We'll explore this later on too.
+
+Chunk names (e.g. `setup`) are optional in R Markdown, and directly follow the `` ```{r ``.
+Naming chunks in a large analysis can be good practice and can help you find where everything is more easily, but this comes down to your preference.
+We do strongly advocate for naming code chunks though, as we have learned the hard way that tricks which make your life easier, generally do make your life easier.
+The two seconds it takes to name a chunk can save much more time than that as your analysis develops.
+
+You'll also notice that after the chunk name, the argument `include = FALSE` was set.
+This argument will only apply to the specific chunk it is in, and here `include = FALSE` tells **Knit** to hide the code and the output, unless there is a figure being created by the chunk.
+If you check the html document, you'll see that this chunk is not visible.
+
+On lines 18-20 you'll see another code chunk
+
+    ```{r cars}`r ''`
+    summary(cars)
+    ```
+    
+This is calling the function `summary()` on a data object called `cars` that comes pre-installed with `R`.
+We don't need to worry about the actual values, but you'll see that the code is visible (`echo = TRUE`) and that the results from execution of the code have been prefaced with `##` symbols.
+This can be turned off, but is common practice for presenting direct R output in an R Markdown document.
+
+The third chunk we can see is 
+
+    ```{r pressure, echo=FALSE}`r ''`
+    plot(pressure)
+    ```
+    
+Notice that the code for this chunk has been hidden (`echo = FALSE`), but that the plot generate by execution of the code is still visible.
+
+### Section Headings
+
+After our first code chunk, you'll see `## R Markdown` which has been printed on the html document as a section heading.
+In markdown (and R Markdown), and increasing number of hashes changes a line from a Section heading (`##`) to a Subsection heading (`###`), or a Subsubsection heading (`####`) and so on.
+This is a convenient way of controlling the appearance of your output without having to go through the rigmarole of formatting in MS Word.
+
+### Plain text formatting
+
+Notice that in Line 16, the word **Knit** is surrounded by two asterisks on each side.
+This is how we set **bold font** in markdown, with an alternative being two underscores (\_\_).
+
+We can also set italics, by enclosing text in a pair of single asterisks.
+Try surrounding the phrase `a document will be generated` with an asterisk at either end.
+You'll notice that RStudio will automatically highlight this phrase in light blue, and when you knit the document again, this text will appear in italics, as expected.
+
+Further down on line 30, you'll see that the phrase `echo = FALSE` has been enclosed by a backtick (\`) at either end.
+This will cause text to be rendered in what's known as `typewriter font` and is conventionally how code is represented in markdown.
 
 
 
