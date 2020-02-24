@@ -1769,6 +1769,75 @@ plot(pressure)
 <p>Notice that in Line 16, the word <strong>Knit</strong> is surrounded by two asterisks on each side. This is how we set <strong>bold font</strong> in markdown, with an alternative being two underscores (__).</p>
 <p>We can also set italics, by enclosing text in a pair of single asterisks. Try surrounding the phrase <code>a document will be generated</code> with an asterisk at either end. You’ll notice that RStudio will automatically highlight this phrase in light blue, and when you knit the document again, this text will appear in italics, as expected.</p>
 <p>Further down on line 30, you’ll see that the phrase <code>echo = FALSE</code> has been enclosed by a backtick (`) at either end. This will cause text to be rendered in what’s known as <code>typewriter font</code> and is conventionally how code is represented in markdown.</p>
+<p>There are many other simple formatting tricks available in R Markdown, and you can see a brief help using <code>Help</code> &gt; <code>Markdown Quick Reference</code> in the drop-down menu.</p>
+</div>
+<div id="navigation-tips" class="section level3">
+<h3>Navigation Tips</h3>
+<p>As well as being able to format text and specify section headings, insert pictures etc., R Studio provides a navigation pane. Click the staggered text symbol (<img src="data:image/png;base64,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" />) at the top of your R Markdown page.</p>
+<p>Here you’ll see all of the section headings and clicking on these will take you to that part of the document. Chunk names can also be shown, but we’ll need to set this manually. Using the drop-down menu at the top of R Studio, choose: <code>Tools</code> &gt; <code>Global Options...</code> &gt; <code>R Markdown</code>. Once you’re on this page, look for the text <code>Show in document outline:</code> and using the drop-down menu set this to <code>Sections and All Chunks</code>, then <kbd>OK</kbd>.</p>
+</div>
+</div>
+</div>
+<div id="running-code-interactively" class="section level1">
+<h1>Running Code Interactively</h1>
+<div id="using-our-default-template" class="section level2">
+<h2>Using Our Default Template</h2>
+<p>Now that we’ve had a good look through R Markdown and all of the available options, we should start to build our own workflow. All we’ve seen in the above is our plain text R Markdown file being converted into an html document, and where the code is executed whilst the document is being compiled.</p>
+<p>In reality, we’ll start with an empty document and will build up a workflow from scratch. To do this, we’ll probably need to write code and check that it works as we go.</p>
+<p>As we may have ascertained, code within an R Markdown document has not been executed, but is just a plain text record of some code. In order to actually execute a line of code we have several options.</p>
+<ol style="list-style-type: decimal">
+<li>Use your mouse to set the cursor anywhere on the line <code>summary(cars)</code>.</li>
+<li>Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd></li>
+</ol>
+<p>Here you’ll see the results appear in your R Markdown document as a kind of preview. Some people like to use this setting as the default, but many others prefer to execute code in the Console without this preview. This tends to keep a document looking cleaner while you work on it, as the previews can take up a fair bit of space.</p>
+<p>To remove these previews, go to the settings icon at the top of your R Markdown document (<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADsAAAAkCAYAAAA3pUL9AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH5AIYDh0wfUeungAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAFBUlEQVRo3u2Z6VNTVxTAfy9ClkdAWUI2SJQEiaDIoNVxqZ3OaFsZO9bpONP2D2zH1k91XFo7U1uXbpIAYUkgTwhJSEJICJCEkLVfWiQkAjPgEJfz8dzz7r2/d+872xOS6bUi74jIeIfkPex72LdAanY7gcvlRpIkUqlVGhrqsVgsWK2Wtw/WHwgQj8e5+skVxDqRpeVl7j14iMnUjlwuf3Ov8WI8TiaTKdHNen10HDahVtchEwQaDx5E09JMNBYtsdv8XFWfrN1uJxqNkUim6LRaOH68h0KhwFwgwEcfni+x1Wo0LERi6HV6YouLvJAkfP45zOZ2erq7USgU+wYrbJdUDNodyAQ4f/YM6XSavwftpFJpRFFFNpvl8scfldgHgyEcI6O0tDQz5ZE43d9Hp6UDx/AoztFRbty4Tm1tbfXBxmIxHPYhrg18iiAI6/rAXJBkKoW5va3spAqFAmMuN8tLy5zu7ysZ/8c+hEwm49gxW/VdY7GujkQqSS6fp7bmpanRoH+1E5DJONF9rOKYVtOMe0qqTgelVCgwm8243JO7XqhQLOIYdmKxdFSvN7ZaLYyOT5DN5Xa10Pi4i6bmZnQ6XfXCiioVjYcOMR+e39VCQyNOuo52Vmfo8fkD+GZ9zAUCGNoM6Ct8p5lMBvvQMNL0DIV8AaPRwJlT/ajVdWW2DfVqhoedCIKAXF6D2WRG06rZf288aHeQz2Y4YjZjMBpKnNPGb/Du/Z/QaDTYbF0IMhmSR2LK4+GLawNlXnp1dZX5yALFYoG1TBbpxTQ6nQ6brWv/Tjaby+Gd8fLNVzeRbQg3m8U7O4soivT2nljX2WxdZDIZ3JMSvSe6S+xVKhVmU/tLj67Xc//nh/sLu5ZOo1AqtgQFiESiNDU1lembmpvw+/zbL3zgAPl8ftcARp12R3aBULjcQcnlcrKZzLYbEUUl6bV0mT69mkap3D4l9Pr9GLaI1zuVQCi8Y5uKsObDZr69dZtff3/CtHeWbDZbNoHZZGLS7SEcDpdkXIODdo5WKPGKxSKxeJxxl5tfHv3G80EHHZa9KQW3At449sp0MZvLEQyGCPj9xBYXuXnjepnNjNfLk2d/YTDoKRaLBAJznDv7AZ0VYO/ce0Aun0ejaaG1VYu2VbPnOfLmK735JQg76S7euvUDX9/8EqVKWTa2trZGYC6IIJOhb22taBONxXjy7E+uXLn82p3Q/8CVTnvbEs/pHMNqOVIRAkChUNBx5PCWc9Sr1SSTSZaWlznY0PBaYbe60ltmUIlEAo/k4czpU7vagFwup+9kLx7P/hUB28J6JIm+3uN7UnDbuo4SjSwQjy9VJ6yoEllJJMsyJ+fYOM8H7SRTqfLMqlBgxuvFtynWygQBnU5LJBKpTlir1cLEhJsR5zjFYpFQKMyPd+6ytLKCcKCGsXFX2TOPHj/F88LLxOQUj5/+sR62AoE53O6pfe08buuNk6kUbpeLUCjMykqCc+fPYWpvIxaN4Rga4vOBz0pi6Xff32Zg4CpyuZzhkRF8Pj8N9Q0Eg0EuXLxAm9FQvQ23OlGkv7+fRCKBWq1e1zc2NRKLLpLL5aj5r1BYXFpCJYrrbdSTvb1YrVYSKytcunTxzWmlbgQFEAQBk9mE1+craa0aDYayl6XVaqkGEXbzy3JhYQFJmmZ+PkyhWKS9zUh3Tw/KfWyXvjbYjbWqIJNVLeSewr4p8v6X5dsq/wLkKS35kV4oLgAAAABJRU5ErkJggg==" height="18" />). Once the drop-down menu appears, select <code>Chunk Output in Console</code>, then choose <kbd>Remove Output</kbd> when prompted. This will remove the existing preview and now when we send code to the Console, all output will appear there.</p>
+<p>Make sure your cursor is back on the line that says <code>summary(cars)</code>, and hit <kbd>Ctrl</kbd> + <kbd>Enter</kbd> again. Now the output will appear in the Console.</p>
+<p>This method can be used for executing a single line, but to execute every line in a chunk, you can use the <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + C shortcut. You can also jump to the next chunk using <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + N. This strategy can help you quickly run through an analysis.</p>
+<p>A final option for those who prefer to click on things, would be to click the green ‘play arrow’ at the RHS of each chunk. The ‘down arrow’ can be used to run all chunks above the current one.</p>
+</div>
+<div id="writing-our-own-code" class="section level2">
+<h2>Writing our own code</h2>
+<p>As a final step for this week’s practical, let’s create our own content. Using your mouse select everything from the <code>## R Markdown</code> header to the end of the file and delete. Compile the report just to convince yourself that it’s now empty, apart from the title, author and date from the YAML header.</p>
+<p>Make a section header: <code>Creating an R Object</code>, and enter text similar to the below after this header</p>
+<blockquote>
+<p>To create an object in R, we first enter the name of the object, followed by the assignment operator (&lt;-) and the values we wish to place in the object.</p>
+</blockquote>
+<p>Now we’ve explained the process to our future selves, let’s create our favourite vector <code>x</code>, with the values <code>1:5</code>. We’ll need to place this code inside a chunk, so after the above text create a new chunk by either manually typing <code>```{r}</code> to begin the chunk, followed by <code>```</code> to close the chunk. Or we can use the shortcut <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + I to create an empty chunk.</p>
+<p>Name the chunk whatever you choose, however a good trick may to use the name of any objects you’re creating as the chunk name. Include the code to create <code>x</code> with the values <code>1:5</code> and <strong>compile the document to make sure you haven’t made any mistakes.</strong></p>
+<p>After this chunk, start a new paragraph and include the following text.</p>
+<blockquote>
+<p>In our object <code>x</code>, the largest value is 5 and the smallest value is 1.</p>
+</blockquote>
+<p><strong>Recompile the document.</strong></p>
+<div id="including-in-line-code" class="section level3">
+<h3>Including in-line code</h3>
+<p>As well as executing code in code chunks, we can evaluate very simple code in our plain text paragraphs. Earlier, we discovered that <code>R</code> has the functions <code>min()</code> and <code>max()</code>. Change the last paragraph to read</p>
+<blockquote>
+<p>In our object <code>x</code>, the largest value is <code>`r max(x)`</code> and the smallest value is <code>`r min(x)`</code>.</p>
+</blockquote>
+<p><strong>Recompile the document.</strong></p>
+<p>Notice how these simple pieces of R code have been executed within the paragraph they are contained. This can be very useful when performing an analysis and needing to include descriptions of our data, such as the number of samples, the number of detectable genes, or anything similar. This also makes our analysis robust to new data points arriving, as we will just need to change our data importing or data setup prior to this paragraph, whilst all inline summaries will automatically include any new data points.</p>
+<p>As a simple example, change your object <code>x</code>, so that it is now the values <code>1:10</code>, and recompile your document.</p>
+<p>Using whichever version of <code>x</code> that you prefer, now add the text</p>
+<blockquote>
+<p>We can also perform mathematical operations directly on our entire vector in a single command. This is much simpler than selecting a range of values in Excel, and printing the results to another cell in an Excel workbook.</p>
+</blockquote>
+<pre><code>```{r basic_maths}
+x + 1
+x*2
+x^2
+1/x
+sqrt(x)
+``` </code></pre>
+<p>Notice how R Markdown includes the <code>##</code> symbol at the start of each line of results, and that each line of code within the same chunk is name broken up by the output of each line.</p>
+<p>Create a new chunk containing the object <code>x_sq</code> and recompile to check your code.</p>
+<p>Now let’s make a simple plot of <code>x</code> and <code>x_sq</code></p>
+<pre><code>```{r make_plot}
+plot(x, x_sq)
+``` </code></pre>
+<p>(Recompile to check everything works)</p>
+<p>When we create plots and figures, we may like to include a figure caption. This can be done by setting the <code>fig.cap</code> argument in the chunk header. In the above chunk, place a comma after the name, followed by <code>fig.cap = &quot;Plot of x vs x^2^&quot;</code>. This will appear under your plot as a figure caption, and also note that we’ve used the <em>superscript formatting</em> trick here too.</p>
+<p>Now that we’ve introduced most of the key concepts for working interactively in R, keeping our code organised and using R Markdown, we’re ready to start importing and looking through data. This will be the topic for next week’s practical sessions.</p>
 </div>
 </div>
 </div>

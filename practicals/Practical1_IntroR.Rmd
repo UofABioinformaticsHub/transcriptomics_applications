@@ -494,5 +494,122 @@ You'll notice that RStudio will automatically highlight this phrase in light blu
 Further down on line 30, you'll see that the phrase `echo = FALSE` has been enclosed by a backtick (\`) at either end.
 This will cause text to be rendered in what's known as `typewriter font` and is conventionally how code is represented in markdown.
 
+There are many other simple formatting tricks available in R Markdown, and you can see a brief help using `Help` > `Markdown Quick Reference` in the drop-down menu.
+
+### Navigation Tips
+
+As well as being able to format text and specify section headings, insert pictures etc., R Studio provides a navigation pane.
+Click the staggered text symbol (![](images/staggeredText.png)) at the top of your R Markdown page.
+
+Here you'll see all of the section headings and clicking on these will take you to that part of the document.
+Chunk names can also be shown, but we'll need to set this manually.
+Using the drop-down menu at the top of R Studio, choose: `Tools` > `Global Options...` > `R Markdown`.
+Once you're on this page, look for the text `Show in document outline:` and using the drop-down menu set this to `Sections and All Chunks`, then <kbd>OK</kbd>.
+
+# Running Code Interactively
+
+## Using Our Default Template
+
+Now that we've had a good look through R Markdown and all of the available options, we should start to build our own workflow.
+All we've seen in the above is our plain text R Markdown file being converted into an html document, and where the code is executed whilst the document is being compiled.
+
+In reality, we'll start with an empty document and will build up a workflow from scratch.
+To do this, we'll probably need to write code and check that it works as we go.
+
+As we may have ascertained, code within an R Markdown document has not been executed, but is just a plain text record of some code.
+In order to actually execute a line of code we have several options.
+
+1. Use your mouse to set the cursor anywhere on the line `summary(cars)`.
+2. Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
+
+Here you'll see the results appear in your R Markdown document as a kind of preview.
+Some people like to use this setting as the default, but many others prefer to execute code in the Console without this preview.
+This tends to keep a document looking cleaner while you work on it, as the previews can take up a fair bit of space.
+
+To remove these previews, go to the settings icon at the top of your R Markdown document (![](images/settings_icon.png){height=18px}).
+Once the drop-down menu appears, select `Chunk Output in Console`, then choose <kbd>Remove Output</kbd> when prompted.
+This will remove the existing preview and now when we send code to the Console, all output will appear there.
+
+Make sure your cursor is back on the line that says `summary(cars)`, and hit <kbd>Ctrl</kbd> + <kbd>Enter</kbd> again.
+Now the output will appear in the Console.
+
+This method can be used for executing a single line, but to execute every line in a chunk, you can use the <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + C shortcut.
+You can also jump to the next chunk using <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + N.
+This strategy can help you quickly run through an analysis.
+
+A final option for those who prefer to click on things, would be to click the green 'play arrow' at the RHS of each chunk.
+The 'down arrow' can be used to run all chunks above the current one.
+
+## Writing our own code
+
+As a final step for this week's practical, let's create our own content.
+Using your mouse select everything from the `## R Markdown` header to the end of the file and delete.
+Compile the report just to convince yourself that it's now empty, apart from the title, author and date from the YAML header.
+
+Make a section header: `Creating an R Object`, and enter text similar to the below after this header
+
+> To create an object in R, we first enter the name of the object, followed by the assignment operator (<-) and the values we wish to place in the object.
+
+Now we've explained the process to our future selves, let's create our favourite vector `x`, with the values `1:5`.
+We'll need to place this code inside a chunk, so after the above text create a new chunk by either manually typing `` ```{r} `` to begin the chunk, followed by `` ``` `` to close the chunk.
+Or we can use the shortcut <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + I to create an empty chunk.
+
+Name the chunk whatever you choose, however a good trick may to use the name of any objects you're creating as the chunk name.
+Include the code to create `x` with the values `1:5` and **compile the document to make sure you haven't made any mistakes.**
+
+After this chunk, start a new paragraph and include the following text.
+
+> In our object `x`, the largest value is 5 and the smallest value is 1.
+
+**Recompile the document.**
+
+### Including in-line code
+
+As well as executing code in code chunks, we can evaluate very simple code in our plain text paragraphs.
+Earlier, we discovered that `R` has the functions `min()` and `max()`.
+Change the last paragraph to read
+
+> In our object `x`, the largest value is `` `r knitr::inline_expr("max(x)")` `` and the smallest value is `` `r knitr::inline_expr("min(x)")` ``.
+
+**Recompile the document.**
+
+Notice how these simple pieces of R code have been executed within the paragraph they are contained.
+This can be very useful when performing an analysis and needing to include descriptions of our data, such as the number of samples, the number of detectable genes, or anything similar.
+This also makes our analysis robust to new data points arriving, as we will just need to change our data importing or data setup prior to this paragraph, whilst all inline summaries will automatically include any new data points.
+
+As a simple example, change your object `x`, so that it is now the values `1:10`, and recompile your document.
+
+Using whichever version of `x` that you prefer, now add the text 
+
+> We can also perform mathematical operations directly on our entire vector in a single command. This is much simpler than selecting a range of values in Excel, and printing the results to another cell in an Excel workbook.
+
+    ```{r basic_maths}`r ''`
+    x + 1
+    x*2
+    x^2
+    1/x
+    sqrt(x)
+    ``` `r ''`
+    
+Notice how R Markdown includes the `##` symbol at the start of each line of results, and that each line of code within the same chunk is name broken up by the output of each line.
+
+Create a new chunk containing the object `x_sq` and recompile to check your code.
+
+Now let's make a simple plot of `x` and `x_sq`
+
+    ```{r make_plot}`r ''`
+    plot(x, x_sq)
+    ``` `r ''`
+
+(Recompile to check everything works)
+
+When we create plots and figures, we may like to include a figure caption.
+This can be done by setting the `fig.cap` argument in the chunk header.
+In the above chunk, place a comma after the name, followed by `fig.cap = "Plot of x vs x^2^"`.
+This will appear under your plot as a figure caption, and also note that we've used the *superscript formatting* trick here too.
+
+Now that we've introduced most of the key concepts for working interactively in R, keeping our code organised and using R Markdown, we're ready to start importing and looking through data.
+This will be the topic for next week's practical sessions.
+
 
 
