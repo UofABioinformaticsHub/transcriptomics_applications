@@ -343,7 +343,7 @@ We'll learn more about file paths as we go through this course.
 
 In the **Files** pane, we can actually create new directories.
 Directly below the word **Files**, you'll see a `New Folder` icon (![](images/NewFolder.png)).
-Click on this and type `transcriptomic_applications`, ensuring everything is lower case and you use an underscore between words, **NOT** white-space.
+Click on this and type `transcriptomics_applications`, ensuring everything is lower case and you use an underscore between words, **NOT** white-space.
 We'll use this folder in the next section, and we an include all of our course content here.
 
 
@@ -360,15 +360,15 @@ This will get you to this form:
 
 ![](images/NewProject.png)
 
-The cursor should be flashing in the `Directory name` field, so please click the <kbd>Browse</kbd> button then enter the `transcriptomic_applications` directory, followed by <kbd>Choose</kbd>.
+The cursor should be flashing in the `Directory name` field, so please click the <kbd>Browse</kbd> button then enter the `transcriptomics_applications` directory, followed by <kbd>Choose</kbd>.
 The cursor will once again be flashing in the `Directory name` field so please enter `practical_1` as the directory name, followed by <kbd>Create Project</kbd>.
 
-This will start a clean R session, where have no records of our previous work, and you'll notice that in the **Files** pane we are now in the directory `~/transcriptomic_applications/practical_1`.
+This will start a clean R session, where have no records of our previous work, and you'll notice that in the **Files** pane we are now in the directory `~/transcriptomics_applications/practical_1`.
 Inside this directory will be the file `practical_1.Rproj` which functions as a shortcut to this directory, but can also be used to store any customisations you make to the project.
 We won't look at these today, but may tweak things later during the course.
 These `.Rproj` files are also useful for setting correct file paths during an analysis.
 
-NB: If you are not in the exact directory `~/transcriptomic_applications/practical_1`, **you may be disadvantaging yourself for the remainder of the course and for any assessments that are set**. 
+NB: If you are not in the exact directory `~/transcriptomics_applications/practical_1`, **you may be disadvantaging yourself for the remainder of the course and for any assessments that are set**. 
 **Please ensure you have this completely correct**, and call an instructor over if you cannot figure the above steps out. 
 
 
@@ -406,7 +406,7 @@ Once you have that New R Markdown form open
 3. Leave everything else as it is and hit OK
 4. Save the file as RMarkdownTutorial.Rmd
 
-Notice that by default, you will be asked to save this in the project root directory `~/transcriptomic_applications/practical_1`.
+Notice that by default, you will be asked to save this in the project root directory `~/transcriptomics_applications/practical_1`.
 This is a simple example of how using an R Project helps us to save files in intelligent places and manage our analysis without losing track of where our files are.
 Many analyses involve dozens or hundreds of files, so managing all of those can become a non-trivial undertaking if you don't learn good practice from the beginning.
 
