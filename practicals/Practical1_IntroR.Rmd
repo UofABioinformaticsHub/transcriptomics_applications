@@ -27,15 +27,6 @@ knitr::opts_chunk$set(
     )
 ```
 
-```{r, echo=FALSE}
-library(tidyverse)
-library(lubridate)
-library(pander)
-panderOptions("table.style", "rmarkdown")
-panderOptions("table.split.table", Inf)
-panderOptions("missing", "")
-```
-
 
 # Introduction
 

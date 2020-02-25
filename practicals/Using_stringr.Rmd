@@ -1,0 +1,137 @@
+---
+title: "BIOINF3005/7160: Transcriptomics Applications"
+subtitle: "Working With Text in R"
+date: "4^th^ March, 2020"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE,
+    results = "hide",
+    message = FALSE,
+    warning = FALSE,
+    fig.align = "center"
+    )
+```
+
+
+## Introduction
+
+In our previous work, we introduced:
+
+- The relationship between R and R Studio
+- The advantages of R Markdown
+- How to create an R Markdown document from scratch
+
+In this session, we'll look at working with text strings
+
+### R Packages
+
+A very convenient package for working with text in R is called `stringr`, however, many of you may not know what a package is.
+Put simply, a package is a collection of functions that can be used together to perform similar or related tasks.
+
+When you open an initial R session, a handful of packages are loaded by default, such as `r pander::pander(.packages())`.
+Each of these packages has a set of related functions.
+For example, `sd()`, `var()`, `cor()` and `rnorm()` all live in the `stats` package as they are about distributional parameters or statisitcal model-fitting.
+Alternatively, `abs()`, `max()`, `log()` and other functions live in `base` are they are the fundamental functions required for performing any calculations.
+If you go to the help page for any of these, you'll see the package name at the top left of each help page in the curly braces.
+
+There are thousands of packages available, and loading them all every time we start `R` would take hours, so for each analysis, we just need to load the packages that are relevant to each analysis.
+For this section, we're going to manipulate text and the package we'll look at is `stringr`.
+
+
+## Working with Text 
+
+### Start a new R Markdown Document
+
+Making sure you're in the appropriate R Project, create a new R Markdown file called `TextManipulation.Rmd`.
+THroughout this section, please write copious notes to yourself about what we are doing.
+We will note give you exact guidance on this, but remember that you are creating a reference document for yourself so you can find your way around later.
+Take the time to write everything in a way that you find clear.
+It's better to go slowly and understand everything, than to finish but to have no idea what you've done.
+
+Once you've got your new R Markdown document, make sure you're happy with the YAML header, then delete everything after the first chunk (`setup`).
+**Compile just to check you haven't broken anything.**
+
+A good tip is to load all packages you need for a workflow at the beginning. 
+This helps identify any potential conflicts between packages early, as sometimes two packages don't play well together, and may even have identically named functions.
+
+Start a new chunk and set the label to be `load_packages` or something similar.
+Inside that chunk add the code 
+
+```{r}
+library(stringr)
+```
+
+This will load the package `stringr`, which has a raft of functions for manipulating text.
+Often we'll need to know these tricks as our sample names may have mulitple genotypes or treatment embedded in them, and knowing how to get these pieces of information out can be very helpful.
+Other times, we need to know how to correct typos longs the lines of sex being recorded as `male`, `female`, `M`, `m`, `f` or `F` all in the same document.
+This type of thing happens more than you may relaise, especially when dealing with large datasets that have a lot of manually entered values.
+
+The first thing we'll need to do is create a character vector that we'll work with for this section.
+Create new chunk called `hi` and create the vector `hi` as follows.
+
+```{r hi}
+hi <- c("Hi Mum", "Hi Mother")
+```
+
+This is a simple character vector (of length `r length(hi)`) with two closely related phrases.
+
+The package `stringr` has a whole series of functions, many of which start with `str_`.
+From here on, we strongly advise to demonstrate each function within it's own chunk, and for you to make notes in your R Markdown document that help you understandw what we're doing.
+For most of the following examples, we won't actually create a new object, but will just demonstrate the output of each function.
+Importantly, for most of the functions we look at, we pass them a charatcer vector of length `r length(hi)`, and we will return a character vector of length `r length(hi)`.
+There are a few exceptions though.
+
+## Changing Case
+
+We can very easily change the case of our vector, and this may be of help when our collaborators have given us M/m/F/f encoding for the sex of our samples.
+The main functions are `str_to_lower()`, `str_to_upper()` and `str_to_title`, with final helpful function being `str_to_sentence()`
+
+```{r}
+str_to_lower(hi)
+str_to_upper(hi)
+str_to_title(hi)
+str_to_sentence(hi)
+```
+
+Make sure you describe what each function does.
+
+## Removing Unwanted Text
+
+Often we have to remove unwnated text, like file suffixes and directory names, and `str_remove_all()` makes this easy.
+
+```{r}
+str_remove_all(hi, "H")
+```
+
+As well as specifying exact matches, we can set alternatives.
+In the following, we'll remove either an upper or lower case `h` and these alternatives can be set within a square bracket.
+We can also think of this as being a pattern that we are matching, as opposed to an exact character.
+
+```{r}
+str_remove_all(hi, "[Hh]")
+```
+
+There is an alternative function `str_remove()` which will only remove the first match to the supplied pattern.
+This is mostly not what you'll be after, but you may choose it by accident at some point, then wonder what went wrong.
+
+In `stringr`, we can also set a wild-card character using the `.` symbol.
+For those familiar with regular expressions, this will be old news, but for those who are not familiar with `regexp` this may be a new way of working with text.
+
+```{r}
+str_remove_all(hi, "Mu")
+str_remove_all(hi, "M.")
+```
+
+In this last example, we've removed the upper case `M` and any single character that follows.
+We could remove any number of following characters by adding a `+` symbol after the `.`, which is interpreted as *match anything (.) any number of times (+)*
+
+```{r}
+str_remove_all(hi, "M.+")
+```
+
