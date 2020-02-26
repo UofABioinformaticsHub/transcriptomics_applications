@@ -1515,6 +1515,16 @@ div.tocify {
 </div>
 
 
+<script>
+function myFunction(i) {
+  var x = document.getElementById(i);
+  if (x.style.display === "none") {
+    x.style.display = "block";
+  } else {
+    x.style.display = "none";
+  }
+}
+</script>
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
 <p>In our previous work, we introduced:</p>
@@ -1523,11 +1533,11 @@ div.tocify {
 <li>The advantages of R Markdown</li>
 <li>How to create an R Markdown document from scratch</li>
 </ul>
-<p>In this session, we’ll look at working with text strings</p>
+<p>In this session, we’ll look at working with text strings.</p>
 <div id="r-packages" class="section level3">
 <h3>R Packages</h3>
-<p>A very convenient package for working with text in R is called <code>stringr</code>, however, many of you may not know what a package is. Put simply, a package is a collection of functions that can be used together to perform similar or related tasks.</p>
-<p>When you open an initial R session, a handful of packages are loaded by default, such as <em>stats</em>, <em>graphics</em>, <em>grDevices</em>, <em>utils</em>, <em>datasets</em>, <em>methods</em> and <em>base</em>. Each of these packages has a set of related functions. For example, <code>sd()</code>, <code>var()</code>, <code>cor()</code> and <code>rnorm()</code> all live in the <code>stats</code> package as they are about distributional parameters or statistical model-fitting. Alternatively, <code>abs()</code>, <code>max()</code>, <code>log()</code> and other functions live in <code>base</code> are they are the fundamental functions required for performing any calculations. If you go to the help page for any of these, you’ll see the package name at the top left of each help page in the curly braces.</p>
+<p>A very convenient package for working with text in R is called <code>stringr</code>, however, many of you may not even know what a package is. Put simply, a package is a collection of functions that can be used together to perform similar or related tasks. We make these functions available within an R session by executing <code>library(myPackageName)</code> in the Console.</p>
+<p>When you open an R session, a handful of packages are loaded by default, such as <em>stats</em>, <em>graphics</em>, <em>grDevices</em>, <em>utils</em>, <em>datasets</em>, <em>methods</em> and <em>base</em>. Each of these packages has a set of related functions. For example, <code>sd()</code>, <code>var()</code>, <code>cor()</code> and <code>rnorm()</code> all live in the <code>stats</code> package as they are about distributional parameters or statistical model-fitting. Alternatively, <code>abs()</code>, <code>max()</code>, <code>log()</code> and other functions live in <code>base</code> are they are the fundamental functions required for performing many calculations. If you go to the help page for any of these, you’ll see the package name at the top left of each help page in the curly braces.</p>
 <p>There are thousands of packages available, and loading them all every time we start <code>R</code> would take hours, so for each analysis, we just need to load the packages that are relevant to each analysis. For this section, we’re going to manipulate text and the package we’ll look at is <code>stringr</code>.</p>
 </div>
 </div>
@@ -1535,108 +1545,125 @@ div.tocify {
 <h2>Working with Text</h2>
 <div id="start-a-new-r-markdown-document" class="section level3">
 <h3>Start a new R Markdown Document</h3>
-<p>Making sure you’re in the appropriate R Project, create a new R Markdown file called <code>TextManipulation.Rmd</code>. Throughout this section, please write copious notes to yourself about what we are doing. We will note give you exact guidance on this, but remember that you are creating a reference document for yourself so you can find your way around later. Take the time to write everything in a way that you find clear. It’s better to go slowly and understand everything, than to finish but to have no idea what you’ve done.</p>
+<p>Making sure you’re in the appropriate R Project, create a new R Markdown file called <code>TextManipulation.Rmd</code>. Throughout this section, please write copious notes to yourself about what we are doing. We will note give you exact guidance on these notes, but remember that you are creating a reference document for yourself so you can find your way around later. Take the time to write everything in a way that you find clear. <strong>It’s far better to go slowly and understand everything, than to finish but to have no idea what you’ve done.</strong></p>
 <p>Once you’ve got your new R Markdown document, make sure you’re happy with the YAML header, then delete everything after the first chunk (<code>setup</code>). <strong>Compile just to check you haven’t broken anything.</strong></p>
-<p>A good tip is to load all packages you need for a workflow at the beginning. This helps identify any potential conflicts between packages early, as sometimes two packages don’t play well together, and may even have identically named functions.</p>
-<p>Start a new chunk and set the label to be <code>load_packages</code> or something similar. Inside that chunk add the code</p>
+<p>A good tip is to load all packages you need for a workflow at the beginning of the R Markdown document. This helps identify any potential conflicts between packages early, as sometimes two packages don’t play well together, and may even have identically named functions.</p>
+<p>Once you have your new R Markdown document ready to go, start a new chunk and set the label to be <code>load_packages</code> or something similar. Inside that chunk add the code</p>
 <pre class="r"><code>library(stringr)</code></pre>
-<p>This will load the package <code>stringr</code>, which has a raft of functions for manipulating text. Often we’ll need to know these tricks as our sample names may have multiple genotypes or treatment embedded in them, and knowing how to get these pieces of information out can be very helpful. Other times, we need to know how to correct typos longs the lines of sex being recorded as <code>male</code>, <code>female</code>, <code>M</code>, <code>m</code>, <code>f</code> or <code>F</code> all in the same document. This type of thing happens more than you may realise, especially when dealing with large datasets that have a lot of manually entered values.</p>
+<p>When executed, this will load the package <code>stringr</code>, which has a raft of functions for manipulating text. Often we’ll need to know these tricks as our sample names may have multiple genotypes or treatment embedded in them, and knowing how to get these pieces of information out can be very helpful. Other times, we need to know how to correct typos longs the lines of sex being recorded as <code>male</code>, <code>female</code>, <code>M</code>, <code>m</code>, <code>f</code> or <code>F</code> all in the same document. This type of thing happens more than you may realise, especially when dealing with large datasets that have a lot of manually entered values.</p>
 <p>The first thing we’ll need to do is create a character vector that we’ll work with for this section. Create new chunk called <code>hi</code> and create the vector <code>hi</code> as follows.</p>
 <pre class="r"><code>hi &lt;- c(&quot;Hi Mum&quot;, &quot;Hi Mother&quot;)</code></pre>
-<p>This is a simple character vector (of length 2) with two closely related phrases.</p>
-<p>The package <code>stringr</code> has a whole series of functions, many of which start with <code>str_</code>. From here on, we strongly advise to demonstrate each function within it’s own chunk, and for you to make notes in your R Markdown document that help you understand what we’re doing. For most of the following examples, we won’t actually create a new object, but will just demonstrate the output of each function. Importantly, for most of the functions we look at, we pass them a character vector of length 2, and we will return a character vector of length 2. There are a few exceptions though.</p>
+<p>This is a simple character vector (of length 2) with two closely related phrases. This will be short enough for us to work with today and see all of the results clearly. In a real world context, <em>we often work with vectors with many thousands of entries.</em> These are generally far too long to inspect one element at a time.</p>
+<p>The package <code>stringr</code> has a whole series of functions, many of which start with <code>str_</code>. From here on, we strongly advise to demonstrate each function within it’s own chunk, and for you to make notes in your R Markdown document that help <strong>you</strong> understand what we’re doing. For nearly all of the following examples, we won’t actually create a new object, but will just demonstrate the output of each function, which should appear as R output when you compile your document. Importantly, for the first set of functions we look at, we pass the function a character vector of length 2, and we will return a character vector of length 2. There are a few exceptions later on though.</p>
 </div>
 <div id="changing-case" class="section level3">
 <h3>Changing Case</h3>
-<p>We can very easily change the case of our vector, and this may be of help when our collaborators have given us same strange combination of M/m/F/f encoding for the sex of our samples. The main functions are <code>str_to_lower()</code>, <code>str_to_upper()</code> and <code>str_to_title</code>, with final helpful function being <code>str_to_sentence()</code>.</p>
-<pre class="r"><code>str_to_lower(hi)
-str_to_upper(hi)
+<p>We can very easily change the case of our vector, and this may be of help when our collaborators have given us same strange combination of M/m/F/f encoding for the sex of our samples. The main functions are <code>str_to_lower()</code>, <code>str_to_upper()</code> and <code>str_to_title</code>, with final helpful function being <code>str_to_sentence()</code>. All of these take one main argument, called <code>string</code> in the function. When we call a function in R, we can name these arguments explicitly, or if we pass everything in order we don’t need to name these. The first two lines of code below are essentially identical.</p>
+<pre class="r"><code>str_to_lower(string = hi)
+str_to_lower(hi)</code></pre>
+<p>Notice that because the first argument that <code>str_to_lower()</code> requires is called string, we can name it, or just pass our character vector to the function in the first position. For the remaining three functions in this set, we can omit the argument name for convenience.</p>
+<pre class="r"><code>str_to_upper(hi)
 str_to_title(hi)
 str_to_sentence(hi)</code></pre>
-<p>Make sure you describe what each function does.</p>
+<p>These are quite well named functions as the name makes it clear what the output will be. This is not always the case with functions, so make sure you describe what each one does.</p>
 </div>
 <div id="removing-unwanted-text" class="section level3">
 <h3>Removing Unwanted Text</h3>
-<p>Often we have to remove unwanted text, like file suffixes and directory names, and <code>str_remove_all()</code> makes this easy. There are two arguments we need to provide to this function. The first is called <code>string</code>, whilst the second argument is called <code>pattern</code>. We didn’t worry about this for the first group of functions, as we really just needed to pass our character vector to the function. Now, we need to specify two arguments.</p>
-<pre class="r"><code>str_remove_all(string = hi, pattern = &quot;M&quot;)</code></pre>
-<div id="a-note-on-calling-functions-in-r" class="section level4">
-<h4>A Note On Calling Functions in R</h4>
-<p>When we call a function in R, we can pass what we need to each argument, by naming the argument explicitly like we did above. The string we’re going to search is provided in the vector <code>hi</code>, whilst the pattern we’re looking to remove is the character “M”.</p>
-<p>If we don’t wish to name them explicitly, we can pass them in the order specified by the help page. The following two commands are identical.</p>
+<p>Often we have to remove unwanted text like file suffixes and directory names, and <code>str_remove_all()</code> makes this easy. There are two arguments we need to provide to this function. The first is called <code>string</code>, whilst the second argument is called <code>pattern</code>. Now, we need to specify two arguments. We can either name them explicitly, or just pass all of the values in the correct position.</p>
 <pre class="r"><code>str_remove_all(string = hi, pattern = &quot;M&quot;)
 str_remove_all(hi, &quot;M&quot;)</code></pre>
-<p>As you learn, there may be times when you specifically name each argument, whilst this may not be required at other times. For most of the following code, we won’t name the arguments as we’ll almost always be providing a string (<code>hi</code>) and a pattern that we’re matching.</p>
-</div>
-<div id="back-to-editing-our-text" class="section level4">
-<h4>Back To Editing Our Text</h4>
-<p>Returning back to <code>str_remove_all()</code>. As well as specifying exact patterns to match, we can set alternatives. In the following, we’ll remove either an upper or lower case <code>m</code> by providing a set of alternative characters within the square brackets. To demonstrate a larger set of characters, we’ll follow that by removing all lower case vowels.</p>
+<p>As well as specifying exact patterns to match, we can provide a set of alternative values. In the following, we’ll remove either an upper or lower case <code>m</code> by providing a set of alternative characters within the square brackets. To demonstrate providing a larger set of alternative characters, we’ll follow that by removing all lower-case vowels.</p>
 <pre class="r"><code>str_remove_all(hi, &quot;[Mm]&quot;)
 str_remove_all(hi, &quot;[aeiou]&quot;)</code></pre>
+<button onclick="myFunction('myDIV')">
+Click To Show/Hide Optional Bonus Information
+</button>
+<div id="myDIV" style="display: none;">
 <p>There is an alternative function <code>str_remove()</code> provided by <code>stringr</code> which will only remove the first match to the supplied pattern. This is mostly not the function you’ll be after, but you may choose it by accident at some point, then wonder what went wrong.</p>
-<p>In <code>stringr</code> syntax (which is based on regular expressions), we can also set a wild-card character by using the <code>.</code> symbol. For those familiar with regular expressions, this will be old news, but for those who are not familiar with <code>regexp</code> syntax this may be a new way of working with text. Some of you may also be familiar with using the <code>*</code> symbol as a plain-text wild-card, but importantly the <code>*</code> symbol doesn’t work in that manner here.</p>
+</div>
+<p>In <code>stringr</code>, syntax is based on regular expressions, so we can also <strong>set a wild-card character by using the <code>.</code> symbol.</strong> For those familiar with regular expressions, this will be old news, but for those who are not familiar with <code>regexp</code> syntax this may be a new way of working with text. Some of you may also be familiar with using the <code>*</code> symbol as a plain-text wild-card, but importantly the <code>*</code> symbol doesn’t work in that manner here and actually has a completely different meaning.</p>
 <pre class="r"><code>str_remove_all(hi, &quot;Mu&quot;)
 str_remove_all(hi, &quot;M.&quot;)</code></pre>
-<p>In this last example, we’ve removed the upper case <code>M</code> and any single character that follows. We could remove any number of following characters by adding a <code>+</code> symbol after the <code>.</code>, which is interpreted as <em>match anything (.) one or more times (+)</em></p>
+<p>In this last example, we’ve removed the upper case <code>M</code> and any single character that directly follows it. We could also remove <strong>any number of following characters</strong> by adding a <code>+</code> symbol after the <code>.</code>, which is interpreted as <em>match anything (.) one or more times (+)</em></p>
 <pre class="r"><code>str_remove_all(hi, &quot;M.+&quot;)</code></pre>
-</div>
 </div>
 <div id="extracting-patterns" class="section level3">
 <h3>Extracting Patterns</h3>
-<p>As well as just removing sections of a text string,there are various methods for reaching into a text string and grabbing the patterns we need. The first of these is <code>str_extract()</code> If we search for a pattern that doesn’t exist, <code>str_extract()</code> will return a missing value (<code>NA</code>).</p>
+<p>As well as just removing sections of a text string,there are various methods for reaching into a text string and grabbing the patterns we need. The first of these is <code>str_extract()</code> which also takes the two arguments <code>string</code> and <code>pattern</code>. If we search for a pattern that doesn’t exist, <code>str_extract()</code> will return a missing value (<code>NA</code>).</p>
 <pre class="r"><code>str_extract(hi, &quot;Mu&quot;)
 str_extract(hi, &quot;M.+&quot;)</code></pre>
-<p>Notice how the patterns behave in the exact same manner as we saw with <code>str_replace_all()</code>. We can also use exact positions within a text string using <code>str_sub()</code>, however, notice that naming the arguments explicitly is really helpful here.</p>
+<p>Notice how the patterns behave in the exact same manner as we saw with <code>str_replace_all()</code>, by using the <code>regex</code> syntax. We can also use exact positions within a text string using <code>str_sub()</code>, with the arguments <code>string</code>, <code>start</code> and <code>end</code>. Notice that naming the <code>start</code> and <code>end</code> arguments explicitly is really helpful here as when you read this back in 2 years time, you’ll immediately understand what the numbers <code>4</code> and <code>5</code> represent.</p>
 <pre class="r"><code>str_sub(hi, start = 4, end = 5)</code></pre>
 </div>
 <div id="replacing-text" class="section level3">
 <h3>Replacing Text</h3>
-<p>Sometimes, we don’t need to just find or extract pattern, but we need to perform more complex manipulations. The function <code>str_replace()</code> allows us to specify the arguments <code>string</code> &amp; <code>pattern</code> as we’ve already seen, but also the third argument <code>replacement</code>. Once again, the following two commands are identical, because we are providing the arguments in order.</p>
+<p>Sometimes, we don’t need to just find or extract one simple pattern, but we need to perform more complex manipulations. The function <code>str_replace()</code> allows us to specify the arguments <code>string</code> &amp; <code>pattern</code> as we’ve already seen, but also provide the third argument <code>replacement</code>. Once again, the following two commands are identical, because we are providing the arguments in order.</p>
 <pre class="r"><code>str_replace(string = hi, pattern = &quot;Hi&quot;, replacement = &quot;Hello&quot;)
 str_replace(hi, &quot;Hi&quot;, &quot;Hello&quot;)</code></pre>
-<p>We can also use our pattern matching tricks to replace either “Mum” or “Mother” with “Dad”</p>
+<p>We can also use our pattern matching tricks to replace either “Mum” or “Mother” with “Dad”. <strong>Feel free to experiment with other patterns and replacements here.</strong></p>
 <pre class="r"><code>str_replace(hi, &quot;M.+&quot;, &quot;Dad&quot;)</code></pre>
-<p><code>str_replace()</code> also allows us to ‘capture’ a pattern and incorporate it in the replacement. To capture a pattern, we surround it in the round braces <code>()</code>. To return the pattern, we use the shortcut <code>\\1</code> which will return the first pattern we have captured. In the following, notice that we’re matching white-space followed by “(M.+)”, where the captured pattern is “M.+”. In the replacement, we’re replacing the entire pattern with a long string, but this string include the captured pattern.</p>
+<p><code>str_replace()</code> also allows us to ‘capture’ a pattern within each text string, and incorporate it into the replacement. <em>To capture a pattern, we surround it in the round braces <code>()</code>.</em> <em>To return the pattern, we use the shortcut <code>\\1</code> which will return the</em> <strong>first</strong> <em>pattern we have captured.</em> In the following, notice that we’re matching white-space followed by “(M.+)”, where the captured pattern is “M.+”. In the replacement, we’re replacing the entire pattern (including the white-space) with a long string, but this replacement string <strong>includes the captured pattern</strong>.</p>
 <pre class="r"><code>str_replace(hi, &quot; (M.+)&quot;, &quot;! We captured and replaced the pattern \\1.&quot;)</code></pre>
-<p>We can capture multiple patterns, and return them in any order we choose. In the following, our first capture will be “Hi”, then we won’t capture the white-space, but we then capture the pattern “M.+” as before. In our replacement, we’re returning them in the opposite order that we captured them in, and we’re also including some exclamation marks and additional white-space.</p>
+<p>We can also capture multiple patterns, and return them in any order we choose. In the following, our first capture will be “Hi”, then we won’t capture the white-space, but then we capture the pattern “M.+” as before. In our replacement, we’re returning them in the opposite order that we captured them in, and we’re also including some exclamation marks and additional white-space.</p>
 <pre class="r"><code>str_replace(hi, &quot;(Hi) (M.+)&quot;, &quot;\\2! \\1!&quot;)</code></pre>
-<p>Just like <code>str_remove()</code> and <code>str_remove_all()</code>, there are two versions of <code>str_replace()</code>. The first will only replace the first match to the pattern, whilst <code>str_replace_all()</code> will replace all matches to the pattern.</p>
+<p>Just like <code>str_remove()</code> and <code>str_remove_all()</code>, there are two versions of <code>str_replace()</code>. The first will only replace the first match to the pattern, whilst <code>str_replace_all()</code> will replace all matches to the pattern. Depending on what operation you’re needing to perform, either may be suitable.</p>
 <pre class="r"><code>str_replace(hi, &quot;[Mm]&quot;, &quot;b&quot;)
 str_replace_all(hi, &quot;[Mm]&quot;, &quot;b&quot;)</code></pre>
 </div>
 <div id="a-few-more-handy-functions" class="section level3">
 <h3>A few more handy functions</h3>
-<p>If we wish to ensure that our text strings are all the same length, we can pad them with any character we choose. In the first example, we’re setting our new strings to be 10 characters wide, and we’re padding on the right with exclamation marks. Note again, that explicitly naming the arguments here helps us understand exactly what we’re doing with the function.</p>
+<p>The above functions are probably the “big guns” of <code>stringr</code>, however there are a few more very useful things we can do to clean up our data. If we wish to ensure that our text strings are all the same length, we can pad them with any character we choose, using <code>str_pad()</code>. This takes the arguments <code>string</code>, <code>width</code>, <code>side</code> and <code>pad</code> as the four arguments. In the first example, we’re setting our new strings to be exactly 10 characters wide, and we’re padding on the right with exclamation marks. Note again, that explicitly naming the arguments here helps us understand exactly what we’re doing with the function.</p>
 <pre class="r"><code>str_pad(hi, width = 10, side = &quot;right&quot;, pad = &quot;!&quot;)</code></pre>
-<p>A far more common use for something like this would be to pad numbers to ensure we have the same number of digits. Once that numbers are represented as characters, most sort algorithms sort them alpha-numerically instead of numerically. We often see strange ordering like <em>1</em>, <em>10</em>, <em>2</em>, <em>3</em>, <em>4</em>, <em>5</em>, <em>6</em>, <em>7</em>, <em>8</em> and <em>9</em> instead of the more reasonable <em>1</em>, <em>2</em>, <em>3</em>, <em>4</em>, <em>5</em>, <em>6</em>, <em>7</em>, <em>8</em>, <em>9</em> and <em>10</em>. In the next line, we’ll add zeroes in front of the numbers to ensure every number has two digits. Once we’ve done this, alpha-numeric sorting and numeric sorting will give the same results.</p>
+<p>Another common use for something like this would be to pad numbers to ensure we have the same number of digits. If numbers are represented as characters, most sorting algorithms sort them alpha-numerically instead of numerically. We often see strange ordering like <em>1</em>, <em>10</em>, <em>2</em>, <em>3</em>, <em>4</em>, <em>5</em>, <em>6</em>, <em>7</em>, <em>8</em> and <em>9</em> instead of the more reasonable <em>1</em>, <em>2</em>, <em>3</em>, <em>4</em>, <em>5</em>, <em>6</em>, <em>7</em>, <em>8</em>, <em>9</em> and <em>10</em>. In the next line, we’ll add zeroes in front of the numbers to ensure every number has two digits. Once we’ve done this, alpha-numeric sorting and numeric sorting will give the same results.</p>
 <pre class="r"><code>str_pad(1:10, width = 2, pad = &quot;0&quot;)</code></pre>
-<p>Sometimes we end up with ridiculously long text strings, so we can use <code>str_trunc()</code> to truncate these. By default, the last 3 characters of a truncated string will be given as the ellipsis (<code>...</code>) to indicate the text has been shortened.</p>
+<p>Notice that we didn’t set the argument <code>side</code> here! By default, this argument will be set to <code>side = &quot;left&quot;</code>, and we’ve relied on this value. This means that <code>pad = &quot;0&quot;</code> will be provided in position 3 of the function, so <strong>must</strong> be explicitly named. This also demonstrates why it can be helpful to explicitly name arguments.</p>
+<p>Sometimes we can end up with ridiculously long text strings, particularly when dealing with gene-set enrichment analyses, so we can use <code>str_trunc()</code> to truncate these. By default, the last 3 characters of a truncated string will be given as the ellipsis (<code>...</code>) to indicate the text has been shortened.</p>
 <pre class="r"><code>str_trunc(hi, width = 6)</code></pre>
-<p>Finally, we often see text strings which have white-space in weird places, so we can remove this using <code>str_trim()</code>. This will remove white-spaces from the start or end.</p>
+<p>Finally, we often see text strings which have excessive white-space, so we can remove this using <code>str_trim()</code>. This will remove leading or trailing white-spaces from the text.</p>
 <pre class="r"><code>str_trim(&quot;   Hi!&quot;)</code></pre>
 </div>
 </div>
 <div id="approaches-that-return-different-structures" class="section level2">
-<h2>Approaches that Return Different Structures</h2>
-<p>In all of the above, we provided a character vector of length 2 and we obtained a character vector of length 2 as our output. (<code>NA</code> technically still counts as a character)</p>
-<p>There are multiple other functions which exist that return output in different forms</p>
+<h2>Approaches That Return Different Structures</h2>
+<p>In all of the above, we provided a character vector of length 2 and we obtained a character vector of length 2 as our output. (<code>NA</code> technically still counts as a character.) There are multiple other functions which exist that return output in different forms</p>
 <div id="finding-matching-text" class="section level4">
 <h4>Finding Matching Text</h4>
+<p>The first of these might be to perform a logical test for the presence of a pattern within our text strings. <code>str_detect()</code> again takes the two arguments <code>string</code> and <code>pattern</code>, with a third argument called <code>negate</code> that defaults to <code>FALSE</code>. If we set this to <code>TRUE</code>, we will invert our results, which is often referred to as negating a logical search. In both cases, we no longer return a character vector, but return the logical values <code>TRUE</code> and <code>FALSE</code>.</p>
 <pre class="r"><code>str_detect(hi, &quot;Mum&quot;)
-str_subset(hi, &quot;Mum&quot;)
-str_subset(hi, &quot;M.&quot;)
-str_ends(hi, &quot;m&quot;)
-str_starts(hi,&quot;Hi&quot;)
-str_locate(hi, &quot;M.+&quot;)
-str_view_all(hi, &quot;M.+&quot;)</code></pre>
+str_detect(hi, &quot;Mum&quot;, negate = TRUE)</code></pre>
+<p>These functions really come into their own when we’re dealing with spreadsheet-like structures (known as data frames) and we wish to perform some kind of filtering on our values, as we would with Auto-Filter in Excel.</p>
+<p>Sometimes it can be convenient to look in specific positions within our text and the two functions <code>str_starts()</code> and <code>str_ends()</code> check to see if a string starts or ends with a specific pattern. Both of these also take the argument <code>negate</code>, which we’ll leave as the default (<code>negate = FALSE</code>).</p>
+<pre class="r"><code>str_starts(hi,&quot;Hi&quot;)
+str_ends(hi, &quot;m&quot;)</code></pre>
+<p>We can also subset our initial character vector, so that only the elements which match our search pattern are returned. Here, we provide a character vector of length 2 and initially return a character vector of length 1. By incorporating <code>regex</code> wildcards, we can then return any elements that contains “M.”.</p>
+<pre class="r"><code>str_subset(hi, &quot;Mum&quot;)
+str_subset(hi, &quot;M.&quot;)</code></pre>
+<p>A final function (<code>str_view_all()</code>) returns a completely different output. This matches the specified pattern and opens the results in the <strong>Viewer</strong> pane, which we haven’t used until now. This can be incredibly helpful if you’re trying to build a complex search pattern and want to check where it’s matching.</p>
+<pre class="r"><code>str_view_all(hi, &quot;M.+&quot;)</code></pre>
 </div>
 <div id="counting-letters" class="section level4">
 <h4>Counting letters</h4>
+<p>Sometimes, it can be helpful to obtain information about the content of our text strings, such as their overall length, or the number of times a specific letter or pattern appear. I’m sure you’ll immediately realise this can be very useful if wanting to assess the nucleotide content of a DNA/RNA sequence. In NextGen Sequencing experiments, the GC content of a sequence is a known factor that biases our ability to sequence a DNA fragment. In all of these, we’ll provide our input as a character vector with length 2, but will obtain an integer vector of the same length as the output.</p>
 <pre class="r"><code>str_length(hi)
 str_count(hi, &quot;[Hh]&quot;)
-str_count(hi, &quot;[HMhm]&quot;)</code></pre>
+str_count(&quot;AGCTGCGCGATTTAGC&quot;, &quot;[GC]&quot;)</code></pre>
+</div>
+<div id="collapsing-and-joining-text" class="section level4">
+<h4>Collapsing and Joining Text</h4>
+<p>Sometimes, we need to condense multiple text strings into a single string, and we can use <code>str_flatten</code> for this.</p>
 <pre class="r"><code>str_flatten(hi, collapse = &quot;, &quot;)</code></pre>
-<pre class="r"><code>str_split(hi, &quot; &quot;)
-str_split_fixed(hi, &quot; M&quot;, 2)</code></pre>
+<p>However, there are two <code>base</code> functions <code>paste()</code> and <code>paste0()</code> that are just as helpful here, and probably a little more flexible.</p>
+<pre class="r"><code>paste(hi, collapse = &quot;, &quot;)</code></pre>
+<p>In addition to performing the above concatenation, we more commonly use the argument <code>sep</code> within the function <code>paste()</code> to join additional text to a string. In the following, we’re pasting an additional phrase to each of our initial vector elements, and specifying the separator between the phrases to be <code>&quot;, &quot;</code>.</p>
+<pre class="r"><code>paste(hi, &quot;I hope you're well.&quot;, sep = &quot;, &quot;)</code></pre>
+<p>The function <code>paste0()</code> is a simple wrapper to <code>paste()</code> but with <code>sep = &quot;&quot;</code> as the default.</p>
+<pre class="r"><code>paste0(hi, &quot;!&quot;)</code></pre>
+</div>
+<div id="separating-text" class="section level4">
+<h4>Separating Text</h4>
+<p>Finally, a common operation is to separate a single text string into multiple text strings based on a specific character, or set of characters. The function that gives us the most convenient output for this is <code>str_split_fixed()</code>, where we provide the arguments <code>string</code>, <code>pattern</code> and <code>n</code>, with the final argument controlling how many strings to obtain from the initial string. In the following, we’re splitting our text based on white-space, and ensuring that each string is only split into 2 new strings. This provides output in a structure known as a <code>matrix</code>, which we’ll explore further in the course.</p>
+<pre class="r"><code>str_split_fixed(hi, &quot; &quot;, 2)</code></pre>
+<p>In general, when performing this type of operation, we’re looking for something specific and we’ll know what type of output we need. There is a slightly more flexible function <code>str_split()</code>, however the output format from <code>str_split()</code> is beyond the scope of our knowledge for now.</p>
 </div>
 </div>
 
