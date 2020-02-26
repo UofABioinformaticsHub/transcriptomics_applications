@@ -210,8 +210,15 @@ We can also use our pattern matching tricks to replace either "Mum" or "Mother" 
 str_replace(hi, "M.+", "Dad")
 ```
 
+As well as just using wild-cards, we can specify complete patterns as alternatives.
+When searching using this technique, the alternative phrases must be provided within the round braces, and they are separated by the "|" symbol, which is commonly used to represent "OR".
+
+```{r}
+str_replace(hi, "(Mum|Mother)", "Dad")
+```
+
 `str_replace()` also allows us to 'capture' a pattern within each text string, and incorporate it into the replacement.
-*To capture a pattern, we surround it in the round braces `()`.*
+*To capture a pattern, we surround it in the round braces `()`*, as we did above.
 *To return the pattern, we use the shortcut `\\1` which will return the* **first** *pattern we have captured.*
 In the following, notice that we're matching white-space followed by "(M.+)", where the captured pattern is "M.+".
 In the replacement, we're replacing the entire pattern (including the white-space) with a long string, but this replacement string **includes the captured pattern**.
@@ -221,7 +228,7 @@ str_replace(hi, " (M.+)", "! We captured and replaced the pattern \\1.")
 ```
 
 We can also capture multiple patterns, and return them in any order we choose.
-In the following, our first capture will be "Hi", then we won't capture the white-space, but then we capture the pattern "M.+" as before.
+In the following, our first capture will be "Hi", then we *don't capture the white-space*, but then we capture the pattern "M.+" as we did before.
 In our replacement, we're returning them in the opposite order that we captured them in, and we're also including some exclamation marks and additional white-space.
 
 ```{r}

@@ -660,5 +660,7 @@ This will appear under your plot as a figure caption, and also note that we've u
 Now that we've introduced most of the key concepts for working interactively in R, keeping our code organised and using R Markdown, we're ready to start importing and looking through data.
 This will be the topic for next week's practical sessions.
 
+# The Next Section
 
+Once you've reached this point, **go to the next section** for this weeks practicals: [Working With Text](Using_stringr.html)
 

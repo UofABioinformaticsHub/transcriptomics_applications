@@ -1,0 +1,242 @@
+---
+title: "BIOINF3005/7160: Transcriptomics Applications"
+subtitle: "Data Import Using the Tidyverse"
+date: "11^th^ March, 2020"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+<script>
+function myFunction(i) {
+  var x = document.getElementById(i);
+  if (x.style.display === "none") {
+    x.style.display = "block";
+  } else {
+    x.style.display = "none";
+  }
+}
+</script>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE,
+    message = FALSE,
+    warning = FALSE,
+    fig.align = "center"
+    )
+```
+
+# Introduction
+
+In our previous sections, we learned how to document our workflow using R Markdown using plain-text paragraphs and R code embedded in the same document.
+Once we'd learned that, we spent some time learning how to manipulate text strings.
+For today's session, we'll introduce a more common object type, known as a data frame (or tibble) which resembles a spreadsheet.
+Firstly, we'll import the file into R, and then we'll learn how to manipulate the data object inside the R environment.
+
+## Setting up our workspace
+
+Before we go any further, we need to keep developing our good programming practice.
+If you don't already have an R Project for `practical_2`, create a new project with this name as a subdirectory of your `transcriptomics_applications` directory.
+**Call a tutor over if you can't remember how to do this.**
+
+Once you have an R Project ready to go for `practical_2`, create a new directory called `data` within this directory.
+Copy the file `Enrichment.csv` to this directory.
+
+Once you have `Enrichment.csv` in your `data` directory, begin a new R Markdown document and save this as `DataImport.Rmd` in your project root directory.
+As per usual, delete everything after the `setup` chunk.
+
+## Introducting The Tidyverse
+
+Previously we saw the package `stringr` which was dedicated to manipulating text strings.
+Today we're going to learn about functions from the packages `readr`, `dplyr`, `tibble` and `tidyr`.
+Because these packages are very tighly integrated, the authors decided to create a further package called the `tidyverse` which enables the loading of the eight core packages (`ggplot2`, `tibble`, `tidyr`, `readr`, `purrr`, `dplyr`, `stringr` and `forcats`) in one command.
+An entire programming culture has sprung up around these packages, which is often referred to as the `tidyverse` or `tidy` data, or something similar.
+In essence, the release of these packages and their ease of use, opened R up to a far wider community.
+All of these packages are maintained by staff from RStudio, in particular Hadley Wickham, who is one of the most influential figures within the international R community.
+
+![](https://avatars1.githubusercontent.com/u/4196?s=400&v=4){height=250px}  
+*Hi! I'm Hadley Wickham & I wrote/designed most of the tidyverse. I'm originally from New Zealand, so my functions use English spelling instead of US spelling. Yay!*
+(source: https://github.com/hadley)
+
+After your `setup` chunk, create a new chunk called `packages` and enter the following code.
+
+```{r packages}
+library(tidyverse)
+```
+
+This will load all 8 of the packages that were described earlier when executed.
+Compile your document and inspect the output.
+
+You'll probably notice that this chunk has been rather "chatty" and provided an unexpected amount of output in your final document.
+The first time you execute this chunk in an interactive session you would have seen the same output appear in your Console (or in your R Markdown if you have it set for that).
+This is what's known as a `message` in R, and is just communicating information to us.
+It may look like like some kind of error, but this one isn't.
+
+The first few lines are informing us what packages have been loaded, and which versions they are.
+After `--Conflicts-----` should be two lines letting us know that the function `filter()` from `dplyr` is the first one `R` will look for in the session, and now takes precedence of the function `filter()` from `stats`.
+Similarly for the function `lag()`.
+This really isn't super relevant for us, so we can ignore all of this.
+
+One convenient piece of syntax that is shown here is the use of namespaces.
+As we can see that two packages have functions called `filter()` that are currently available to use.
+If we wish to specify which exact one to use, we can put the package name before the function name, and separated by a double colon (`::`).
+Formally, this is known as a namespace which is essentially a list of functions made visible by loading a package.
+If we're wanting to be sure that we're using `filter()` from `dplyr`, we could write `dplyr::filter()` instead of just using `filter()` and hoping that R figures it out.
+We won't come across too many instances of this today, but the more packages we learn about, the more of a useful trick it becomes.
+
+Given that this output is going to make our compiled document look a bit uglier, we can hide this type of output by setting the chunk argument `message = FALSE`.
+We can do this in the chunk header for this chunk only, or we can add it to our `setup` chunk, inside the call to `knitr::opts_chunk$set()` after `echo = TRUE`.
+We'll have to separate these with a comma, but this will then become a global setting so that all messages from any chunks are hidden.
+This is my preferred option for all of my R Markdown documents.
+(Notice the use of the namespace trick here to ensure that `opts_chunk$set()` from the package `knitr` is called.)
+
+# Importing Data
+
+Now we've started our R Markdown document and tidied up our output, let's get on with importing data.
+First, we'll use the convenient GUI that R Studio provides, but then we'll ditch this and just use code in the style that we've already seen.
+
+## Using the GUI
+
+The file we'll work with today is called `Enrichment.csv` and contains some actual results from a transcriptomic analysis comparing mutant and wild-type zebrafish.
+This data was generously provided by Prof Michael Lardelli who does some excellent work in the context of Alzheimer's Disease.
+As this is a csv file, we know this will be a plain-text file, with columns separated by the comma symbol.
+
+Using the **Files** pane, navigate into the `data` folder and click on the file `Enrichment.csv`.
+When prompted, select `View File` and the file will open in your script window, aloowing us to have a sneak peak at it.
+Note, that **we haven't loaded it into your R Environment**.
+We're just opening it like we open any plain-text file to have a look at the contents.
+Once you're happy with what it looks like as plain-text, close it by clicking the cross next to the file name and return to your **Files** pane.
+
+Click on the file again, but this time select `Import Dataset`.
+A GUI will now open and you should see an image like the following:
+
+![](images/GUI_Import.png)
+
+If the `Data Preview` part of the preview is blank, click the <kbd>Update</kbd> button and it will refresh.
+(This seems a bit glitchy sometimes.)
+**Don't click <kbd>Import</kbd> just yet.**
+
+Notice that in the main `Data Preview` section that R Studio has figured out:
+
+1. We have comma-separated values. The suffix `.csv` is how it guessed this.
+2. The first row contains column names
+3. What type of values are in each column. You can see the data type in brackets underneath the column names.
+
+An vitally important feature of the GUI is inthe bottom right, where we have bene given a preview of the **actual code that will be executed** to import that data into R.
+
+![](images/code_preview.png)
+
+Here, there are three lines which we need to understand
+
+1. `library(readr)`
+2. `Enrichment <- read_csv("data/Enrichment.csv")`
+3. `View(Enrichment)`
+
+**Using your mouse, select and copy these three lines** then click the <kbd>Import</kbd> button and some crazy magic will happen.
+You'll probably find yourself looking at an Excel-like preview, so before we move on, go to `DataImport.Rmd` and create a new chunk.
+Name the chunk `import` then paste these lines of code into the chunk.
+
+Let's see what we've actually done
+
+### `library(readr)`
+
+The first line is telling `R` to load the package `readr`.
+This package contains the function `read_csv()` which is what parses the plain-text file into the R Environment.
+We've already loaded this package in our first chunk as part of the `tidyverse`, so we can actually delete this line from our `import` chunk. (Please do so.)
+
+### `Enrichment <- read_csv("data/Enrichment.csv")`
+
+The second line is where the importing actually happens.
+Hopefully this looks like normal R code to you know, where we have an object name (`Enrichment`) followed by the assignment operator (`<-`).
+The data that we're placing into this object is the output from the function `read_csv()`, and notice that here we have simply given the file path to this function, and it's done the rest.
+
+The GUI has automatically decided on the object name `Enrichment` as this was taken from the file name by dropping the `.csv` suffix.
+
+### `View(Enrichment)`
+
+The third line has opened up our Excel-like preview.
+For those who really like this format, this can provide a familiar way to inspect your data.
+However, for those who are R purists, this actually looks horrifying!
+Once you've had a quick browse, close the preview.
+
+We're also going to delete this third line from our `import` chunk.
+This preview is designed for interactive inspection of the data, and when we're compiling our R Markdown document we can't interact with the data like this.
+
+An alternative way of viewing the data object is to simply enter the name of the object in the **Console**.
+Do this, and notice all of the information that has been presented to you here.
+
+1. `# A tibble: 500 x 10`: This is a type of object known as a `tibble`, which is based on a `data.frame`, but wrapped in lovely wrapping paper so it looks nice. Notice that this output also tells us how many rows (500) and columns (10) that we have.
+2. After that we have all of the column names, with the data type shown in grey underneath each column name.
+3. Then we are shown a preview of the first 10 rows of data, followed by `# … with 490 more rows`.
+This is a great feature of tibbles, as a `data.frame` would dump all 500 rows onto the screen. Each column has also been truncated in the display so you get a peek at what every column looks like, without seeing all of the data.
+For this dataset, so of the columns are very, very wide so this also makes out lives easier.
+
+These features are why many R users prefer this preview, as you can see all of that important summary information as well as having a sneak peak at the contents.
+Using the Excel-like `View()` command, in some people's opinions, is actually **less** informative.
+
+### Changing the Defaults
+
+All of the settings for `read_csv()` were guessed by the R Studio GUI and for the most part, these will be correct.
+Can we change these using the GUI?
+
+Re-open the GUI by clicking on the file, but once again don't click <kbd>Import</kbd>.
+
+1. Try changing the name to `enrichment` at the bottom left, then click anywhere else in the GUI. You'll notice that the Code Preview has updated to reflect this.
+2. Uncheck the `First Row as Names` check-box.
+**Clearly, this would be a bad idea for this dataset**.
+However, notice that the column names have now changed, the types of data in each column have changes, and the code has changed to include the argument `col_names = FALSE`.
+Re-check the check-box to make sure we don't accidentally do anything silly.
+3. Uncheck the `Open Data Viewer` check-box. **What changed?**
+4. Change the `Delimiter:` drop-down menu to anything other than a comma. Although this would also be a bad idea for this dataset, notice that the code changes along with the preview. This may be useful if you have tab-separated data, or if you have any other delimiter. 
+5. Click the <kbd>Cancel</kbd> button to make sure we import anything silly into our R Environment.
+
+In our last change above, the import function changed to `read_delim()` instead of `read_csv()`.
+`read_delim()` is actually the main function whilst `read_csv()` is actually a wrapper with all arguments preset to values that work for a `csv`.
+Additional functions like `read_tsv()` do the same thing for tab-separated files.
+
+## Using Code to Import Data
+
+Returning to our R Markdown.
+As you may have now figured out, we've kept the only line from our code that performs the actual data import.
+
+```{r import}
+Enrichment <- read_csv("data/Enrichment.csv")
+```
+
+
+Have a look at your **Environment** Tab and you'll see `Enrichment` sitting there.
+Now that we've saved our code for the import, click the broom symbol next to `Import Dataset` (![](images/broom.png)).
+This will delete the object from your R Environment.
+
+Now execute the chunk that has the import code, and it will reappear in your Environment.
+This is your first taste of *reproducible research*.
+We no longer have to click on everything, but can write the code to perform an operation.
+
+After your `import` chunk, include the following lines.
+
+> The object `Enrichment` was imported, which contained `` `r knitr::inline_expr("nrow(Enrichment)")` `` gene sets.
+
+Now compile your document and check the document we have generated.
+It'll be pretty simple, but we've effectively automated data import, and printed a quick summary of some important information.
+
+## What is in this object
+
+In this object, we have `r ncol(Enrichment)` columns (`r pander::pander(colnames(Enrichment))`), each of which contains different pieces of information.
+
+1. `gs_name`: This is the name of the gene set that we have tested for being enriched in our results
+2. `gs_size`: This is the number of genes in the complete gene set
+3. `nDE`: This is the number of genes in the gene set that were formally considered as *differentially expressed* (DE) between the two genotypes
+4. `wilkinson_p`: Is our p-value for enrichment after combining multiple tests
+5. `FDR` is an adjusted p-value which tells us what proportion of our results are likely to be false if we choose the corresponding value from `wilkinson_p` as our threshold of significance
+6. `fry, camera, gsea` and `goseq` are four different analyses we performed on our data. We then combined these p-values (using Wilkinson's method) to obtain the value `wilkinson_p`. (For reference, `goseq` needs a list of formally declared DE genes, whilst the other analyses work on ranked lists.)
+7. `DE` is the all of the gene names formally considered as DE that belong to each gene set
+
+We're now going to explore a whole series of functions in the package `dplyr` which we can use to extract key results from our enrichment analysis.
+
+# The Package `dplyr`
+
+
+
+
+
