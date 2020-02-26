@@ -1,6 +1,6 @@
 ---
 title: "BIOINF3005/7160: Transcriptomics Applications"
-subtitle: "Data Import Using the Tidyverse"
+subtitle: "Using the Tidyverse"
 date: "11^th^ March, 2020"
 output: 
   html_document:
@@ -23,8 +23,10 @@ knitr::opts_chunk$set(
     echo = TRUE,
     message = FALSE,
     warning = FALSE,
-    fig.align = "center"
+    fig.align = "center",
+    results = "hide"
     )
+if (interactive()) setwd(here::here("practicals"))
 ```
 
 # Introduction
@@ -236,7 +238,164 @@ We're now going to explore a whole series of functions in the package `dplyr` wh
 
 # The Package `dplyr`
 
+Just like `readr` contains a series of functions designed to read data into R, the package `dplyr` contains a huge set of functions for working with tibble objects.
 
+## What is a `tibble`
 
+The main object type we will work with today is a `tibble`, which is an extension of the basic R structure called a `data.frame`. 
+In short, these are very much like spreadsheets with clear rows and columns, but there are a few key points we should just make a note of:
 
+1. All values in a column **must be of the same type** (i.e. `character`, `numeric`, `integer`, `logical`), however, each column *can be of a different type to the other columns*
+2. **All columns must be the same length**
+3. **Column names must be specified.** If not, R will add generic column names
+4. *Row names are optional.*
 
+This final point is one of the things that sets a `tibble` apart from a `data.frame`. 
+Whilst a `data.frame` can have row names, a `tibble` cannot, and will drop them or just set them to the row number.
+This is a design feature enforced by Hadley Wickham, and can initially seem a little strange.
+However it does provide a little more flexibility when dealing with non-trivial data structures. 
+Other features which make `tibble` objects a slightly more convenient version of a `data.frame` are:
+
+1. When you type the object name, only the first few rows are displayed. A `data.frame` will dump the entire contents into your R Console if you just type its name
+2. Only the first few columns are displayed, with a summary of the remaining columns given. Once again, a `data.frame` will dump its entire contents into your R Console
+3. The type of value contained in each column is shown
+4. The dimensions of the object are shown
+
+Beyond this, they are essentially identical structures and a `tibble` can just be thought of as a `data.frame` with nice wrapping paper. 
+Sometimes, you will hear `tibble` objects referred to as `data.frame` objects as this is their basic class, so hopefully this won’t cause any confusion.
+
+### Subsetting a `tibble/data.frame`
+
+Regardless of which type of `data.frame` or `tibble` that you have, we can subset the object using square brackets after the object name, with rows and columns specified using `object[row,column]`.
+We could just print the first row of `Enrichment` using `Enrichment[1,]`
+Or we could print the first 3 columns using `Enrichment[,1:3]`.
+Combining the two to print the the first 5 rows and first 5 columns would be `Enrichment[1:5, 1:5]`
+
+We can also call columns or rows by name, although given that tibbles have no rownames, rownames cannot be used for tibble objects.
+Note that when doing this, we use the c() function to combine the names we want.
+
+```{r, results='hide'}
+Enrichment[1:5, c("gs_name", "nDE")]
+```
+
+In general, we encourage using column names, rather than the numeric positions. 
+This can be more robust if you accidentally change the column order, and is also far easier to understand when other people (e.g. you in the future when you’ve forgotten what you did in the past) read your code.
+
+Another common way to extract information from a single column is to use the `$` symbol, and the square brackets. In this case, our column is treated as a vector and we only need to specify the position in the brackets, without a comma. 
+In the following, we’ll just grab the first two gene sets.
+
+```{r}
+Enrichment$gs_name[1:2]
+```
+
+Although we haven't formally mentioned it, this is also how you can subset a vector, like the `hi` vector we used last time.
+
+## Introducing `dplyr`
+
+The above methods are the traditional ways of accessing data within a tibble or data.frame. 
+Another package written by Hadley Wickham is `dplyr` which introduces a variety of additional strategies for manipulating these objects, and is loaded as part of the `tidyverse`. 
+These functions not only make sense to an Excel user, but enable extremely powerful approaches for data manipulation.
+
+### Using `select()` to select columns
+
+Whilst we have already seen how to select columns using conventional strategies, `dplyr` introduces a new function `select()` which enables you to select columns.
+(Most functions in `dplyr` have intuitive names.)
+The strategy here is to pass our `tibble/data.frame` as the first argument to the function, and then to just list any columns we wish returned. 
+Column names can be quoted, or given that they are columns within the data frame we’re working with, they can also be unquoted. 
+We also no longer need to use the c() function to combine our column names.
+
+```{r}
+select(Enrichment, gs_name, gs_size)
+```
+
+This may seem pretty simple, but given the helper functions which `dplyr` also brings with it, this approach becomes extremely powerful. 
+These common helper functions are: `contains()`, `starts_with()`, `ends_with()`, `one_of()` and `everything()`.
+
+An example of this may be just to extract the `gs_name` and `gs_size` columns.
+
+```{r}
+select(Enrichment, starts_with("gs_"))
+```
+
+**What would've happened if we'd just used `starts_with("gs")`?**
+
+Although `everything()` may initially seem pointless, we can also this within select `select()` to rearrange our columns.
+
+```{r}
+select(Enrichment, contains("DE"), everything())
+```
+
+If we wish to remove columns we just place the `-` symbol before the column names, or helper function.
+
+```{r}
+select(Enrichment, -contains("DE"))
+```
+
+**Notice that through the above calls to `select()`, we never overwrote our original object.** 
+`select()` simply takes a `tibble/data.frame` as input and returns the same.
+
+### Using `arrange()` to sort columns
+
+A common strategy in Excel is to sort your data by the values in a particular column. 
+The function that `dplyr` introduces is `arrange()` and it behaves very similarly to `select()` in that we pass it the object, then call the columns we wish to sort by.
+Similarly, the object will not be overwritten, but if a `tibble` is provided as input, a `tibble` will be returned as output.
+
+By default, we have given you the object sorted by the `wilkinson_p` column. 
+If we wish to sort by gene set size, we would sort on the `gs_size` column.
+
+```{r}
+arrange(Enrichment, gs_size)
+```
+
+This will sort in increasing order by default, but to switch this to decreasing order, we can wrap the column name in the `desc()` function.
+
+```{r}
+arrange(Enrichment, desc(gs_size))
+```
+
+Now the largest gene sets are the first ones shown.
+
+### Using `filter()` to subset our results
+
+Yet another common strategy in Excel is to use the auto-filter to restrict the values shown to those matching a given criteria. 
+We can do this using the `filter()` function, which behaves similarly to the previous functions we’ve seen, but this time we need to perform a logical test on our column(s) of interest. 
+Let’s just get the gene sets which contains at least one DE gene.
+
+```{r}
+filter(Enrichment, nDE > 0)
+```
+
+We can also combine filtering criteria for more complex strategies.
+Here we can ask for the significant gene sets (FDR < 0.05) which contain at least one DE gene
+
+```{r}
+filter(Enrichment, nDE > 0, FDR < 0.05)
+```
+
+### Using `slice()` to obtain rows
+
+Whilst `filter()` can be very useful for returning rows that match a given criteria, sometimes we do want to call rows by position. 
+A classic example, may be if we just want to show the top 10 genes in a given list, and to do this, we can use the function `slice()`.
+
+```{r}
+slice(Enrichment, 1:5)
+```
+
+Importantly, we use `filter()` to filter rows **based on a given criteria**, but we use `slice()` to return rows **based on their position** in the original object.
+
+### Using `mutate()` to add columns
+
+The final thing we might like to do with our tibble object is to add a column. 
+To add columns using dplyr, we can use the function `mutate()`.
+
+In the following code, we’re adding a new column called `Sig` and adding a `logical` (or boolean) value based in the gene set matching a combined criteria of an FDR-adjusted p-value < 0.05, and there being at least one DE gene
+
+```{r}
+mutate(Enrichment, Sig = FDR < 0.05 & nDE > 0)
+```
+
+If you can't see the contents of this column, temporarily drag the R Studio panel divider so that the **Console** is wide enough to show all columns.
+Again, we haven’t yet overwritten our original object. 
+We’ve just passed it to the function `mutate()` which has returned another tibble, but this time with one additional column.
+
+## Combining Functions

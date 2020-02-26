@@ -1509,7 +1509,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">BIOINF3005/7160: Transcriptomics Applications</h1>
-<h3 class="subtitle">Data Import Using the Tidyverse</h3>
+<h3 class="subtitle">Using the Tidyverse</h3>
 <h4 class="date">11<sup>th</sup> March, 2020</h4>
 
 </div>
@@ -1638,6 +1638,85 @@ function myFunction(i) {
 </div>
 <div id="the-package-dplyr" class="section level1">
 <h1>The Package <code>dplyr</code></h1>
+<p>Just like <code>readr</code> contains a series of functions designed to read data into R, the package <code>dplyr</code> contains a huge set of functions for working with tibble objects.</p>
+<div id="what-is-a-tibble" class="section level2">
+<h2>What is a <code>tibble</code></h2>
+<p>The main object type we will work with today is a <code>tibble</code>, which is an extension of the basic R structure called a <code>data.frame</code>. In short, these are very much like spreadsheets with clear rows and columns, but there are a few key points we should just make a note of:</p>
+<ol style="list-style-type: decimal">
+<li>All values in a column <strong>must be of the same type</strong> (i.e. <code>character</code>, <code>numeric</code>, <code>integer</code>, <code>logical</code>), however, each column <em>can be of a different type to the other columns</em></li>
+<li><strong>All columns must be the same length</strong></li>
+<li><strong>Column names must be specified.</strong> If not, R will add generic column names</li>
+<li><em>Row names are optional.</em></li>
+</ol>
+<p>This final point is one of the things that sets a <code>tibble</code> apart from a <code>data.frame</code>. Whilst a <code>data.frame</code> can have row names, a <code>tibble</code> cannot, and will drop them or just set them to the row number. This is a design feature enforced by Hadley Wickham, and can initially seem a little strange. However it does provide a little more flexibility when dealing with non-trivial data structures. Other features which make <code>tibble</code> objects a slightly more convenient version of a <code>data.frame</code> are:</p>
+<ol style="list-style-type: decimal">
+<li>When you type the object name, only the first few rows are displayed. A <code>data.frame</code> will dump the entire contents into your R Console if you just type its name</li>
+<li>Only the first few columns are displayed, with a summary of the remaining columns given. Once again, a <code>data.frame</code> will dump its entire contents into your R Console</li>
+<li>The type of value contained in each column is shown</li>
+<li>The dimensions of the object are shown</li>
+</ol>
+<p>Beyond this, they are essentially identical structures and a <code>tibble</code> can just be thought of as a <code>data.frame</code> with nice wrapping paper. Sometimes, you will hear <code>tibble</code> objects referred to as <code>data.frame</code> objects as this is their basic class, so hopefully this won’t cause any confusion.</p>
+<div id="subsetting-a-tibbledata.frame" class="section level3">
+<h3>Subsetting a <code>tibble/data.frame</code></h3>
+<p>Regardless of which type of <code>data.frame</code> or <code>tibble</code> that you have, we can subset the object using square brackets after the object name, with rows and columns specified using <code>object[row,column]</code>. We could just print the first row of <code>Enrichment</code> using <code>Enrichment[1,]</code> Or we could print the first 3 columns using <code>Enrichment[,1:3]</code>. Combining the two to print the the first 5 rows and first 5 columns would be <code>Enrichment[1:5, 1:5]</code></p>
+<p>We can also call columns or rows by name, although given that tibbles have no rownames, rownames cannot be used for tibble objects. Note that when doing this, we use the c() function to combine the names we want.</p>
+<pre class="r"><code>Enrichment[1:5, c(&quot;gs_name&quot;, &quot;nDE&quot;)]</code></pre>
+<p>In general, we encourage using column names, rather than the numeric positions. This can be more robust if you accidentally change the column order, and is also far easier to understand when other people (e.g. you in the future when you’ve forgotten what you did in the past) read your code.</p>
+<p>Another common way to extract information from a single column is to use the <code>$</code> symbol, and the square brackets. In this case, our column is treated as a vector and we only need to specify the position in the brackets, without a comma. In the following, we’ll just grab the first two gene sets.</p>
+<pre class="r"><code>Enrichment$gs_name[1:2]</code></pre>
+<p>Although we haven’t formally mentioned it, this is also how you can subset a vector, like the <code>hi</code> vector we used last time.</p>
+</div>
+</div>
+<div id="introducing-dplyr" class="section level2">
+<h2>Introducing <code>dplyr</code></h2>
+<p>The above methods are the traditional ways of accessing data within a tibble or data.frame. Another package written by Hadley Wickham is <code>dplyr</code> which introduces a variety of additional strategies for manipulating these objects, and is loaded as part of the <code>tidyverse</code>. These functions not only make sense to an Excel user, but enable extremely powerful approaches for data manipulation.</p>
+<div id="using-select-to-select-columns" class="section level3">
+<h3>Using <code>select()</code> to select columns</h3>
+<p>Whilst we have already seen how to select columns using conventional strategies, <code>dplyr</code> introduces a new function <code>select()</code> which enables you to select columns. (Most functions in <code>dplyr</code> have intuitive names.) The strategy here is to pass our <code>tibble/data.frame</code> as the first argument to the function, and then to just list any columns we wish returned. Column names can be quoted, or given that they are columns within the data frame we’re working with, they can also be unquoted. We also no longer need to use the c() function to combine our column names.</p>
+<pre class="r"><code>select(Enrichment, gs_name, gs_size)</code></pre>
+<p>This may seem pretty simple, but given the helper functions which <code>dplyr</code> also brings with it, this approach becomes extremely powerful. These common helper functions are: <code>contains()</code>, <code>starts_with()</code>, <code>ends_with()</code>, <code>one_of()</code> and <code>everything()</code>.</p>
+<p>An example of this may be just to extract the <code>gs_name</code> and <code>gs_size</code> columns.</p>
+<pre class="r"><code>select(Enrichment, starts_with(&quot;gs_&quot;))</code></pre>
+<p><strong>What would’ve happened if we’d just used <code>starts_with(&quot;gs&quot;)</code>?</strong></p>
+<p>Although <code>everything()</code> may initially seem pointless, we can also this within select <code>select()</code> to rearrange our columns.</p>
+<pre class="r"><code>select(Enrichment, contains(&quot;DE&quot;), everything())</code></pre>
+<p>If we wish to remove columns we just place the <code>-</code> symbol before the column names, or helper function.</p>
+<pre class="r"><code>select(Enrichment, -contains(&quot;DE&quot;))</code></pre>
+<p><strong>Notice that through the above calls to <code>select()</code>, we never overwrote our original object.</strong> <code>select()</code> simply takes a <code>tibble/data.frame</code> as input and returns the same.</p>
+</div>
+<div id="using-arrange-to-sort-columns" class="section level3">
+<h3>Using <code>arrange()</code> to sort columns</h3>
+<p>A common strategy in Excel is to sort your data by the values in a particular column. The function that <code>dplyr</code> introduces is <code>arrange()</code> and it behaves very similarly to <code>select()</code> in that we pass it the object, then call the columns we wish to sort by. Similarly, the object will not be overwritten, but if a <code>tibble</code> is provided as input, a <code>tibble</code> will be returned as output.</p>
+<p>By default, we have given you the object sorted by the <code>wilkinson_p</code> column. If we wish to sort by gene set size, we would sort on the <code>gs_size</code> column.</p>
+<pre class="r"><code>arrange(Enrichment, gs_size)</code></pre>
+<p>This will sort in increasing order by default, but to switch this to decreasing order, we can wrap the column name in the <code>desc()</code> function.</p>
+<pre class="r"><code>arrange(Enrichment, desc(gs_size))</code></pre>
+<p>Now the largest gene sets are the first ones shown.</p>
+</div>
+<div id="using-filter-to-subset-our-results" class="section level3">
+<h3>Using <code>filter()</code> to subset our results</h3>
+<p>Yet another common strategy in Excel is to use the auto-filter to restrict the values shown to those matching a given criteria. We can do this using the <code>filter()</code> function, which behaves similarly to the previous functions we’ve seen, but this time we need to perform a logical test on our column(s) of interest. Let’s just get the gene sets which contains at least one DE gene.</p>
+<pre class="r"><code>filter(Enrichment, nDE &gt; 0)</code></pre>
+<p>We can also combine filtering criteria for more complex strategies. Here we can ask for the significant gene sets (FDR &lt; 0.05) which contain at least one DE gene</p>
+<pre class="r"><code>filter(Enrichment, nDE &gt; 0, FDR &lt; 0.05)</code></pre>
+</div>
+<div id="using-slice-to-obtain-rows" class="section level3">
+<h3>Using <code>slice()</code> to obtain rows</h3>
+<p>Whilst <code>filter()</code> can be very useful for returning rows that match a given criteria, sometimes we do want to call rows by position. A classic example, may be if we just want to show the top 10 genes in a given list, and to do this, we can use the function <code>slice()</code>.</p>
+<pre class="r"><code>slice(Enrichment, 1:5)</code></pre>
+<p>Importantly, we use <code>filter()</code> to filter rows <strong>based on a given criteria</strong>, but we use <code>slice()</code> to return rows <strong>based on their position</strong> in the original object.</p>
+</div>
+<div id="using-mutate-to-add-columns" class="section level3">
+<h3>Using <code>mutate()</code> to add columns</h3>
+<p>The final thing we might like to do with our tibble object is to add a column. To add columns using dplyr, we can use the function <code>mutate()</code>.</p>
+<p>In the following code, we’re adding a new column called <code>Sig</code> and adding a <code>logical</code> (or boolean) value based in the gene set matching a combined criteria of an FDR-adjusted p-value &lt; 0.05, and there being at least one DE gene</p>
+<pre class="r"><code>mutate(Enrichment, Sig = FDR &lt; 0.05 &amp; nDE &gt; 0)</code></pre>
+<p>If you can’t see the contents of this column, temporarily drag the R Studio panel divider so that the <strong>Console</strong> is wide enough to show all columns. Again, we haven’t yet overwritten our original object. We’ve just passed it to the function <code>mutate()</code> which has returned another tibble, but this time with one additional column.</p>
+</div>
+</div>
+<div id="combining-functions" class="section level2">
+<h2>Combining Functions</h2>
+</div>
 </div>
 
 
