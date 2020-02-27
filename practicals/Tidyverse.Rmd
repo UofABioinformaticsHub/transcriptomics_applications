@@ -48,11 +48,11 @@ Copy the file `Enrichment.csv` to this directory.
 Once you have `Enrichment.csv` in your `data` directory, begin a new R Markdown document and save this as `DataImport.Rmd` in your project root directory.
 As per usual, delete everything after the `setup` chunk.
 
-## Introducting The Tidyverse
+## Introducing The Tidyverse
 
 Previously we saw the package `stringr` which was dedicated to manipulating text strings.
 Today we're going to learn about functions from the packages `readr`, `dplyr`, `tibble` and `tidyr`.
-Because these packages are very tighly integrated, the authors decided to create a further package called the `tidyverse` which enables the loading of the eight core packages (`ggplot2`, `tibble`, `tidyr`, `readr`, `purrr`, `dplyr`, `stringr` and `forcats`) in one command.
+Because these packages are very tightly integrated, the authors decided to create a further package called the `tidyverse` which enables the loading of the eight core packages (`ggplot2`, `tibble`, `tidyr`, `readr`, `purrr`, `dplyr`, `stringr` and `forcats`) in one command.
 An entire programming culture has sprung up around these packages, which is often referred to as the `tidyverse` or `tidy` data, or something similar.
 In essence, the release of these packages and their ease of use, opened R up to a far wider community.
 All of these packages are maintained by staff from RStudio, in particular Hadley Wickham, who is one of the most influential figures within the international R community.
@@ -101,11 +101,11 @@ First, we'll use the convenient GUI that R Studio provides, but then we'll ditch
 ## Using the GUI
 
 The file we'll work with today is called `Enrichment.csv` and contains some actual results from a transcriptomic analysis comparing mutant and wild-type zebrafish.
-This data was generously provided by Prof Michael Lardelli who does some excellent work in the context of Alzheimer's Disease.
+This data was generously provided by Prof. Michael Lardelli who does some excellent work in the context of Alzheimer's Disease.
 As this is a csv file, we know this will be a plain-text file, with columns separated by the comma symbol.
 
 Using the **Files** pane, navigate into the `data` folder and click on the file `Enrichment.csv`.
-When prompted, select `View File` and the file will open in your script window, aloowing us to have a sneak peak at it.
+When prompted, select `View File` and the file will open in your script window, allowing us to have a sneak peak at it.
 Note, that **we haven't loaded it into your R Environment**.
 We're just opening it like we open any plain-text file to have a look at the contents.
 Once you're happy with what it looks like as plain-text, close it by clicking the cross next to the file name and return to your **Files** pane.
@@ -125,7 +125,7 @@ Notice that in the main `Data Preview` section that R Studio has figured out:
 2. The first row contains column names
 3. What type of values are in each column. You can see the data type in brackets underneath the column names.
 
-An vitally important feature of the GUI is inthe bottom right, where we have bene given a preview of the **actual code that will be executed** to import that data into R.
+An vitally important feature of the GUI is in the bottom right, where we have been given a preview of the **actual code that will be executed** to import that data into R.
 
 ![](images/code_preview.png)
 
@@ -251,9 +251,9 @@ In short, these are very much like spreadsheets with clear rows and columns, but
 4. *Row names are optional.*
 
 This final point is one of the things that sets a `tibble` apart from a `data.frame`. 
-Whilst a `data.frame` can have row names, a `tibble` cannot, and will drop them or just set them to the row number.
-This is a design feature enforced by Hadley Wickham, and can initially seem a little strange.
-However it does provide a little more flexibility when dealing with non-trivial data structures. 
+Whilst a `data.frame` **can** have row names, a `tibble` **cannot**, and will drop them by silently setting them to the row number.
+This is a design feature enforced by Hadley Wickham, and can initially seem a little strange (and is much argued about amongst the R community).
+However it can provide a little more flexibility when dealing with non-trivial data structures. 
 Other features which make `tibble` objects a slightly more convenient version of a `data.frame` are:
 
 1. When you type the object name, only the first few rows are displayed. A `data.frame` will dump the entire contents into your R Console if you just type its name
@@ -261,7 +261,7 @@ Other features which make `tibble` objects a slightly more convenient version of
 3. The type of value contained in each column is shown
 4. The dimensions of the object are shown
 
-Beyond this, they are essentially identical structures and a `tibble` can just be thought of as a `data.frame` with nice wrapping paper. 
+Beyond this, they are essentially identical structures and a `tibble` can just be thought of as a `data.frame` with pretty wrapping paper. 
 Sometimes, you will hear `tibble` objects referred to as `data.frame` objects as this is their basic class, so hopefully this won’t cause any confusion.
 
 ### Subsetting a `tibble/data.frame`
@@ -308,7 +308,7 @@ We also no longer need to use the c() function to combine our column names.
 select(Enrichment, gs_name, gs_size)
 ```
 
-This may seem pretty simple, but given the helper functions which `dplyr` also brings with it, this approach becomes extremely powerful. 
+The above example of `select()` may also seem pretty simple, but given the helper functions which `dplyr` includes, this approach becomes extremely powerful. 
 These common helper functions are: `contains()`, `starts_with()`, `ends_with()`, `one_of()` and `everything()`.
 
 An example of this may be just to extract the `gs_name` and `gs_size` columns.
@@ -331,7 +331,7 @@ If we wish to remove columns we just place the `-` symbol before the column name
 select(Enrichment, -contains("DE"))
 ```
 
-**Notice that through the above calls to `select()`, we never overwrote our original object.** 
+**Notice that through the above calls to `select()`, we never overwrote our original object, because we never used the `<-` symbol to assign anything to a new object.** 
 `select()` simply takes a `tibble/data.frame` as input and returns the same.
 
 ### Using `arrange()` to sort columns
@@ -386,16 +386,196 @@ Importantly, we use `filter()` to filter rows **based on a given criteria**, but
 ### Using `mutate()` to add columns
 
 The final thing we might like to do with our tibble object is to add a column. 
-To add columns using dplyr, we can use the function `mutate()`.
+To add columns using `dplyr`, we can use the function `mutate()`.
 
-In the following code, we’re adding a new column called `Sig` and adding a `logical` (or boolean) value based in the gene set matching a combined criteria of an FDR-adjusted p-value < 0.05, and there being at least one DE gene
+In the following code, we’re adding a new column called `PropDE` by dividing the number of DE genes, by the total gene set size 
 
 ```{r}
-mutate(Enrichment, Sig = FDR < 0.05 & nDE > 0)
+mutate(Enrichment, prop_DE = nDE / gs_size)
 ```
 
 If you can't see the contents of this column, temporarily drag the R Studio panel divider so that the **Console** is wide enough to show all columns.
 Again, we haven’t yet overwritten our original object. 
 We’ve just passed it to the function `mutate()` which has returned another tibble, but this time with one additional column.
 
+The column `gs_name` contains gene sets from three sources.
+These are the GO data base, the KEGG data base and a list of gene sets from the MSigDB data base known as the HALLMARK gene sets.
+
+We can use some of the functions we learned when we were exploring `stringr` to obtain this information.
+
+
+```{r}
+mutate(
+  Enrichment,
+  source = str_extract(gs_name, "(GO|KEGG|HALLMARK)")
+)
+```
+
+
+### Using `rename()`
+
+One final function we'll introduce in this section is `rename()`, which can be used to rename columns. (Surprise!)
+For this function, we provide the new name for each column that we wish to rename
+
+```{r}
+rename(Enrichment, n_de = nDE)
+```
+
+
+
 ## Combining Functions
+
+In the above sections, we have have seen many of the core functions in `dplyr`, however, this is really just scratching the surface of what we can do.
+Often we would like to combine some of these functions to produce some output.
+For example, we might like to `arrange()` our data by some key value, then just show (`slice()`) the top 10 values for our results table.
+
+With our current knowledge, we would have two strategies available to us.
+
+1. We save the output of the first function as a new object, then pass this as the input to the second function, or
+2. Wrap the functions inside each other
+
+If using strategy 1, we would end up with a workspace filled with similar objects, which would rapidly become a confusing mess.
+If using strategy 2, it would work, but it might look ugly and be hard to understand for your collaborators.
+
+```{r}
+slice(
+  arrange(Enrichment, desc(nDE)),
+  1:5
+)
+```
+
+Even doing this it's pretty clear, that we'd probably want to remove some of the columns from our output table.
+We could do this, but even though I've tried to make the next chunk look readable, it's still starting to get messy.
+And that's just after performing two trivial things!
+
+```{r}
+slice(
+  arrange(Enrichment, desc(nDE)),
+  1:5
+)[,c("gs_name", "gs_size", "nDE", "wilkinson_p", "FDR")]
+```
+
+### Introducing the `magrittr`
+
+If you are familiar with `bash`, you may have come across the pipe as a way of chaining multiple functions together.
+If you're not familiar with `bash`, you're still going to learn a useful new trick.
+
+R has a special tool called the `magrittr` (or sometimes called the pipe) which is the symbol `%>%`.
+What this does is takes what is given to it on the left, and places this as the first argument of a function on the right.
+For example, the following two lines of code are functionally identical!
+
+```{r}
+arrange(Enrichment, desc(nDE))
+Enrichment %>% arrange(desc(DE))
+```
+
+In the second line, we have taken the output of Enrichment (which is a `tibble`) and passed it to the function `arrange()` as the first argument.
+As you may have just figured out, **we could also take the output of `arrange()`** (which is also a `tibble`) ** and pass it to another function, such as `slice()`.
+
+```{r}
+Enrichment %>% 
+  arrange(desc(DE)) %>%
+  slice(1:5)
+```
+
+Notice how this is much easier to read than our previous attempt!
+As we join several functions together, it's also very good practice to **place each function on it's own line*.
+This greatly assists readability, particularly as you will often end up with chains of 10-20 operations.
+R Studio will indent each line for you automatically so you can see where the chain starts and finishes.
+
+In our earlier attempt, we also just grabbed the columns we wanted to, and now we could add an extra call to `select()` to manage that.
+
+```{r}
+Enrichment %>% 
+  arrange(desc(DE)) %>%
+  slice(1:5) %>%
+  select(starts_with("gs_"), nDE, wilkinson_p, FDR)
+```
+
+#### Task 
+
+**Try and write a code chunk that performs the following:**
+
+1. Restrict the results to significant gene sets, using an FDR below 0.05 as your criteria
+2. Restrict this list to gene sets with at least 1 DE gene
+3. Find the proportion of genes in the gene set which are DE
+3. Sort them in descending order, based on the proportion of DE genes
+4. Provide the final output as the gene set name, the gene set size, the proportion of DE genes and the FDR
+5. Rename the columns `nDE` and `FDR` to be `n_de` and `fdr` respectively.
+
+
+### Grouping values
+
+Given that we have data from three sources, we might wish to obtain some summaries for each of these.
+`dplyr` provides the function `group_by()` to allow this.
+First let's obtain the information describing the source of the gene set, as we did above, but then we should have a look to make sure we have everything right.
+
+```{r}
+Enrichment %>%
+  mutate(source = str_extract(gs_name, "(GO|KEGG|HALLMARK)")) %>%
+  select(gs_name, source) %>%
+  print(n = 20)
+```
+
+Let's group by this new column and see what happens
+
+```{r}
+Enrichment %>%
+  mutate(source = str_extract(gs_name, "(GO|KEGG|HALLMARK)")) %>%
+  group_by(source)
+```
+
+As may have noticed, nothing happened, except for one thing.
+If you check the top of the output, you'll see `# Groups:   source [3]`, which tells us that R is now keeping track of the 3 groups in the column `source`.
+We can pass this to the function `tally()`, which will count how many rows belong to each group.
+
+```{r}
+Enrichment %>%
+  mutate(source = str_extract(gs_name, "(GO|KEGG|HALLMARK)")) %>%
+  group_by(source) %>%
+  tally()
+```
+
+### Using `summarise()`
+
+Maybe we might like to find the lowest FDR-adjusted p-value for each group.
+
+```{r}
+Enrichment %>%
+  mutate(source = str_extract(gs_name, "(GO|KEGG|HALLMARK)")) %>%
+  group_by(source) %>%
+  summarise(lowest = min(FDR))
+```
+
+We could even find the distribution of gene set sizes for each source
+
+```{r}
+Enrichment %>%
+  mutate(source = str_extract(gs_name, "(GO|KEGG|HALLMARK)")) %>%
+  group_by(source) %>%
+  summarise(
+    smallest = min(gs_size),
+    mean = mean(gs_size),
+    largest = max(gs_size)
+  )
+```
+
+### Using `summarise_at()`
+
+Once we start wanting to apply multiple functions to one or more columns, we can use the function `summarise_at()`.
+We can use our unquoted column names or helper functions to select the columns, but they do need to be wrapped in another function `vars()`.
+This seems a bit clunky, but it does the job.
+Also notice that when we specify the functions, we provide names that become column names.
+
+```{r}
+Enrichment %>%
+  mutate(source = str_extract(gs_name, "(GO|KEGG|HALLMARK)")) %>%
+  group_by(source) %>%
+  summarise_at(
+    vars(gs_size), 
+    c(smallest = min, mean = mean, largest = max))
+```
+
+
+
+

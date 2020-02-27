@@ -28,9 +28,11 @@ panderOptions("missing", "")
 pracs <- tribble(
     ~Week, ~`Week Starting`, ~Lecture, ~Lecturer, ~LecUrl, ~Practical, ~PracUrl,
     1, "2020-03-02", "Introduction", "Stephen Pederson", "", "Introduction to R and `rmarkdown`", "practicals/Practical1_IntroR.html",
+    NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Manipulating Text in R", "practicals/Using_stringr.html",
     2, "2020-03-09", "**Adelaide Cup Day**", "No Lecture", "", "Using the `tidyverse`", "practicals/Tidyverse.html",
     3, "2020-03-16", "Quantification Strategies", "Stephen Pederson", "", "Data Visualisation with `ggplot2`", "",
-    4, "2020-03-23", "Microarray Technology", "Stephen Pederson", "", "Using Git with RStudio", "",
+    4, "2020-03-23", "Microarray Technology", "Stephen Pederson", "", "Working with Vectors", "",
+    NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Using Git with RStudio", "",
     5, "2020-03-30", "Statistical Techniques", "Stephen Pederson", "", "Basic Statistics in R", "",
     6, "2020-04-06", "RNA-Seq", "Zhipeng Qu", "", "Alignments and Visualisation", "",
     NA_integer_, "2020-04-13", "**Mid-Semester Break**", "No Lecture", "", "", "",
@@ -66,6 +68,7 @@ pracs %>%
     mutate(
         `Week Starting` = as_date(`Week Starting`), 
         Lecture = case_when(
+            is.na(Lecture) ~ NA_character_,
             !grepl("\\*\\*", Lecture) ~ paste0("[", Lecture, "](", LecUrl, ")", "<br>(", Lecturer, ")"),
             grepl("\\*\\*", Lecture) ~ paste0(Lecture, " (", Lecturer, ")")
         ),
