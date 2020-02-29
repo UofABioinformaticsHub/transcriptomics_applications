@@ -3,3 +3,10 @@
 .RData
 .Ruserdata
 *Rproj
+*aux
+*log
+*nav
+*out
+*snm
+*synctex.gz
+*toc
