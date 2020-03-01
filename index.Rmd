@@ -29,7 +29,7 @@ panderOptions("missing", "")
 ```{r}
 pracs <- tribble(
     ~Week, ~`Week Starting`, ~Lecture, ~Lecturer, ~LecUrl, ~Practical, ~PracUrl,
-    1, "2020-03-02", "Introduction", "Stephen Pederson", "", "Introduction to R and `rmarkdown`", "practicals/Practical1_IntroR.html",
+    1, "2020-03-02", "Introduction", "Stephen Pederson", "lectures/1_Introduction.pdf", "Introduction to R and `rmarkdown`", "practicals/Practical1_IntroR.html",
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Manipulating Text in R", "practicals/Using_stringr.html",
     2, "2020-03-09", "**Adelaide Cup Day**", "No Lecture", "", "Using the `tidyverse`", "practicals/Tidyverse.html",
     3, "2020-03-16", "Early Quantification Strategies", "Stephen Pederson", "", "Data Visualisation with `ggplot2`", "",
