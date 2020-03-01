@@ -12,13 +12,15 @@ knitr::opts_chunk$set(
     echo = FALSE,
     message = FALSE,
     warning = FALSE
-    )
+)
 ```
 
 ```{r}
 library(tidyverse)
 library(lubridate)
 library(pander)
+library(kableExtra)
+options(knitr.kable.NA = '')
 panderOptions("table.style", "rmarkdown")
 panderOptions("table.split.table", Inf)
 panderOptions("missing", "")
@@ -30,18 +32,18 @@ pracs <- tribble(
     1, "2020-03-02", "Introduction", "Stephen Pederson", "", "Introduction to R and `rmarkdown`", "practicals/Practical1_IntroR.html",
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Manipulating Text in R", "practicals/Using_stringr.html",
     2, "2020-03-09", "**Adelaide Cup Day**", "No Lecture", "", "Using the `tidyverse`", "practicals/Tidyverse.html",
-    3, "2020-03-16", "Quantification Strategies", "Stephen Pederson", "", "Data Visualisation with `ggplot2`", "",
-    4, "2020-03-23", "Microarray Technology", "Stephen Pederson", "", "Working with Vectors", "",
+    3, "2020-03-16", "Early Quantification Strategies", "Stephen Pederson", "", "Data Visualisation with `ggplot2`", "",
+    4, "2020-03-23", "Quantification Strategies and Statistics", "Stephen Pederson", "", "Working with Vectors", "",
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Using Git with RStudio", "",
-    5, "2020-03-30", "Statistical Techniques", "Stephen Pederson", "", "Basic Statistics in R", "",
+    5, "2020-03-30", "Statistics For Transcriptomics", "Stephen Pederson", "", "Basic Statistics in R", "",
     6, "2020-04-06", "RNA-Seq", "Zhipeng Qu", "", "Alignments and Visualisation", "",
     NA_integer_, "2020-04-13", "**Mid-Semester Break**", "No Lecture", "", "", "",
     NA_integer_, "2020-04-20", "**Mid-Semester Break**", "No Lecture", "", "", "",
     7, "2020-04-27", "Alignment and Quantification", "Nathan Watson-Haigh", "", "Introduction to `limma` and `edgeR`", "",
     8, "2020-05-04", "Statistics for RNA-Seq", "Stephen Pederson", "", "Introduction to `limma` and `edgeR`", "",
     9, "2020-05-11", "Enrichment Analysis", "Stephen Pederson", "", "Enrichment Strategies", "",
-    10, "2020-05-18", "Single Cell RNA-Seq", "Stephen Pederson", "", "WGCNA", "",
-    11, "2020-05-25", "Network Analysis", "Nathan Watson-Haigh", "", "WGCNA", "",
+    10, "2020-05-18", "Network Analysis", "Nathan Watson-Haigh", "", "WGCNA", "",
+    11, "2020-05-25", "Single Cell RNA-Seq", "Stephen Pederson", "", "WGCNA", "",
     12, "2020-06-01", "Transcriptome Assembly", "Terry Bertozzi", "", "", "",
     13, "2020-06-07", "Challenges in RNA-Seq", "Stephen Pederson", "", "", ""
 )
@@ -52,10 +54,10 @@ pracs <- tribble(
 # Timetable
 
 - **Lectures**
-    - Monday 9:10am - 10:00am, Ingkarni Wardli, Room B18
+- Monday 9:10am - 10:00am, Ingkarni Wardli, Room B18
 - **Practicals**
-    - Wednesday 9:10am - 11:00am, Johnson Building, Room 111
-    - Friday 9:10am - 11:00am, Johnson Building, Room 111
+- Wednesday 9:10am - 11:00am, Johnson Building, Room 111
+- Friday 9:10am - 11:00am, Johnson Building, Room 111
 
 Lectures for this course are held on a Monday, and will clash with **two Public Holidays** in Semester 1.
 
@@ -69,15 +71,16 @@ pracs %>%
         `Week Starting` = as_date(`Week Starting`), 
         Lecture = case_when(
             is.na(Lecture) ~ NA_character_,
-            !grepl("\\*\\*", Lecture) ~ paste0("[", Lecture, "](", LecUrl, ")", "<br>(", Lecturer, ")"),
+            !grepl("\\*\\*", Lecture) ~ paste0("[", Lecture, "](", LecUrl, ")", " (", Lecturer, ")"),
             grepl("\\*\\*", Lecture) ~ paste0(Lecture, " (", Lecturer, ")")
         ),
         Practical = paste0("[", Practical, "](", PracUrl, ")")
     ) %>%
     dplyr::select(starts_with("Week"), Lecture, Practical) %>%
-    pander(
-        justify = "rrll"
-    )
+    kable() %>%
+    kable_styling(
+        bootstrap_options = c("striped", "hover", "condensed", "responsive")
+    )   
 ```
 
 
@@ -87,10 +90,10 @@ pracs %>%
 ```{r}
 ass <- tribble(
     ~Url, ~Topic, ~`Due Date`,
-    "", "", ""
+    "", "Not Yet Released", "2020-03-23"
 ) %>%
     mutate(
-        Assessment = paste("Assessment", seq_len(nrow(.)) - 1)
+        Assessment = paste("Assessment", seq_len(nrow(.)) )
     )
 ```
 
@@ -103,9 +106,10 @@ ass %>%
         Assessment = paste0("[", Assessment, "](", Url, ")")
     ) %>%
     dplyr::select(Assessment, Topic, `Due Date`) %>%
-    pander(
-        justify = "llr"
-    )
+    kable() %>%
+    kable_styling(
+        bootstrap_options = c("striped", "hover", "condensed", "responsive")
+    )   
 ```
 
 
@@ -117,11 +121,11 @@ Have you:
 - [ ] Followed naming conventions for Assessments?
 - [ ] Checked that you have not breached the [Academic Honesty Policy](http://www.adelaide.edu.au/policies/230/).
 - [ ] Identified the work as yours?
-	- Emails should have the course and assessment task names.
-	- Documents should be named with your name, the course name and the assessment task.
-	- Printed documents should have you name and the course and assessment task in the text/footer/header.
+- Emails should have the course and assessment task names.
+- Documents should be named with your name, the course name and the assessment task.
+- Printed documents should have you name and the course and assessment task in the text/footer/header.
 - [ ] Used appropriate electronic communication with assessors?
-	- Emails should have a meaningful subject.
+- Emails should have a meaningful subject.
 - [ ] Handed in the assignment before the due time (see MyUni)?
 
 # Useful Links
