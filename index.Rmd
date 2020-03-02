@@ -54,7 +54,7 @@ pracs <- tribble(
 # Timetable
 
 - **Lectures**
-- Monday 9:10am - 10:00am, Ingkarni Wardli, Room B18
+- Monday 9:10am - 10:00am, Ingkarni Wardli, Room B17
 - **Practicals**
 - Wednesday 9:10am - 11:00am, Johnson Building, Room 111
 - Friday 9:10am - 11:00am, Johnson Building, Room 111
