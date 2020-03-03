@@ -32,7 +32,7 @@ knitr::opts_chunk$set(
 
 ## Introduction
 
-In our previous work, we introduced:
+In our previous session, we introduced:
 
 - The relationship between R and R Studio
 - The advantages of R Markdown
