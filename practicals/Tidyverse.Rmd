@@ -766,7 +766,7 @@ Enrichment %>%
 #### Task
 
 The transcription factor *stat5* may be playing a key role in any inflammation for this experiment.
-Find all significant gene sets containing this gene.
+Find all significantly enriched gene sets containing this gene.
 
 ```{r, echo=FALSE}
 Enrichment %>%
@@ -778,9 +778,9 @@ Enrichment %>%
 ```
 
 Alternatively, we think the surface markers *cd40* and *cd59* might be of interest.
-Do they belong to any significant gene sets?
+Do they belong to any significantly enriched gene sets?
 
-(Try and perform this by searching for both of these in the same `filter()`.)
+(Try perform this by searching for both of these within the same call to `filter()`.)
 
 ```{r, echo = FALSE}
 Enrichment %>%
@@ -798,7 +798,7 @@ Usage of the first is strongly discouraged as the data points in one column are 
 There is usually a better way of doing things if you're tempted to use this.
 
 In contrast, `bind_rows()` is incredibly useful as this checks for common column names.
-A *foolish thing to do* might be to use `bind_rows()` to join `Enrichment` and `de`, however this is a useful examples for demonstrating this command in action.
+A *foolish thing to do* might be to use `bind_rows()` to join `Enrichment` and `de`, however this is a useful technical example for demonstrating the `bind_rows()` command in action.
 
 The common column will be `gs_name`, so the tibbles will be stacked on top of each other using this column.
 No `DE` column exists in `Enrichment`, so `NA` will be used to fill this column for the values originally in `Enrichment`.
@@ -809,7 +809,7 @@ You'll see however, that the total size of the joined `tibble` is `r nrow(de) + 
 Enrichment %>% bind_rows(de)
 ```
 
-An alternative, but more useful example of this by be if we returned to some of our `group_by()` operations.
+An alternative, but far more realistic example of this may be if we returned to some of our `group_by()` operations.
 Earlier, we found how many gene sets from the GO, KEGG and HALLMARK databases were considered as enriched.
 
 ```{r}
@@ -841,7 +841,7 @@ We've given the first column the value "Total" and highlighted it as bold for R 
 In the second column, we manually entered the value 15, because we'd looked at the first result & figured that 15 = 14 + 1.
 
 We can actually grab this from the data using a slightly advanced trick where we can look into the object passed by the magrittr using `.`.
-As a simple example, we can use a subsetting operation.
+As a simple example of this technique, we can use a subsetting operation (`[r,c]`).
 The following is a sightly less elegant way to replicate `Enrichment %>% slice(1:5)`
 
 ```{r}
@@ -849,8 +849,8 @@ Enrichment %>%
   .[1:5, ]
 ```
 
-Here we've used `.` to indicate the object passed by `%>%` and we've then performed an operation on this.
-If we apply this logic to our actual problem at hand, we can use:
+Here we've used `.` to indicate the object passed by `%>%` and we've then performed the subsetting operation on this.
+If we apply the same logic to our actual problem at hand, we can use:
 
 ```{r}
 Enrichment %>%

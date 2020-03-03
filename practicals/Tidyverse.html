@@ -1905,18 +1905,18 @@ filter(de, gs_name == &quot;GO_COPI_VESICLE_COAT&quot;)</code></pre>
 </div>
 <div id="task-1" class="section level4">
 <h4>Task</h4>
-<p>The transcription factor <em>stat5</em> may be playing a key role in any inflammation for this experiment. Find all significant gene sets containing this gene.</p>
-<p>Alternatively, we think the surface markers <em>cd40</em> and <em>cd59</em> might be of interest. Do they belong to any significant gene sets?</p>
-<p>(Try and perform this by searching for both of these in the same <code>filter()</code>.)</p>
+<p>The transcription factor <em>stat5</em> may be playing a key role in any inflammation for this experiment. Find all significantly enriched gene sets containing this gene.</p>
+<p>Alternatively, we think the surface markers <em>cd40</em> and <em>cd59</em> might be of interest. Do they belong to any significantly enriched gene sets?</p>
+<p>(Try perform this by searching for both of these within the same call to <code>filter()</code>.)</p>
 </div>
 </div>
 <div id="bind_rows" class="section level3">
 <h3><code>bind_rows()</code></h3>
 <p>Two additional commands are <code>bind_cols()</code> and <code>bind_rows()</code>. Usage of the first is strongly discouraged as the data points in one column are not checked for matching values in any subsequent columns. There is usually a better way of doing things if you’re tempted to use this.</p>
-<p>In contrast, <code>bind_rows()</code> is incredibly useful as this checks for common column names. A <em>foolish thing to do</em> might be to use <code>bind_rows()</code> to join <code>Enrichment</code> and <code>de</code>, however this is a useful examples for demonstrating this command in action.</p>
+<p>In contrast, <code>bind_rows()</code> is incredibly useful as this checks for common column names. A <em>foolish thing to do</em> might be to use <code>bind_rows()</code> to join <code>Enrichment</code> and <code>de</code>, however this is a useful technical example for demonstrating the <code>bind_rows()</code> command in action.</p>
 <p>The common column will be <code>gs_name</code>, so the tibbles will be stacked on top of each other using this column. No <code>DE</code> column exists in <code>Enrichment</code>, so <code>NA</code> will be used to fill this column for the values originally in <code>Enrichment</code>. Similarly the columns <em>gs_size</em>, <em>nDE</em>, <em>wilkinson_p</em>, <em>FDR</em>, <em>fry</em>, <em>camera</em>, <em>gsea</em> and <em>goseq</em> don’t exist in <code>de</code>, and so these columns will be given <code>NA</code> for any rows originating from <code>de</code>. You’ll see however, that the total size of the joined <code>tibble</code> is 4507, which is the size you would expect by simply placing one of these after the other.</p>
 <pre class="r"><code>Enrichment %&gt;% bind_rows(de)</code></pre>
-<p>An alternative, but more useful example of this by be if we returned to some of our <code>group_by()</code> operations. Earlier, we found how many gene sets from the GO, KEGG and HALLMARK databases were considered as enriched.</p>
+<p>An alternative, but far more realistic example of this may be if we returned to some of our <code>group_by()</code> operations. Earlier, we found how many gene sets from the GO, KEGG and HALLMARK databases were considered as enriched.</p>
 <pre class="r"><code>Enrichment %&gt;%
   mutate(source = str_extract(gs_name, &quot;(GO|KEGG|HALLMARK)&quot;)) %&gt;%
   dplyr::filter(FDR &lt; 0.05) %&gt;%
@@ -1935,10 +1935,10 @@ filter(de, gs_name == &quot;GO_COPI_VESICLE_COAT&quot;)</code></pre>
     )
   )</code></pre>
 <p>Here we’re trying to create a new <code>tibble</code> to join onto the first one, and this should have the columns <code>source</code> and <code>n</code> so the two tibbles match. We’ve given the first column the value “Total” and highlighted it as bold for R Markdown (we’ll render this in html soon). In the second column, we manually entered the value 15, because we’d looked at the first result &amp; figured that 15 = 14 + 1.</p>
-<p>We can actually grab this from the data using a slightly advanced trick where we can look into the object passed by the magrittr using <code>.</code>. As a simple example, we can use a subsetting operation. The following is a sightly less elegant way to replicate <code>Enrichment %&gt;% slice(1:5)</code></p>
+<p>We can actually grab this from the data using a slightly advanced trick where we can look into the object passed by the magrittr using <code>.</code>. As a simple example of this technique, we can use a subsetting operation (<code>[r,c]</code>). The following is a sightly less elegant way to replicate <code>Enrichment %&gt;% slice(1:5)</code></p>
 <pre class="r"><code>Enrichment %&gt;%
   .[1:5, ]</code></pre>
-<p>Here we’ve used <code>.</code> to indicate the object passed by <code>%&gt;%</code> and we’ve then performed an operation on this. If we apply this logic to our actual problem at hand, we can use:</p>
+<p>Here we’ve used <code>.</code> to indicate the object passed by <code>%&gt;%</code> and we’ve then performed the subsetting operation on this. If we apply the same logic to our actual problem at hand, we can use:</p>
 <pre class="r"><code>Enrichment %&gt;%
   mutate(source = str_extract(gs_name, &quot;(GO|KEGG|HALLMARK)&quot;)) %&gt;%
   dplyr::filter(FDR &lt; 0.05) %&gt;%
