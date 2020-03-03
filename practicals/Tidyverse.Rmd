@@ -271,7 +271,7 @@ Or we could print the first 3 columns using `Enrichment[,1:3]`.
 Combining the two to print the the first 5 rows and first 5 columns would be `Enrichment[1:5, 1:5]`
 
 We can also call columns or rows by name, although given that tibbles have no rownames, rownames cannot be used for tibble objects.
-Note that when doing this, we use the c() function to combine the names we want.
+Note that when doing this, we use the c() function to combine the names we want as a `character` vector.
 
 ```{r, results='hide'}
 Enrichment[1:5, c("gs_name", "nDE")]
@@ -460,6 +460,8 @@ If you're not familiar with `bash`, you're still going to learn a useful new tri
 
 R has a special tool called the `magrittr` (or sometimes called the pipe) which is the symbol `%>%`.
 What this does is takes what is given to it on the left, and places this as the first argument of a function on the right.
+It is very much like sticking a pipe at the output of one function, and directing the output to be the input of the next function, hence the name.
+(If you'd like to understand the 'hilarious' name, [look here](https://en.wikipedia.org/wiki/The_Treachery_of_Images).)
 For example, the following two lines of code are functionally identical!
 
 ```{r}
@@ -870,7 +872,7 @@ This time, we've used the `$` separator to grab the `n` column from `.`, and the
 This is about as mind-blowing as we'll get this week, so hopefully this hasn't caused too many explosions in your brain.
 It's a very useful trick though.
 
-# Making Pretty Output Using `pander`
+## Making Pretty Output Using `pander`
 
 So far, every piece of output we've generated has just used a standard `tibble` output, which should render in your output as standard R output, with `##` at the start of each line.
 If we're compiling to html, there is a very handy package called `pander` which will take a `data.frame` or `tibble` and produce a markdown table.
@@ -945,3 +947,34 @@ Enrichment %>%
 There are multiple packages which can perform this kind of thing (`xtable` for $\LaTeX$, or `kableExtra` for some alternative html formatting options).
 In general, `pander` provides a reasonably powerful and straightforward way of formatting html output, so hopefully this gives you enough options to work with for now.
 However, it may be worth noting that `pander` will print the entire `tibble` you pass to it, so making sure you've used `filter()` or `slice()` to just return the rows you care about can be very important.
+
+## A final word on `dplyr`
+
+The functions in `dplyr` are very useful and form the backbone of nearly every analysis, transcriptomic or otherwise.
+However, their names are **very** commonly used by other packages (e.g. `filter()`, `select()`, `mutate()`, `arrange()`, `slice()`).
+Sometimes you may see some unintelligible error with something like 
+
+```
+Error in (function (classes, fdef, mtable)  : 
+  unable to find an inherited method for function ‘select’ for signature ‘"spec_tbl_df"’
+```
+
+Or 
+
+```
+Error in .Call2("Rle_constructor", values, lengths, PACKAGE = "S4Vectors") : 
+  Rle of type 'list' is not supported
+```
+
+This can be your first clue that you have two packages loaded which both use the same function names.
+If you call a function from `dplyr` and you see a very odd error instead of your expected results, you can explicitly call the `dplyr` version of the function using the namespace from the package.
+This would look like `dplyr::select()`, or `dplyr::filter()` etc.
+Even though `dplyr` is loaded with a group of packages when we loaded the `tidyverse`, knowing that these functions come from `dplyr` is important, as that is the 'namespace' we need.
+
+If you're troubled by the word *namespace*, this is simply a **collection of function names** that are made publicly visible when you load a package.
+R has a way of holding all of these in memory separately for each package after loading, so that you can refer back to them easily in these kinds of situations.
+
+We quietly introduced this concept earlier when we used `here::here()`, and you've also seen this before in your setup chunk using `knitr::opts_chunk$set()`, so hopefully this isn't too weird.
+We're mentioning it here, as many packages used in transcriptomic analysis will clash with `dplyr` exactly as we've described.
+
+

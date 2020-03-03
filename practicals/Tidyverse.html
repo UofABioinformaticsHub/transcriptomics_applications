@@ -1658,7 +1658,7 @@ function myFunction(i) {
 <div id="subsetting-a-tibbledata.frame" class="section level3">
 <h3>Subsetting a <code>tibble/data.frame</code></h3>
 <p>Regardless of which type of <code>data.frame</code> or <code>tibble</code> that you have, we can subset the object using square brackets after the object name, with rows and columns specified using <code>object[row,column]</code>. We could just print the first row of <code>Enrichment</code> using <code>Enrichment[1,]</code> Or we could print the first 3 columns using <code>Enrichment[,1:3]</code>. Combining the two to print the the first 5 rows and first 5 columns would be <code>Enrichment[1:5, 1:5]</code></p>
-<p>We can also call columns or rows by name, although given that tibbles have no rownames, rownames cannot be used for tibble objects. Note that when doing this, we use the c() function to combine the names we want.</p>
+<p>We can also call columns or rows by name, although given that tibbles have no rownames, rownames cannot be used for tibble objects. Note that when doing this, we use the c() function to combine the names we want as a <code>character</code> vector.</p>
 <pre class="r"><code>Enrichment[1:5, c(&quot;gs_name&quot;, &quot;nDE&quot;)]</code></pre>
 <p>In general, we encourage using column names, rather than the numeric positions. This can be more robust if you accidentally change the column order, and is also far easier to understand when other people (e.g. you in the future when you’ve forgotten what you did in the past) read your code.</p>
 <p>Another common way to extract information from a single column is to use the <code>$</code> symbol, and the square brackets. In this case, our column is treated as a vector and we only need to specify the position in the brackets, without a comma. In the following, we’ll just grab the first two gene sets.</p>
@@ -1745,7 +1745,7 @@ function myFunction(i) {
 <div id="introducing-the-magrittr" class="section level3">
 <h3>Introducing the <code>magrittr</code></h3>
 <p>If you are familiar with <code>bash</code>, you may have come across the pipe as a way of chaining multiple functions together. If you’re not familiar with <code>bash</code>, you’re still going to learn a useful new trick.</p>
-<p>R has a special tool called the <code>magrittr</code> (or sometimes called the pipe) which is the symbol <code>%&gt;%</code>. What this does is takes what is given to it on the left, and places this as the first argument of a function on the right. For example, the following two lines of code are functionally identical!</p>
+<p>R has a special tool called the <code>magrittr</code> (or sometimes called the pipe) which is the symbol <code>%&gt;%</code>. What this does is takes what is given to it on the left, and places this as the first argument of a function on the right. It is very much like sticking a pipe at the output of one function, and directing the output to be the input of the next function, hence the name. (If you’d like to understand the ‘hilarious’ name, <a href="https://en.wikipedia.org/wiki/The_Treachery_of_Images">look here</a>.) For example, the following two lines of code are functionally identical!</p>
 <pre class="r"><code>arrange(Enrichment, desc(nDE))
 Enrichment %&gt;% arrange(desc(nDE))</code></pre>
 <p>In the second line, we have taken the output of Enrichment (which is a <code>tibble</code>) and passed it to the function <code>arrange()</code> as the first argument. As you may have just figured out, <strong>we could also take the output of <code>arrange()</code></strong> (which is also a <code>tibble</code>) ** and pass it to another function, such as <code>slice()</code>.</p>
@@ -1953,9 +1953,8 @@ filter(de, gs_name == &quot;GO_COPI_VESICLE_COAT&quot;)</code></pre>
 <p>This time, we’ve used the <code>$</code> separator to grab the <code>n</code> column from <code>.</code>, and then we’ve added the values using <code>sum()</code>. This is about as mind-blowing as we’ll get this week, so hopefully this hasn’t caused too many explosions in your brain. It’s a very useful trick though.</p>
 </div>
 </div>
-</div>
-<div id="making-pretty-output-using-pander" class="section level1">
-<h1>Making Pretty Output Using <code>pander</code></h1>
+<div id="making-pretty-output-using-pander" class="section level2">
+<h2>Making Pretty Output Using <code>pander</code></h2>
 <p>So far, every piece of output we’ve generated has just used a standard <code>tibble</code> output, which should render in your output as standard R output, with <code>##</code> at the start of each line. If we’re compiling to html, there is a very handy package called <code>pander</code> which will take a <code>data.frame</code> or <code>tibble</code> and produce a markdown table. At the top of your R Markdown, please add the line</p>
 <pre class="r"><code>library(pander)</code></pre>
 <p>This will load this when you compile, so execute the chunk to ensure it’s active in your interactive session too. We can now take the output of our previous chunk and pipe this into the function <code>pander()</code>.</p>
@@ -2004,6 +2003,19 @@ filter(de, gs_name == &quot;GO_COPI_VESICLE_COAT&quot;)</code></pre>
     caption = &quot;Summary of enriched gene sets, and which database they were drawn from.&quot;
   )</code></pre>
 <p>There are multiple packages which can perform this kind of thing (<code>xtable</code> for <span class="math inline">\(\LaTeX\)</span>, or <code>kableExtra</code> for some alternative html formatting options). In general, <code>pander</code> provides a reasonably powerful and straightforward way of formatting html output, so hopefully this gives you enough options to work with for now. However, it may be worth noting that <code>pander</code> will print the entire <code>tibble</code> you pass to it, so making sure you’ve used <code>filter()</code> or <code>slice()</code> to just return the rows you care about can be very important.</p>
+</div>
+<div id="a-final-word-on-dplyr" class="section level2">
+<h2>A final word on <code>dplyr</code></h2>
+<p>The functions in <code>dplyr</code> are very useful and form the backbone of nearly every analysis, transcriptomic or otherwise. However, their names are <strong>very</strong> commonly used by other packages (e.g. <code>filter()</code>, <code>select()</code>, <code>mutate()</code>, <code>arrange()</code>, <code>slice()</code>). Sometimes you may see some unintelligible error with something like</p>
+<pre><code>Error in (function (classes, fdef, mtable)  : 
+  unable to find an inherited method for function ‘select’ for signature ‘&quot;spec_tbl_df&quot;’</code></pre>
+<p>Or</p>
+<pre><code>Error in .Call2(&quot;Rle_constructor&quot;, values, lengths, PACKAGE = &quot;S4Vectors&quot;) : 
+  Rle of type 'list' is not supported</code></pre>
+<p>This can be your first clue that you have two packages loaded which both use the same function names. If you call a function from <code>dplyr</code> and you see a very odd error instead of your expected results, you can explicitly call the <code>dplyr</code> version of the function using the namespace from the package. This would look like <code>dplyr::select()</code>, or <code>dplyr::filter()</code> etc. Even though <code>dplyr</code> is loaded with a group of packages when we loaded the <code>tidyverse</code>, knowing that these functions come from <code>dplyr</code> is important, as that is the ‘namespace’ we need.</p>
+<p>If you’re troubled by the word <em>namespace</em>, this is simply a <strong>collection of function names</strong> that are made publicly visible when you load a package. R has a way of holding all of these in memory separately for each package after loading, so that you can refer back to them easily in these kinds of situations.</p>
+<p>We quietly introduced this concept earlier when we used <code>here::here()</code>, and you’ve also seen this before in your setup chunk using <code>knitr::opts_chunk$set()</code>, so hopefully this isn’t too weird. We’re mentioning it here, as many packages used in transcriptomic analysis will clash with <code>dplyr</code> exactly as we’ve described.</p>
+</div>
 </div>
 
 
