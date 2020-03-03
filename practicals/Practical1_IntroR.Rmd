@@ -28,12 +28,18 @@ knitr::opts_chunk$set(
 ```
 
 
+```{r, echo=FALSE}
+library(tidyverse)
+```
+
+
 # Introduction
 
 For the majority of this practical course, we will be working with the language R using the RStudio IDE.
 You have all been assigned a Virtual Machine (VM) which will be yours for the entirety of this course, but will be shut down once the course is completed.
 We have provided all of the software on this machine that you will require for the course, however be aware that all data on the machines will be lost once they are shut down.
-If you need to transfer data to or from the VM, we recommend using stand-alone program like [FileZilla](https://filezilla-project.org/download.php)
+If you need to transfer data to or from the VM, we recommend using stand-alone program like [CyberDuck](https://cyberduck.io/download/).
+Cyberduck is only available for Windows or macOS, so please discuss alternatives with a tutor if you're natively using an alternative OS (i.e. Linux).
 
 During this course, we strongly encourage you to a) **read all of the notes carefully**, and b) **manually type all of the code**, unless directed otherwise.
 This will provide you with the the most benefit.
@@ -43,12 +49,23 @@ Making mistakes is a fundamental learning experience, and this will also equip y
 
 **Please follow these instructions very carefully**
 
-You will be provided with an IP address associated with your student ID, which looks something like `10.150.xx.xxx`.
+```{r, echo=FALSE}
+here::here("practicals", "VMs.csv") %>%
+  read_csv() %>%
+  dplyr::select(`Student ID`, `IP Address`) %>%
+  dplyr::filter(!is.na(`Student ID`)) %>%
+  pander::pander(
+    justify = "ll", style = "rmarkdown"
+  )
+```
 
-1. Using your IP address, use your favourite Internet browser to navigate to `10.150.xx.xxx:8787`. 
+
+You will be provided with an IP address associated with your student ID, which looks something like `10.150.8.xxx`.
+
+1. Using your IP address, use your favourite Internet browser to navigate to `10.150.8.xxx:8787`. 
 We recommend Chrome or Firefox for this, but Safari or Explorer may work satisfactorily if you must use these.
 2. You will see a login screen asking you to sign in to RStudio.
-    - If you have already accessed your VM and set a new password during a Genomics Applications practical, please login use that password and skip to the [following section](#what-is-r).
+    - If you **have already accessed your VM and set a new password during a Genomics Applications practical**, please login use that password and skip to the [following section](#what-is-r).
     - If you **have not** accessed your VM before please read on
 3. Use your Username and Password provided to login to RStudio, which is already running on the VM. 
 This should take you to the following screen:
