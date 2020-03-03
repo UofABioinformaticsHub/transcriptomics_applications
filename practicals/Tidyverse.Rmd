@@ -594,5 +594,354 @@ Once again, we do need to know a little more than we do know to really exploit t
 
 So far in this session, we've just explored some of the functionality of `dplyr` when working one object.
 Combining data from multiple sources is a very common requirement regardless of your context, and once again, `dplyr` provides some tools for helping with this.
+In our existing results, we have our results for each gene set, but we don't actually know which genes are DE.
+We know how many, but not what they are.
+
+Let's load in a separate file with this information.
+In your main `data` folder in your VM (where we place all of your files), locate the file `de.tsv` and copy this to the same folder as `Enrichment.csv`.
+Note that this time, we have a tab-separated file, instead of a comma-separated file.
+If you click on this file and hope that R Studio is going to give you options (like we was with a csv), you're out of luck.
+For some reason, loading of `tsv` files via the GUI is not implemented yet, so we're going to have to write some code ourselves.
+Fortunately, it's pretty easy.
+
+Before we assign the imported data to an object, let's get our importing code figured out. 
+The function we'll need here is `read_tsv()` instead of `read_csv()`, so let's start with that.
+
+    ```{r de}`r ''`
+    read_tsv()
+    ``` `r ''`
+    
+The first argument required by `read_tsv()` is called `file`, so we need to tell `read_tsv()` where our file is.
+
+### File Paths
+
+This is as good a moment as any to introduce file paths.
+When we compile an R Markdown document into it's final form (i.e. pdf, html etc.), all file paths are relative to the directory that the R Markdown document is in.
+We should have our R Markdown file in the project root directory, so it'll be pretty easy today, but this is not always the case.
+To find where `R` is currently looking, as your **working directory**, enter the command `getwd()` directly into your Console.
+If all goes according to plan, this will print the complete path to your working directory, and this should begin with `/home/student/`, which may remember is often shortened to `~` as **your home** directory.
+(Every other user will have a home directory in `/home` too.)
+
+On Linux and macOS, the `/` symbol at the start of a file path is the *root of your file system.*
+Windows users more commonly think of this as `C:\\` and this represents a fundamental difference between the two types of architecture.
+So in this segment of the file path, the file system root is `/` with the first-level directory being `home` and the next level directory being `student`.
+An example directory tree might look like the following:
+
+```
+/ 
+|-- bin
+|-- etc
+|-- home
+|    | -- student
+|    | -- ubuntu
+|-- lib
+|-- opt
+|-- usr
+```
+
+Returning to our working directory, after `/home/student/`, you should see `transcriptomics_applications/practical_2` and this is the complete path to your working directory.
+
+We can look in our current directory using `list.files()`, so hopefully that will give you your markdown document(s) and the data folder.
+If we wanted to look up a directory, we could try `list.files("..")` and that will step back into `/home/student/transcriptomics_applications` and you should see the directories `practical_1` and `practical_2` there.
+We can also look into our data folder using `list.files("data")`, and that should give us the two files `Enrichment.csv` and `de.tsv`.
+
+This is how we can navigate around from our working directory, and if your R Markdown file is going to be compiled from your project root directory, you're likely to never have any dramas.
+However, when we collaborate with others it can get a bit more tricky.
+It's very possible, that we provide `"data/Enrichment.csv"` as `"/home/student/transcriptomics_applications/practical_2/data/Enrichment.csv"`, and if you then sent that to an tutor who is going to mark your assignment, that folder probably won't exist on their machine.
+If your tutor is `linda`, her folder may be `"/home/linda/transcriptomics_applications/practical_2/data/Enrichment.csv"`, or it may be completely different.
+
+There is a package called `here` on your VMs which helps us get around this.
+Within the package `here` is a function of the same name (`here()`) which looks for the `.Rproj` file, and considers that directory as the project root.
+This enables portability, as by using `here::here()` on your system you'll get `"/home/student/transcriptomics_applications/practical_2/`, whilst Linda would get `"/home/linda/transcriptomics_applications/practical_2/`, or the complete path to wherever she has her `practical_2.Rproj` file.
+
+If we then provide a further directory to `here::here()`, we can look down into sub-directories with ease.
+For example, `here::here("data")` would provide the complete path to the `data` directory for practical 2 in a machine-agnostic fashion, as long as you are working with an R project called `practical_2`.
+This is one of the reasons the R projects are helpful, by doing virtually nothing but existing.
+
+The full path to `de.tsv` can be specified as `here::here("data", "de.tsv")` or `here::here("data/de.tsv")`.
+The first of this is the most powerful as it will insert the directory separator as `/` for Linux/macOS, or `\` for Windows.
+However, R installations on Windows are now able to correctly interpret file paths which use the Linux/macOS directory separator.
+*This hasn't always been the case.*
+
+If you chose the second option, you have also noticed RStudio helps you complete the file path.
+If your working directory whilst you're entering your code is the project root, this can work very well.
+If your working directory whilst your entering your code is **NOT** the project root, hopefully now you'll have the skills to figure it out.
+
+### Importing `de.tsv`
+
+We can specify our path to `de.tsv` using either of these methods.
+Our import command should now look like this
+
+    ```{r de}`r ''`
+    de <- read_tsv(here::here("data/de.tsv"))
+    ``` `r ''`
+
+Alternatively, you could write
+
+    ```{r de}`r ''`
+    de <- here::here("data/de.tsv") %>% 
+        read_tsv()
+    ``` `r ''`
+
+As we now know, these are equivalent expressions and you may find one or the other easier to read back in the future.
+Using `read_tsv()` for this dataset is dead easy, because we didn't want to confuse you any further just yet.
+
+```{r, echo=FALSE}
+de <- here::here("practicals/data/de.tsv") %>% read_tsv()
+```
 
 
+If we look at our `de` object, you'll notice that we `r nrow(de)` gene sets with the gene set name in the first column.
+The list of DE genes associated with each gene set is in the second column, separated by a semicolon (`;`).
+Clearly we have far more gene sets here than in our `Enrichment` object, so how do we put the right genes in the right place?
+
+### Using the `*_join()` Family of Commands
+
+#### `left_join()`
+
+The most common strategy is to have one object (e.g. `Enrichment`) to which we'd like to add further information.
+Here we'd like to add the names of the DE genes from `de` to the `Enrichment` object, but we have data structures that clearly don't have matching dimensions.
+This is a classic use-case for the function `left_join()`, which treats the first of two objects as the *scaffold* and places the contents of the second of two objects into the first, joining on any common columns.
+Our common column here is `gs_name` and `left_join()` will automatically detect this as it's first step.
+
+```{r}
+Enrichment %>%
+  left_join(de)
+```
+
+Notice that `left_join()` has figured out where everything goes in a few milliseconds.
+However, there are some missing values.
+If we check the `nDE` column there are multiple gene sets where no genes were formally considered as DE, so these will be missing from the `de` objects.
+
+Just so you believe us, try looking for the gene set `"GO_COPI_VESICLE_COAT"` which should be the second row of `Enrichment`.
+
+```{r}
+filter(Enrichment, gs_name == "GO_COPI_VESICLE_COAT")
+filter(de, gs_name == "GO_COPI_VESICLE_COAT")
+```
+
+#### `right_join()`
+
+Where data points are missing from the second object (i.e. `de`), `left_join()` will add `NA` (for *not available*) in the additional columns being added to the first object.
+The reverse of this would be `right_join()` where the second object is treated as the scaffold.
+
+```{r}
+Enrichment %>% 
+  right_join(de)
+```
+
+At this point, the results are identical to `de %>% left_join(Enrichment)`, however in the real world we may use a join part of the way through a series of commands piped together using the magrittr (`%>%`), so having both available is very useful.
+
+#### `full_join()`
+
+Two final functions in the `*_join()` family which we'll look at are `full_join()` and `inner_join()`.
+`full_join()` will join both objects together, but where data is missing in one, `NA` values are placed in the corresponding column.
+
+```{r}
+Enrichment %>%
+  full_join(de) 
+```
+
+
+In general, the structure of the first object will be used as a scaffold, with the additional rows added at the end.
+
+```{r}
+Enrichment %>%
+  full_join(de) %>%
+  tail()
+```
+
+
+#### `inner_join()`
+
+By contrast the function `inner_join()` will only return rows which are complete.
+Any rows which would contain a missing value are simply dropped.
+
+```{r}
+Enrichment %>%
+  inner_join(de)
+```
+
+
+#### Task
+
+The transcription factor *stat5* may be playing a key role in any inflammation for this experiment.
+Find all significant gene sets containing this gene.
+
+```{r, echo=FALSE}
+Enrichment %>%
+  inner_join(de) %>%
+  filter(
+    str_detect(DE, "stat5"),
+    FDR < 0.05
+    )
+```
+
+Alternatively, we think the surface markers *cd40* and *cd59* might be of interest.
+Do they belong to any significant gene sets?
+
+(Try and perform this by searching for both of these in the same `filter()`.)
+
+```{r, echo = FALSE}
+Enrichment %>%
+  inner_join(de) %>%
+  filter(
+    str_detect(DE, "cd(40|59)")
+    )
+```
+
+
+### `bind_rows()`
+
+Two additional commands are `bind_cols()` and `bind_rows()`.
+Usage of the first is strongly discouraged as the data points in one column are not checked for matching values in any subsequent columns.
+There is usually a better way of doing things if you're tempted to use this.
+
+In contrast, `bind_rows()` is incredibly useful as this checks for common column names.
+A *foolish thing to do* might be to use `bind_rows()` to join `Enrichment` and `de`, however this is a useful examples for demonstrating this command in action.
+
+The common column will be `gs_name`, so the tibbles will be stacked on top of each other using this column.
+No `DE` column exists in `Enrichment`, so `NA` will be used to fill this column for the values originally in `Enrichment`.
+Similarly the columns `r pander::pander(setdiff(colnames(Enrichment), colnames(de)))` don't exist in `de`, and so these columns will be given `NA` for any rows originating from `de`.
+You'll see however, that the total size of the joined `tibble` is `r nrow(de) + nrow(Enrichment)`, which is the size you would expect by simply placing one of these after the other.
+
+```{r}
+Enrichment %>% bind_rows(de)
+```
+
+An alternative, but more useful example of this by be if we returned to some of our `group_by()` operations.
+Earlier, we found how many gene sets from the GO, KEGG and HALLMARK databases were considered as enriched.
+
+```{r}
+Enrichment %>%
+  mutate(source = str_extract(gs_name, "(GO|KEGG|HALLMARK)")) %>%
+  dplyr::filter(FDR < 0.05) %>%
+  group_by(source) %>%
+  tally()
+```
+
+Something you may find useful, is to add a summary row adding these.
+
+```{r}
+Enrichment %>%
+  mutate(source = str_extract(gs_name, "(GO|KEGG|HALLMARK)")) %>%
+  dplyr::filter(FDR < 0.05) %>%
+  group_by(source) %>%
+  tally() %>%
+  bind_rows(
+    tibble(
+      source = "**Total**",
+      n = 15
+    )
+  )
+```
+
+Here we're trying to create a new `tibble` to join onto the first one, and this should have the columns `source` and `n` so the two tibbles match.
+We've given the first column the value "Total" and highlighted it as bold for R Markdown (we'll render this in html soon).
+In the second column, we manually entered the value 15, because we'd looked at the first result & figured that 15 = 14 + 1.
+
+We can actually grab this from the data using a slightly advanced trick where we can look into the object passed by the magrittr using `.`.
+As a simple example, we can use a subsetting operation.
+The following is a sightly less elegant way to replicate `Enrichment %>% slice(1:5)`
+
+```{r}
+Enrichment %>%
+  .[1:5, ]
+```
+
+Here we've used `.` to indicate the object passed by `%>%` and we've then performed an operation on this.
+If we apply this logic to our actual problem at hand, we can use:
+
+```{r}
+Enrichment %>%
+  mutate(source = str_extract(gs_name, "(GO|KEGG|HALLMARK)")) %>%
+  dplyr::filter(FDR < 0.05) %>%
+  group_by(source) %>%
+  tally() %>%
+  bind_rows(
+    tibble(
+      source = "**Total**",
+      n = sum(.$n)
+    )
+  )
+```
+
+This time, we've used the `$` separator to grab the `n` column from `.`, and then we've added the values using `sum()`.
+This is about as mind-blowing as we'll get this week, so hopefully this hasn't caused too many explosions in your brain.
+It's a very useful trick though.
+
+# Making Pretty Output Using `pander`
+
+So far, every piece of output we've generated has just used a standard `tibble` output, which should render in your output as standard R output, with `##` at the start of each line.
+If we're compiling to html, there is a very handy package called `pander` which will take a `data.frame` or `tibble` and produce a markdown table.
+At the top of your R Markdown, please add the line
+
+```{r}
+library(pander)
+```
+
+This will load this when you compile, so execute the chunk to ensure it's active in your interactive session too.
+We can now take the output of our previous chunk and pipe this into the function `pander()`.
+
+```{r}
+Enrichment %>%
+  mutate(source = str_extract(gs_name, "(GO|KEGG|HALLMARK)")) %>%
+  dplyr::filter(FDR < 0.05) %>%
+  group_by(source) %>%
+  tally() %>%
+  bind_rows(
+    tibble(
+      source = "**Total**",
+      n = sum(.$n)
+    )
+  ) %>%
+  pander()
+```
+
+Notice that now we have a table in pure markdown which will recognised as we compile to an html as a table.
+Try compiling to see how this renders.
+
+We can simply modify this output to add a caption, or align each column.
+Column alignments are set using the argument `justify` with `"l"` indicating left alignment and `"r"` indicating right. 
+(Predictably, centre alignment is `"c"`)
+
+```{r}
+Enrichment %>%
+  mutate(source = str_extract(gs_name, "(GO|KEGG|HALLMARK)")) %>%
+  dplyr::filter(FDR < 0.05) %>%
+  group_by(source) %>%
+  tally() %>%
+  bind_rows(
+    tibble(
+      source = "**Total**",
+      n = sum(.$n)
+    )
+  ) %>%
+  pander(
+    justify = "lr"
+  )
+```
+
+To add a caption, we provide this to `pander()` using the argument `caption`.
+
+```{r}
+Enrichment %>%
+  mutate(source = str_extract(gs_name, "(GO|KEGG|HALLMARK)")) %>%
+  dplyr::filter(FDR < 0.05) %>%
+  group_by(source) %>%
+  tally() %>%
+  bind_rows(
+    tibble(
+      source = "**Total**",
+      n = sum(.$n)
+    )
+  ) %>%
+  pander(
+    justify = "lr",
+    caption = "Summary of enriched gene sets, and which database they were drawn from."
+  )
+```
+
+There are multiple packages which can perform this kind of thing (`xtable` for $\LaTeX$, or `kableExtra` for some alternative html formatting options).
+In general, `pander` provides a reasonably powerful and straightforward way of formatting html output, so hopefully this gives you enough options to work with for now.
+However, it may be worth noting that `pander` will print the entire `tibble` you pass to it, so making sure you've used `filter()` or `slice()` to just return the rows you care about can be very important.

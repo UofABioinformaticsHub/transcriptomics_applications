@@ -1826,8 +1826,184 @@ Enrichment %&gt;% arrange(desc(nDE))</code></pre>
 </div>
 <div id="joining-data-from-multiple-sources" class="section level2">
 <h2>Joining Data From Multiple Sources</h2>
-<p>So far in this session, we’ve just explored some of the functionality of <code>dplyr</code> when working one object. Combining data from multiple sources is a very common requirement regardless of your context, and once again, <code>dplyr</code> provides some tools for helping with this.</p>
+<p>So far in this session, we’ve just explored some of the functionality of <code>dplyr</code> when working one object. Combining data from multiple sources is a very common requirement regardless of your context, and once again, <code>dplyr</code> provides some tools for helping with this. In our existing results, we have our results for each gene set, but we don’t actually know which genes are DE. We know how many, but not what they are.</p>
+<p>Let’s load in a separate file with this information. In your main <code>data</code> folder in your VM (where we place all of your files), locate the file <code>de.tsv</code> and copy this to the same folder as <code>Enrichment.csv</code>. Note that this time, we have a tab-separated file, instead of a comma-separated file. If you click on this file and hope that R Studio is going to give you options (like we was with a csv), you’re out of luck. For some reason, loading of <code>tsv</code> files via the GUI is not implemented yet, so we’re going to have to write some code ourselves. Fortunately, it’s pretty easy.</p>
+<p>Before we assign the imported data to an object, let’s get our importing code figured out. The function we’ll need here is <code>read_tsv()</code> instead of <code>read_csv()</code>, so let’s start with that.</p>
+<pre><code>```{r de}
+read_tsv()
+``` </code></pre>
+<p>The first argument required by <code>read_tsv()</code> is called <code>file</code>, so we need to tell <code>read_tsv()</code> where our file is.</p>
+<div id="file-paths" class="section level3">
+<h3>File Paths</h3>
+<p>This is as good a moment as any to introduce file paths. When we compile an R Markdown document into it’s final form (i.e. pdf, html etc.), all file paths are relative to the directory that the R Markdown document is in. We should have our R Markdown file in the project root directory, so it’ll be pretty easy today, but this is not always the case. To find where <code>R</code> is currently looking, as your <strong>working directory</strong>, enter the command <code>getwd()</code> directly into your Console. If all goes according to plan, this will print the complete path to your working directory, and this should begin with <code>/home/student/</code>, which may remember is often shortened to <code>~</code> as <strong>your home</strong> directory. (Every other user will have a home directory in <code>/home</code> too.)</p>
+<p>On Linux and macOS, the <code>/</code> symbol at the start of a file path is the <em>root of your file system.</em> Windows users more commonly think of this as <code>C:\\</code> and this represents a fundamental difference between the two types of architecture. So in this segment of the file path, the file system root is <code>/</code> with the first-level directory being <code>home</code> and the next level directory being <code>student</code>. An example directory tree might look like the following:</p>
+<pre><code>/ 
+|-- bin
+|-- etc
+|-- home
+|    | -- student
+|    | -- ubuntu
+|-- lib
+|-- opt
+|-- usr</code></pre>
+<p>Returning to our working directory, after <code>/home/student/</code>, you should see <code>transcriptomics_applications/practical_2</code> and this is the complete path to your working directory.</p>
+<p>We can look in our current directory using <code>list.files()</code>, so hopefully that will give you your markdown document(s) and the data folder. If we wanted to look up a directory, we could try <code>list.files(&quot;..&quot;)</code> and that will step back into <code>/home/student/transcriptomics_applications</code> and you should see the directories <code>practical_1</code> and <code>practical_2</code> there. We can also look into our data folder using <code>list.files(&quot;data&quot;)</code>, and that should give us the two files <code>Enrichment.csv</code> and <code>de.tsv</code>.</p>
+<p>This is how we can navigate around from our working directory, and if your R Markdown file is going to be compiled from your project root directory, you’re likely to never have any dramas. However, when we collaborate with others it can get a bit more tricky. It’s very possible, that we provide <code>&quot;data/Enrichment.csv&quot;</code> as <code>&quot;/home/student/transcriptomics_applications/practical_2/data/Enrichment.csv&quot;</code>, and if you then sent that to an tutor who is going to mark your assignment, that folder probably won’t exist on their machine. If your tutor is <code>linda</code>, her folder may be <code>&quot;/home/linda/transcriptomics_applications/practical_2/data/Enrichment.csv&quot;</code>, or it may be completely different.</p>
+<p>There is a package called <code>here</code> on your VMs which helps us get around this. Within the package <code>here</code> is a function of the same name (<code>here()</code>) which looks for the <code>.Rproj</code> file, and considers that directory as the project root. This enables portability, as by using <code>here::here()</code> on your system you’ll get <code>&quot;/home/student/transcriptomics_applications/practical_2/</code>, whilst Linda would get <code>&quot;/home/linda/transcriptomics_applications/practical_2/</code>, or the complete path to wherever she has her <code>practical_2.Rproj</code> file.</p>
+<p>If we then provide a further directory to <code>here::here()</code>, we can look down into sub-directories with ease. For example, <code>here::here(&quot;data&quot;)</code> would provide the complete path to the <code>data</code> directory for practical 2 in a machine-agnostic fashion, as long as you are working with an R project called <code>practical_2</code>. This is one of the reasons the R projects are helpful, by doing virtually nothing but existing.</p>
+<p>The full path to <code>de.tsv</code> can be specified as <code>here::here(&quot;data&quot;, &quot;de.tsv&quot;)</code> or <code>here::here(&quot;data/de.tsv&quot;)</code>. The first of this is the most powerful as it will insert the directory separator as <code>/</code> for Linux/macOS, or <code>\</code> for Windows. However, R installations on Windows are now able to correctly interpret file paths which use the Linux/macOS directory separator. <em>This hasn’t always been the case.</em></p>
+<p>If you chose the second option, you have also noticed RStudio helps you complete the file path. If your working directory whilst you’re entering your code is the project root, this can work very well. If your working directory whilst your entering your code is <strong>NOT</strong> the project root, hopefully now you’ll have the skills to figure it out.</p>
 </div>
+<div id="importing-de.tsv" class="section level3">
+<h3>Importing <code>de.tsv</code></h3>
+<p>We can specify our path to <code>de.tsv</code> using either of these methods. Our import command should now look like this</p>
+<pre><code>```{r de}
+de &lt;- read_tsv(here::here(&quot;data/de.tsv&quot;))
+``` </code></pre>
+<p>Alternatively, you could write</p>
+<pre><code>```{r de}
+de &lt;- here::here(&quot;data/de.tsv&quot;) %&gt;% 
+    read_tsv()
+``` </code></pre>
+<p>As we now know, these are equivalent expressions and you may find one or the other easier to read back in the future. Using <code>read_tsv()</code> for this dataset is dead easy, because we didn’t want to confuse you any further just yet.</p>
+<p>If we look at our <code>de</code> object, you’ll notice that we 4007 gene sets with the gene set name in the first column. The list of DE genes associated with each gene set is in the second column, separated by a semicolon (<code>;</code>). Clearly we have far more gene sets here than in our <code>Enrichment</code> object, so how do we put the right genes in the right place?</p>
+</div>
+<div id="using-the-_join-family-of-commands" class="section level3">
+<h3>Using the <code>*_join()</code> Family of Commands</h3>
+<div id="left_join" class="section level4">
+<h4><code>left_join()</code></h4>
+<p>The most common strategy is to have one object (e.g. <code>Enrichment</code>) to which we’d like to add further information. Here we’d like to add the names of the DE genes from <code>de</code> to the <code>Enrichment</code> object, but we have data structures that clearly don’t have matching dimensions. This is a classic use-case for the function <code>left_join()</code>, which treats the first of two objects as the <em>scaffold</em> and places the contents of the second of two objects into the first, joining on any common columns. Our common column here is <code>gs_name</code> and <code>left_join()</code> will automatically detect this as it’s first step.</p>
+<pre class="r"><code>Enrichment %&gt;%
+  left_join(de)</code></pre>
+<p>Notice that <code>left_join()</code> has figured out where everything goes in a few milliseconds. However, there are some missing values. If we check the <code>nDE</code> column there are multiple gene sets where no genes were formally considered as DE, so these will be missing from the <code>de</code> objects.</p>
+<p>Just so you believe us, try looking for the gene set <code>&quot;GO_COPI_VESICLE_COAT&quot;</code> which should be the second row of <code>Enrichment</code>.</p>
+<pre class="r"><code>filter(Enrichment, gs_name == &quot;GO_COPI_VESICLE_COAT&quot;)
+filter(de, gs_name == &quot;GO_COPI_VESICLE_COAT&quot;)</code></pre>
+</div>
+<div id="right_join" class="section level4">
+<h4><code>right_join()</code></h4>
+<p>Where data points are missing from the second object (i.e. <code>de</code>), <code>left_join()</code> will add <code>NA</code> (for <em>not available</em>) in the additional columns being added to the first object. The reverse of this would be <code>right_join()</code> where the second object is treated as the scaffold.</p>
+<pre class="r"><code>Enrichment %&gt;% 
+  right_join(de)</code></pre>
+<p>At this point, the results are identical to <code>de %&gt;% left_join(Enrichment)</code>, however in the real world we may use a join part of the way through a series of commands piped together using the magrittr (<code>%&gt;%</code>), so having both available is very useful.</p>
+</div>
+<div id="full_join" class="section level4">
+<h4><code>full_join()</code></h4>
+<p>Two final functions in the <code>*_join()</code> family which we’ll look at are <code>full_join()</code> and <code>inner_join()</code>. <code>full_join()</code> will join both objects together, but where data is missing in one, <code>NA</code> values are placed in the corresponding column.</p>
+<pre class="r"><code>Enrichment %&gt;%
+  full_join(de) </code></pre>
+<p>In general, the structure of the first object will be used as a scaffold, with the additional rows added at the end.</p>
+<pre class="r"><code>Enrichment %&gt;%
+  full_join(de) %&gt;%
+  tail()</code></pre>
+</div>
+<div id="inner_join" class="section level4">
+<h4><code>inner_join()</code></h4>
+<p>By contrast the function <code>inner_join()</code> will only return rows which are complete. Any rows which would contain a missing value are simply dropped.</p>
+<pre class="r"><code>Enrichment %&gt;%
+  inner_join(de)</code></pre>
+</div>
+<div id="task-1" class="section level4">
+<h4>Task</h4>
+<p>The transcription factor <em>stat5</em> may be playing a key role in any inflammation for this experiment. Find all significant gene sets containing this gene.</p>
+<p>Alternatively, we think the surface markers <em>cd40</em> and <em>cd59</em> might be of interest. Do they belong to any significant gene sets?</p>
+<p>(Try and perform this by searching for both of these in the same <code>filter()</code>.)</p>
+</div>
+</div>
+<div id="bind_rows" class="section level3">
+<h3><code>bind_rows()</code></h3>
+<p>Two additional commands are <code>bind_cols()</code> and <code>bind_rows()</code>. Usage of the first is strongly discouraged as the data points in one column are not checked for matching values in any subsequent columns. There is usually a better way of doing things if you’re tempted to use this.</p>
+<p>In contrast, <code>bind_rows()</code> is incredibly useful as this checks for common column names. A <em>foolish thing to do</em> might be to use <code>bind_rows()</code> to join <code>Enrichment</code> and <code>de</code>, however this is a useful examples for demonstrating this command in action.</p>
+<p>The common column will be <code>gs_name</code>, so the tibbles will be stacked on top of each other using this column. No <code>DE</code> column exists in <code>Enrichment</code>, so <code>NA</code> will be used to fill this column for the values originally in <code>Enrichment</code>. Similarly the columns <em>gs_size</em>, <em>nDE</em>, <em>wilkinson_p</em>, <em>FDR</em>, <em>fry</em>, <em>camera</em>, <em>gsea</em> and <em>goseq</em> don’t exist in <code>de</code>, and so these columns will be given <code>NA</code> for any rows originating from <code>de</code>. You’ll see however, that the total size of the joined <code>tibble</code> is 4507, which is the size you would expect by simply placing one of these after the other.</p>
+<pre class="r"><code>Enrichment %&gt;% bind_rows(de)</code></pre>
+<p>An alternative, but more useful example of this by be if we returned to some of our <code>group_by()</code> operations. Earlier, we found how many gene sets from the GO, KEGG and HALLMARK databases were considered as enriched.</p>
+<pre class="r"><code>Enrichment %&gt;%
+  mutate(source = str_extract(gs_name, &quot;(GO|KEGG|HALLMARK)&quot;)) %&gt;%
+  dplyr::filter(FDR &lt; 0.05) %&gt;%
+  group_by(source) %&gt;%
+  tally()</code></pre>
+<p>Something you may find useful, is to add a summary row adding these.</p>
+<pre class="r"><code>Enrichment %&gt;%
+  mutate(source = str_extract(gs_name, &quot;(GO|KEGG|HALLMARK)&quot;)) %&gt;%
+  dplyr::filter(FDR &lt; 0.05) %&gt;%
+  group_by(source) %&gt;%
+  tally() %&gt;%
+  bind_rows(
+    tibble(
+      source = &quot;**Total**&quot;,
+      n = 15
+    )
+  )</code></pre>
+<p>Here we’re trying to create a new <code>tibble</code> to join onto the first one, and this should have the columns <code>source</code> and <code>n</code> so the two tibbles match. We’ve given the first column the value “Total” and highlighted it as bold for R Markdown (we’ll render this in html soon). In the second column, we manually entered the value 15, because we’d looked at the first result &amp; figured that 15 = 14 + 1.</p>
+<p>We can actually grab this from the data using a slightly advanced trick where we can look into the object passed by the magrittr using <code>.</code>. As a simple example, we can use a subsetting operation. The following is a sightly less elegant way to replicate <code>Enrichment %&gt;% slice(1:5)</code></p>
+<pre class="r"><code>Enrichment %&gt;%
+  .[1:5, ]</code></pre>
+<p>Here we’ve used <code>.</code> to indicate the object passed by <code>%&gt;%</code> and we’ve then performed an operation on this. If we apply this logic to our actual problem at hand, we can use:</p>
+<pre class="r"><code>Enrichment %&gt;%
+  mutate(source = str_extract(gs_name, &quot;(GO|KEGG|HALLMARK)&quot;)) %&gt;%
+  dplyr::filter(FDR &lt; 0.05) %&gt;%
+  group_by(source) %&gt;%
+  tally() %&gt;%
+  bind_rows(
+    tibble(
+      source = &quot;**Total**&quot;,
+      n = sum(.$n)
+    )
+  )</code></pre>
+<p>This time, we’ve used the <code>$</code> separator to grab the <code>n</code> column from <code>.</code>, and then we’ve added the values using <code>sum()</code>. This is about as mind-blowing as we’ll get this week, so hopefully this hasn’t caused too many explosions in your brain. It’s a very useful trick though.</p>
+</div>
+</div>
+</div>
+<div id="making-pretty-output-using-pander" class="section level1">
+<h1>Making Pretty Output Using <code>pander</code></h1>
+<p>So far, every piece of output we’ve generated has just used a standard <code>tibble</code> output, which should render in your output as standard R output, with <code>##</code> at the start of each line. If we’re compiling to html, there is a very handy package called <code>pander</code> which will take a <code>data.frame</code> or <code>tibble</code> and produce a markdown table. At the top of your R Markdown, please add the line</p>
+<pre class="r"><code>library(pander)</code></pre>
+<p>This will load this when you compile, so execute the chunk to ensure it’s active in your interactive session too. We can now take the output of our previous chunk and pipe this into the function <code>pander()</code>.</p>
+<pre class="r"><code>Enrichment %&gt;%
+  mutate(source = str_extract(gs_name, &quot;(GO|KEGG|HALLMARK)&quot;)) %&gt;%
+  dplyr::filter(FDR &lt; 0.05) %&gt;%
+  group_by(source) %&gt;%
+  tally() %&gt;%
+  bind_rows(
+    tibble(
+      source = &quot;**Total**&quot;,
+      n = sum(.$n)
+    )
+  ) %&gt;%
+  pander()</code></pre>
+<p>Notice that now we have a table in pure markdown which will recognised as we compile to an html as a table. Try compiling to see how this renders.</p>
+<p>We can simply modify this output to add a caption, or align each column. Column alignments are set using the argument <code>justify</code> with <code>&quot;l&quot;</code> indicating left alignment and <code>&quot;r&quot;</code> indicating right. (Predictably, centre alignment is <code>&quot;c&quot;</code>)</p>
+<pre class="r"><code>Enrichment %&gt;%
+  mutate(source = str_extract(gs_name, &quot;(GO|KEGG|HALLMARK)&quot;)) %&gt;%
+  dplyr::filter(FDR &lt; 0.05) %&gt;%
+  group_by(source) %&gt;%
+  tally() %&gt;%
+  bind_rows(
+    tibble(
+      source = &quot;**Total**&quot;,
+      n = sum(.$n)
+    )
+  ) %&gt;%
+  pander(
+    justify = &quot;lr&quot;
+  )</code></pre>
+<p>To add a caption, we provide this to <code>pander()</code> using the argument <code>caption</code>.</p>
+<pre class="r"><code>Enrichment %&gt;%
+  mutate(source = str_extract(gs_name, &quot;(GO|KEGG|HALLMARK)&quot;)) %&gt;%
+  dplyr::filter(FDR &lt; 0.05) %&gt;%
+  group_by(source) %&gt;%
+  tally() %&gt;%
+  bind_rows(
+    tibble(
+      source = &quot;**Total**&quot;,
+      n = sum(.$n)
+    )
+  ) %&gt;%
+  pander(
+    justify = &quot;lr&quot;,
+    caption = &quot;Summary of enriched gene sets, and which database they were drawn from.&quot;
+  )</code></pre>
+<p>There are multiple packages which can perform this kind of thing (<code>xtable</code> for <span class="math inline">\(\LaTeX\)</span>, or <code>kableExtra</code> for some alternative html formatting options). In general, <code>pander</code> provides a reasonably powerful and straightforward way of formatting html output, so hopefully this gives you enough options to work with for now. However, it may be worth noting that <code>pander</code> will print the entire <code>tibble</code> you pass to it, so making sure you’ve used <code>filter()</code> or <code>slice()</code> to just return the rows you care about can be very important.</p>
 </div>
 
 
