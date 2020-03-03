@@ -479,9 +479,11 @@ Enrichment %>%
 ```
 
 Notice how this is much easier to read than our previous attempt!
-As we join several functions together, it's also very good practice to **place each function on it's own line*.
+As we join several functions together, it's also very good practice to **place each function on it's own line**.
 This greatly assists readability, particularly as you will often end up with chains of 10-20 operations.
-R Studio will indent each line for you automatically so you can see where the chain starts and finishes.
+R Studio will also indent each line for you automatically so you can easily see where the chain starts and finishes.
+(As you learn, please note the indentation styles we use in these practicals.
+They are explicitly included to teach you good practice and make your code readable.)
 
 In our earlier attempt, we also just grabbed the columns we wanted to, and now we could add an extra call to `select()` to manage that.
 
@@ -946,7 +948,7 @@ Enrichment %>%
 
 There are multiple packages which can perform this kind of thing (`xtable` for $\LaTeX$, or `kableExtra` for some alternative html formatting options).
 In general, `pander` provides a reasonably powerful and straightforward way of formatting html output, so hopefully this gives you enough options to work with for now.
-However, it may be worth noting that `pander` will print the entire `tibble` you pass to it, so making sure you've used `filter()` or `slice()` to just return the rows you care about can be very important.
+However, it may be worth noting that `pander` will print the entire `tibble` you pass to it, so make sure you've used `filter()` or `slice()` to just return the rows you care about can be very important.
 
 ## A final word on `dplyr`
 
@@ -977,4 +979,35 @@ R has a way of holding all of these in memory separately for each package after 
 We quietly introduced this concept earlier when we used `here::here()`, and you've also seen this before in your setup chunk using `knitr::opts_chunk$set()`, so hopefully this isn't too weird.
 We're mentioning it here, as many packages used in transcriptomic analysis will clash with `dplyr` exactly as we've described.
 
+<button onclick="myFunction('myDIV')">How Did This Problem Even Arise?</button>
+<div id="myDIV" style="display: none;">
 
+The problem itself arises with R's **very** clumsy approach to method dispatch, where an object type is recognised and the appropriate version of a function is called.
+We'll learn more about S3/S4 dispatch later as that is **well beyond the scope of any introductory sessions**.
+However, if you understand object-oriented programming, `S4` object classes are R's attempts at OOP.
+`data frame` and `tibble` objects are the standard `S3` objects, which are all based on the original coding paradigm from `S` in the 1970s.
+
+The methods of dispatch are apparently very difficult to resolve, so when you see these errors, it really means there is an `S4` method which has over-written an `S3` method in your current R environment's hierarchy of methods.
+Honestly, you'd think someone would've figured a viable solution by now, but it appears to be too great a challenge to the entire R community.
+And contrary to popular belief (LOL), there are some very intelligent programmers in the R community.
+
+This is one of the features that draws much disdain from the critics of R, *and justifiably so*.
+In contrast, languages such as `golang` (or `go`, a Google-designed language at the heart of much of their software) enforce the use of namespaces for every function call.
+There is considerable merit to this as it simply sidesteps this entire problem.
+However, `golang` is not in the situation of trying to ensure that code from 20-25 years ago is still theoretically executable, which R (foolishly) attempts.
+`go` simply didn't exist that long ago so doesn't have to juggle design decisions from different programming paradigms and eras.
+We have learned a great deal about intelligent software design since the 1970s, and R is saddled with many problems from it's ancient origins that have often been 'solved' poorly.
+If you know how to work around them when they crop up, R can still be an incredibly powerful tool.
+
+If you're interested in the historical popularity of programming languages, have a [look at this video](https://youtu.be/Og847HVwRSI) that goes back to even before Steve and Dan were born.
+R is currently one of the 10 most heavily-used languages, so it clearly offers a way forward for many data scientists.
+Hands up who's even heard of `APL`, `Ada` or `Lisp`?
+
+(Actually, they're still in use...)
+
+And for the real nerds, check out the [`APL` keyboard](https://en.wikipedia.org/wiki/Digital_encoding_of_APL_symbols#Keyboard_layout) in heavy use in the 1970s, and which contributed significantly to the design of `S` (which became `R`).
+Have a look in the second row of keys, at the second to last key.
+This is where the `R` assignment operator came from, and it was originally one key!
+*How cool is history*?
+
+</div>
