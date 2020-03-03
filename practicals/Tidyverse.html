@@ -1589,9 +1589,9 @@ function myFunction(i) {
 <p>We’re also going to delete this third line from our <code>import</code> chunk. This preview is designed for interactive inspection of the data, and when we’re compiling our R Markdown document we can’t interact with the data like this.</p>
 <p>An alternative way of viewing the data object is to simply enter the name of the object in the <strong>Console</strong>. Do this, and notice all of the information that has been presented to you here.</p>
 <ol style="list-style-type: decimal">
-<li><code># A tibble: 500 x 10</code>: This is a type of object known as a <code>tibble</code>, which is based on a <code>data.frame</code>, but wrapped in lovely wrapping paper so it looks nice. Notice that this output also tells us how many rows (500) and columns (10) that we have.</li>
+<li><code># A tibble: 500 x 9</code>: This is a type of object known as a <code>tibble</code>, which is based on a <code>data.frame</code>, but wrapped in lovely wrapping paper so it looks nice. Notice that this output also tells us how many rows (500) and columns (9) that we have.</li>
 <li>After that we have all of the column names, with the data type shown in grey underneath each column name.</li>
-<li>Then we are shown a preview of the first 10 rows of data, followed by <code># … with 490 more rows</code>. This is a great feature of tibbles, as a <code>data.frame</code> would dump all 500 rows onto the screen. Each column has also been truncated in the display so you get a peek at what every column looks like, without seeing all of the data. For this dataset, so of the columns are very, very wide so this also makes out lives easier.</li>
+<li>Then we are shown a preview of the first 10 rows of data, followed by <code># … with 490 more rows</code>. This is a great feature of tibbles, as a <code>data.frame</code> would dump all 500 rows onto the screen. Each column has also been truncated in the display so you get a peek at what every column looks like, without seeing all of the data. For this dataset, some of the columns are fairly wide so this also makes our lives easier.</li>
 </ol>
 <p>These features are why many R users prefer this preview, as you can see all of that important summary information as well as having a sneak peak at the contents. Using the Excel-like <code>View()</code> command, in some people’s opinions, is actually <strong>less</strong> informative.</p>
 </div>
@@ -1623,7 +1623,7 @@ function myFunction(i) {
 </div>
 <div id="what-is-in-this-object" class="section level2">
 <h2>What is in this object</h2>
-<p>In this object, we have 10 columns (<em>gs_name</em>, <em>gs_size</em>, <em>nDE</em>, <em>wilkinson_p</em>, <em>FDR</em>, <em>fry</em>, <em>camera</em>, <em>gsea</em>, <em>goseq</em> and <em>DE</em>), each of which contains different pieces of information.</p>
+<p>In this object, we have 9 columns (<em>gs_name</em>, <em>gs_size</em>, <em>nDE</em>, <em>wilkinson_p</em>, <em>FDR</em>, <em>fry</em>, <em>camera</em>, <em>gsea</em> and <em>goseq</em>), each of which contains different pieces of information.</p>
 <ol style="list-style-type: decimal">
 <li><code>gs_name</code>: This is the name of the gene set that we have tested for being enriched in our results</li>
 <li><code>gs_size</code>: This is the number of genes in the complete gene set</li>
@@ -1631,7 +1631,6 @@ function myFunction(i) {
 <li><code>wilkinson_p</code>: Is our p-value for enrichment after combining multiple tests</li>
 <li><code>FDR</code> is an adjusted p-value which tells us what proportion of our results are likely to be false if we choose the corresponding value from <code>wilkinson_p</code> as our threshold of significance</li>
 <li><code>fry, camera, gsea</code> and <code>goseq</code> are four different analyses we performed on our data. We then combined these p-values (using Wilkinson’s method) to obtain the value <code>wilkinson_p</code>. (For reference, <code>goseq</code> needs a list of formally declared DE genes, whilst the other analyses work on ranked lists.)</li>
-<li><code>DE</code> is the all of the gene names formally considered as DE that belong to each gene set</li>
 </ol>
 <p>We’re now going to explore a whole series of functions in the package <code>dplyr</code> which we can use to extract key results from our enrichment analysis.</p>
 </div>
@@ -1748,15 +1747,15 @@ function myFunction(i) {
 <p>If you are familiar with <code>bash</code>, you may have come across the pipe as a way of chaining multiple functions together. If you’re not familiar with <code>bash</code>, you’re still going to learn a useful new trick.</p>
 <p>R has a special tool called the <code>magrittr</code> (or sometimes called the pipe) which is the symbol <code>%&gt;%</code>. What this does is takes what is given to it on the left, and places this as the first argument of a function on the right. For example, the following two lines of code are functionally identical!</p>
 <pre class="r"><code>arrange(Enrichment, desc(nDE))
-Enrichment %&gt;% arrange(desc(DE))</code></pre>
+Enrichment %&gt;% arrange(desc(nDE))</code></pre>
 <p>In the second line, we have taken the output of Enrichment (which is a <code>tibble</code>) and passed it to the function <code>arrange()</code> as the first argument. As you may have just figured out, <strong>we could also take the output of <code>arrange()</code></strong> (which is also a <code>tibble</code>) ** and pass it to another function, such as <code>slice()</code>.</p>
 <pre class="r"><code>Enrichment %&gt;% 
-  arrange(desc(DE)) %&gt;%
+  arrange(desc(nDE)) %&gt;%
   slice(1:5)</code></pre>
 <p>Notice how this is much easier to read than our previous attempt! As we join several functions together, it’s also very good practice to **place each function on it’s own line*. This greatly assists readability, particularly as you will often end up with chains of 10-20 operations. R Studio will indent each line for you automatically so you can see where the chain starts and finishes.</p>
 <p>In our earlier attempt, we also just grabbed the columns we wanted to, and now we could add an extra call to <code>select()</code> to manage that.</p>
 <pre class="r"><code>Enrichment %&gt;% 
-  arrange(desc(DE)) %&gt;%
+  arrange(desc(nDE)) %&gt;%
   slice(1:5) %&gt;%
   select(starts_with(&quot;gs_&quot;), nDE, wilkinson_p, FDR)</code></pre>
 <div id="task" class="section level4">
@@ -1772,8 +1771,9 @@ Enrichment %&gt;% arrange(desc(DE))</code></pre>
 </ol>
 </div>
 </div>
-<div id="grouping-values" class="section level3">
-<h3>Grouping values</h3>
+</div>
+<div id="grouping-values" class="section level2">
+<h2>Grouping values</h2>
 <p>Given that we have data from three sources, we might wish to obtain some summaries for each of these. <code>dplyr</code> provides the function <code>group_by()</code> to allow this. First let’s obtain the information describing the source of the gene set, as we did above, but then we should have a look to make sure we have everything right.</p>
 <pre class="r"><code>Enrichment %&gt;%
   mutate(source = str_extract(gs_name, &quot;(GO|KEGG|HALLMARK)&quot;)) %&gt;%
@@ -1788,7 +1788,12 @@ Enrichment %&gt;% arrange(desc(DE))</code></pre>
   mutate(source = str_extract(gs_name, &quot;(GO|KEGG|HALLMARK)&quot;)) %&gt;%
   group_by(source) %&gt;%
   tally()</code></pre>
-</div>
+<p>Perhaps we may even wish to find how many gene sets were considered significant using come predefined cutoff. Let’s try using an FDR-adjusted p-value &lt; 0.05 to define significant.</p>
+<pre class="r"><code>Enrichment %&gt;%
+  mutate(source = str_extract(gs_name, &quot;(GO|KEGG|HALLMARK)&quot;)) %&gt;%
+  dplyr::filter(FDR &lt; 0.05) %&gt;%
+  group_by(source) %&gt;%
+  tally()</code></pre>
 <div id="using-summarise" class="section level3">
 <h3>Using <code>summarise()</code></h3>
 <p>Maybe we might like to find the lowest FDR-adjusted p-value for each group.</p>
@@ -1814,8 +1819,14 @@ Enrichment %&gt;% arrange(desc(DE))</code></pre>
   group_by(source) %&gt;%
   summarise_at(
     vars(gs_size), 
-    c(smallest = min, mean = mean, largest = max))</code></pre>
+    c(smallest = min, mean = mean, largest = max)
+  )</code></pre>
+<p>Although we won’t explore them today, there are a series of functions that end in <code>_at</code> such as <code>rename_at()</code>, <code>mutate_at()</code> and <code>filter_at()</code> which can be very powerful, but as the syntax can get clunky, we’ll save these until later. There are also a whole series of of related functions ending in <code>_all</code> and <code>_if</code> which can perform complex operations across all of your data, or just key columns. Once again, we do need to know a little more than we do know to really exploit these.</p>
 </div>
+</div>
+<div id="joining-data-from-multiple-sources" class="section level2">
+<h2>Joining Data From Multiple Sources</h2>
+<p>So far in this session, we’ve just explored some of the functionality of <code>dplyr</code> when working one object. Combining data from multiple sources is a very common requirement regardless of your context, and once again, <code>dplyr</code> provides some tools for helping with this.</p>
 </div>
 </div>
 

@@ -168,11 +168,11 @@ This preview is designed for interactive inspection of the data, and when we're 
 An alternative way of viewing the data object is to simply enter the name of the object in the **Console**.
 Do this, and notice all of the information that has been presented to you here.
 
-1. `# A tibble: 500 x 10`: This is a type of object known as a `tibble`, which is based on a `data.frame`, but wrapped in lovely wrapping paper so it looks nice. Notice that this output also tells us how many rows (500) and columns (10) that we have.
+1. `# A tibble: 500 x 9`: This is a type of object known as a `tibble`, which is based on a `data.frame`, but wrapped in lovely wrapping paper so it looks nice. Notice that this output also tells us how many rows (500) and columns (9) that we have.
 2. After that we have all of the column names, with the data type shown in grey underneath each column name.
 3. Then we are shown a preview of the first 10 rows of data, followed by `# … with 490 more rows`.
 This is a great feature of tibbles, as a `data.frame` would dump all 500 rows onto the screen. Each column has also been truncated in the display so you get a peek at what every column looks like, without seeing all of the data.
-For this dataset, so of the columns are very, very wide so this also makes out lives easier.
+For this dataset, some of the columns are fairly wide so this also makes our lives easier.
 
 These features are why many R users prefer this preview, as you can see all of that important summary information as well as having a sneak peak at the contents.
 Using the Excel-like `View()` command, in some people's opinions, is actually **less** informative.
@@ -232,7 +232,6 @@ In this object, we have `r ncol(Enrichment)` columns (`r pander::pander(colnames
 4. `wilkinson_p`: Is our p-value for enrichment after combining multiple tests
 5. `FDR` is an adjusted p-value which tells us what proportion of our results are likely to be false if we choose the corresponding value from `wilkinson_p` as our threshold of significance
 6. `fry, camera, gsea` and `goseq` are four different analyses we performed on our data. We then combined these p-values (using Wilkinson's method) to obtain the value `wilkinson_p`. (For reference, `goseq` needs a list of formally declared DE genes, whilst the other analyses work on ranked lists.)
-7. `DE` is the all of the gene names formally considered as DE that belong to each gene set
 
 We're now going to explore a whole series of functions in the package `dplyr` which we can use to extract key results from our enrichment analysis.
 
@@ -422,7 +421,6 @@ rename(Enrichment, n_de = nDE)
 ```
 
 
-
 ## Combining Functions
 
 In the above sections, we have have seen many of the core functions in `dplyr`, however, this is really just scratching the surface of what we can do.
@@ -466,7 +464,7 @@ For example, the following two lines of code are functionally identical!
 
 ```{r}
 arrange(Enrichment, desc(nDE))
-Enrichment %>% arrange(desc(DE))
+Enrichment %>% arrange(desc(nDE))
 ```
 
 In the second line, we have taken the output of Enrichment (which is a `tibble`) and passed it to the function `arrange()` as the first argument.
@@ -474,7 +472,7 @@ As you may have just figured out, **we could also take the output of `arrange()`
 
 ```{r}
 Enrichment %>% 
-  arrange(desc(DE)) %>%
+  arrange(desc(nDE)) %>%
   slice(1:5)
 ```
 
@@ -487,7 +485,7 @@ In our earlier attempt, we also just grabbed the columns we wanted to, and now w
 
 ```{r}
 Enrichment %>% 
-  arrange(desc(DE)) %>%
+  arrange(desc(nDE)) %>%
   slice(1:5) %>%
   select(starts_with("gs_"), nDE, wilkinson_p, FDR)
 ```
@@ -503,8 +501,7 @@ Enrichment %>%
 4. Provide the final output as the gene set name, the gene set size, the proportion of DE genes and the FDR
 5. Rename the columns `nDE` and `FDR` to be `n_de` and `fdr` respectively.
 
-
-### Grouping values
+## Grouping values
 
 Given that we have data from three sources, we might wish to obtain some summaries for each of these.
 `dplyr` provides the function `group_by()` to allow this.
@@ -535,6 +532,18 @@ Enrichment %>%
   group_by(source) %>%
   tally()
 ```
+
+Perhaps we may even wish to find how many gene sets were considered significant using come predefined cutoff.
+Let's try using an FDR-adjusted p-value < 0.05 to define significant.
+
+```{r}
+Enrichment %>%
+  mutate(source = str_extract(gs_name, "(GO|KEGG|HALLMARK)")) %>%
+  dplyr::filter(FDR < 0.05) %>%
+  group_by(source) %>%
+  tally()
+```
+
 
 ### Using `summarise()`
 
@@ -573,9 +582,17 @@ Enrichment %>%
   group_by(source) %>%
   summarise_at(
     vars(gs_size), 
-    c(smallest = min, mean = mean, largest = max))
+    c(smallest = min, mean = mean, largest = max)
+  )
 ```
 
+Although we won't explore them today, there are a series of functions that end in `_at` such as `rename_at()`, `mutate_at()` and `filter_at()` which can be very powerful, but as the syntax can get clunky, we'll save these until later.
+There are also a whole series of of related functions ending in `_all` and `_if` which can perform complex operations across all of your data, or just key columns.
+Once again, we do need to know a little more than we do know to really exploit these.
 
+## Joining Data From Multiple Sources
+
+So far in this session, we've just explored some of the functionality of `dplyr` when working one object.
+Combining data from multiple sources is a very common requirement regardless of your context, and once again, `dplyr` provides some tools for helping with this.
 
 
