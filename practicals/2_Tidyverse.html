@@ -1574,19 +1574,19 @@ function myFunction(i) {
 </ol>
 <p><strong>Using your mouse, select and copy these three lines</strong> then click the <kbd>Import</kbd> button and some crazy magic will happen. You’ll probably find yourself looking at an Excel-like preview, so before we move on, go to <code>DataImport.Rmd</code> and create a new chunk. Name the chunk <code>import</code> then paste these lines of code into the chunk.</p>
 <p>Let’s see what we’ve actually done</p>
-<div id="libraryreadr" class="section level3">
-<h3><code>library(readr)</code></h3>
+<div id="libraryreadr" class="section level4">
+<h4><code>library(readr)</code></h4>
 <p>The first line is telling <code>R</code> to load the package <code>readr</code>. This package contains the function <code>read_csv()</code> which is what parses the plain-text file into the R Environment. We’ve already loaded this package in our first chunk as part of the <code>tidyverse</code>, so we can actually delete this line from our <code>import</code> chunk. (Please do so.)</p>
 </div>
-<div id="enrichment---read_csvdataenrichment.csv" class="section level3">
-<h3><code>Enrichment &lt;- read_csv(&quot;data/Enrichment.csv&quot;)</code></h3>
+<div id="enrichment---read_csvdataenrichment.csv" class="section level4">
+<h4><code>Enrichment &lt;- read_csv(&quot;data/Enrichment.csv&quot;)</code></h4>
 <p>The second line is where the importing actually happens. Hopefully this looks like normal R code to you know, where we have an object name (<code>Enrichment</code>) followed by the assignment operator (<code>&lt;-</code>). The data that we’re placing into this object is the output from the function <code>read_csv()</code>, and notice that here we have simply given the file path to this function, and it’s done the rest.</p>
 <p>The GUI has automatically decided on the object name <code>Enrichment</code> as this was taken from the file name by dropping the <code>.csv</code> suffix.</p>
 </div>
-<div id="viewenrichment" class="section level3">
-<h3><code>View(Enrichment)</code></h3>
-<p>The third line has opened up our Excel-like preview. For those who really like this format, this can provide a familiar way to inspect your data. However, for those who are R purists, this actually looks horrifying! Once you’ve had a quick browse, close the preview.</p>
-<p>We’re also going to delete this third line from our <code>import</code> chunk. This preview is designed for interactive inspection of the data, and when we’re compiling our R Markdown document we can’t interact with the data like this.</p>
+<div id="viewenrichment" class="section level4">
+<h4><code>View(Enrichment)</code></h4>
+<p>The third line has opened up our Excel-like preview. For those who really like this format, this can provide a familiar way to inspect your data. However, for those who are R purists, this actually looks horrifying! Once you’ve had a quick browse, close the preview and wash your eyes out after seeing such dirty things.</p>
+<p>We’re also going to delete this third line from our <code>import</code> chunk. This preview is designed for interactive inspection of the data, and when we’re compiling our R Markdown document we <em>simply can’t interact with the data like this.</em></p>
 <p>An alternative way of viewing the data object is to simply enter the name of the object in the <strong>Console</strong>. Do this, and notice all of the information that has been presented to you here.</p>
 <ol style="list-style-type: decimal">
 <li><code># A tibble: 500 x 9</code>: This is a type of object known as a <code>tibble</code>, which is based on a <code>data.frame</code>, but wrapped in lovely wrapping paper so it looks nice. Notice that this output also tells us how many rows (500) and columns (9) that we have.</li>
@@ -1594,19 +1594,26 @@ function myFunction(i) {
 <li>Then we are shown a preview of the first 10 rows of data, followed by <code># … with 490 more rows</code>. This is a great feature of tibbles, as a <code>data.frame</code> would dump all 500 rows onto the screen. Each column has also been truncated in the display so you get a peek at what every column looks like, without seeing all of the data. For this dataset, some of the columns are fairly wide so this also makes our lives easier.</li>
 </ol>
 <p>These features are why many R users prefer this preview, as you can see all of that important summary information as well as having a sneak peak at the contents. Using the Excel-like <code>View()</code> command, in some people’s opinions, is actually <strong>less</strong> informative.</p>
+<button onclick="myFunction('glimpse')">
+Another way to preview data
+</button>
+<div id="glimpse" style="display: none;">
+<p>An additional way to preview your data is to use the function <code>glimpse()</code>, which offers similar information to just typing the name of the <code>tibble</code>, but may yield a few more insights into the first few values. As you can see, this view doesn’t restrict the width of columns like the basic <code>print()</code> function does for a <code>tibble</code>.</p>
+<pre class="r"><code>glimpse(Enrichment)</code></pre>
+</div>
 </div>
 <div id="changing-the-defaults" class="section level3">
 <h3>Changing the Defaults</h3>
 <p>All of the settings for <code>read_csv()</code> were guessed by the R Studio GUI and for the most part, these will be correct. Can we change these using the GUI?</p>
-<p>Re-open the GUI by clicking on the file, but once again don’t click <kbd>Import</kbd>.</p>
+<p>Re-open the GUI by clicking on the file, but once again <strong>do not click</strong> <kbd>Import</kbd>.</p>
 <ol style="list-style-type: decimal">
 <li>Try changing the name to <code>enrichment</code> at the bottom left, then click anywhere else in the GUI. You’ll notice that the Code Preview has updated to reflect this.</li>
 <li>Uncheck the <code>First Row as Names</code> check-box. <strong>Clearly, this would be a bad idea for this dataset</strong>. However, notice that the column names have now changed, the types of data in each column have changes, and the code has changed to include the argument <code>col_names = FALSE</code>. Re-check the check-box to make sure we don’t accidentally do anything silly.</li>
 <li>Uncheck the <code>Open Data Viewer</code> check-box. <strong>What changed?</strong></li>
-<li>Change the <code>Delimiter:</code> drop-down menu to anything other than a comma. Although this would also be a bad idea for this dataset, notice that the code changes along with the preview. This may be useful if you have tab-separated data, or if you have any other delimiter.</li>
+<li>Change the <code>Delimiter:</code> drop-down menu to anything other than a comma. <em>Although this would also be a bad idea for this dataset</em>, notice that the code changes along with the preview. This may be useful if you have tab-separated data, or if you have any other delimiter.</li>
 <li>Click the <kbd>Cancel</kbd> button to make sure we import anything silly into our R Environment.</li>
 </ol>
-<p>In our last change above, the import function changed to <code>read_delim()</code> instead of <code>read_csv()</code>. <code>read_delim()</code> is actually the main function whilst <code>read_csv()</code> is actually a wrapper with all arguments preset to values that work for a <code>csv</code>. Additional functions like <code>read_tsv()</code> do the same thing for tab-separated files.</p>
+<p>In our last change above, the import function changed to <code>read_delim()</code> instead of <code>read_csv()</code>. <code>read_delim()</code> is actually the main function whilst <code>read_csv()</code> is actually a wrapper with all arguments preset to values that work for a <code>csv</code>. Additional functions like <code>read_tsv()</code> do the same thing for tab-separated files. We’ll explore <code>read_tsv()</code> a little later in our session.</p>
 </div>
 </div>
 <div id="using-code-to-import-data" class="section level2">
@@ -1644,7 +1651,7 @@ function myFunction(i) {
 <ol style="list-style-type: decimal">
 <li>All values in a column <strong>must be of the same type</strong> (i.e. <code>character</code>, <code>numeric</code>, <code>integer</code>, <code>logical</code>), however, each column <em>can be of a different type to the other columns</em></li>
 <li><strong>All columns must be the same length</strong></li>
-<li><strong>Column names must be specified.</strong> If not, R will add generic column names</li>
+<li><strong>Column names must be specified.</strong> If not, R will add generic column names like <code>X1</code>, <code>X2</code> etc</li>
 <li><em>Row names are optional.</em></li>
 </ol>
 <p>This final point is one of the things that sets a <code>tibble</code> apart from a <code>data.frame</code>. Whilst a <code>data.frame</code> <strong>can</strong> have row names, a <code>tibble</code> <strong>cannot</strong>, and will drop them by silently setting them to the row number. This is a design feature enforced by Hadley Wickham, and can initially seem a little strange (and is much argued about amongst the R community). However it can provide a little more flexibility when dealing with non-trivial data structures. Other features which make <code>tibble</code> objects a slightly more convenient version of a <code>data.frame</code> are:</p>
@@ -1657,13 +1664,13 @@ function myFunction(i) {
 <p>Beyond this, they are essentially identical structures and a <code>tibble</code> can just be thought of as a <code>data.frame</code> with pretty wrapping paper. Sometimes, you will hear <code>tibble</code> objects referred to as <code>data.frame</code> objects as this is their basic class, so hopefully this won’t cause any confusion.</p>
 <div id="subsetting-a-tibbledata.frame" class="section level3">
 <h3>Subsetting a <code>tibble/data.frame</code></h3>
-<p>Regardless of which type of <code>data.frame</code> or <code>tibble</code> that you have, we can subset the object using square brackets after the object name, with rows and columns specified using <code>object[row,column]</code>. We could just print the first row of <code>Enrichment</code> using <code>Enrichment[1,]</code> Or we could print the first 3 columns using <code>Enrichment[,1:3]</code>. Combining the two to print the the first 5 rows and first 5 columns would be <code>Enrichment[1:5, 1:5]</code></p>
-<p>We can also call columns or rows by name, although given that tibbles have no rownames, rownames cannot be used for tibble objects. Note that when doing this, we use the c() function to combine the names we want as a <code>character</code> vector.</p>
+<p>Regardless of which type of <code>data.frame</code> or <code>tibble</code> that you have, we can subset the object using square brackets after the object name, with rows and columns specified using <code>object[row,column]</code>. We could just print the entire first row of <code>Enrichment</code> using <code>Enrichment[1,]</code> Or we could print the first 3 columns using <code>Enrichment[,1:3]</code>. Combining the two to print the the first row and first 3 columns would be <code>Enrichment[1, 1:3]</code></p>
+<p>We can also call columns or rows by name, although given that tibbles have no rownames, rownames cannot be used to print specific rows from <code>tibble</code> objects. Note that when doing this for column names below, we use the c() function to combine the names we want as a <code>character</code> vector, enclosing the column name in qoutation marks.</p>
 <pre class="r"><code>Enrichment[1:5, c(&quot;gs_name&quot;, &quot;nDE&quot;)]</code></pre>
 <p>In general, we encourage using column names, rather than the numeric positions. This can be more robust if you accidentally change the column order, and is also far easier to understand when other people (e.g. you in the future when you’ve forgotten what you did in the past) read your code.</p>
-<p>Another common way to extract information from a single column is to use the <code>$</code> symbol, and the square brackets. In this case, our column is treated as a vector and we only need to specify the position in the brackets, without a comma. In the following, we’ll just grab the first two gene sets.</p>
+<p>Another common way to extract information from a single column is to use the <code>$</code> symbol, and the square brackets. In this case, our column is treated as a vector and we only need to specify the position in the brackets, without a comma. In the following, we’ll just grab the first two entries in the <code>gs_name</code> column.</p>
 <pre class="r"><code>Enrichment$gs_name[1:2]</code></pre>
-<p>Although we haven’t formally mentioned it, this is also how you can subset a vector, like the <code>hi</code> vector we used last time.</p>
+<p>Although we haven’t formally mentioned it, using square brackets like the chunk above is also how you can subset a vector, like the <code>hi</code> vector we used last time. We will more formally discuss vectors in a later practical.</p>
 </div>
 </div>
 <div id="introducing-dplyr" class="section level2">
@@ -1677,18 +1684,18 @@ function myFunction(i) {
 <p>An example of this may be just to extract the <code>gs_name</code> and <code>gs_size</code> columns.</p>
 <pre class="r"><code>select(Enrichment, starts_with(&quot;gs_&quot;))</code></pre>
 <p><strong>What would’ve happened if we’d just used <code>starts_with(&quot;gs&quot;)</code>?</strong></p>
-<p>Although <code>everything()</code> may initially seem pointless, we can also this within select <code>select()</code> to rearrange our columns.</p>
+<p>Although <code>everything()</code> may initially seem pointless, we can also this within <code>select()</code> to simply rearrange our columns.</p>
 <pre class="r"><code>select(Enrichment, contains(&quot;DE&quot;), everything())</code></pre>
 <p>If we wish to remove columns we just place the <code>-</code> symbol before the column names, or helper function.</p>
 <pre class="r"><code>select(Enrichment, -contains(&quot;DE&quot;))</code></pre>
-<p><strong>Notice that through the above calls to <code>select()</code>, we never overwrote our original object, because we never used the <code>&lt;-</code> symbol to assign anything to a new object.</strong> <code>select()</code> simply takes a <code>tibble/data.frame</code> as input and returns the same.</p>
+<p><strong>Notice that through the above calls to <code>select()</code>, we never overwrote our original object, because we never used the <code>&lt;-</code> symbol to assign anything to a new object.</strong> <code>select()</code> simply takes a <code>tibble/data.frame</code> as input and returns the same. Although we will create new objects later today, this concept of returning an object of the same type as the input is an important one.</p>
 </div>
 <div id="using-arrange-to-sort-columns" class="section level3">
 <h3>Using <code>arrange()</code> to sort columns</h3>
-<p>A common strategy in Excel is to sort your data by the values in a particular column. The function that <code>dplyr</code> introduces is <code>arrange()</code> and it behaves very similarly to <code>select()</code> in that we pass it the object, then call the columns we wish to sort by. Similarly, the object will not be overwritten, but if a <code>tibble</code> is provided as input, a <code>tibble</code> will be returned as output.</p>
+<p>A common strategy in Excel is to sort your data by the values in a particular column. The function that <code>dplyr</code> introduces is <code>arrange()</code> and it behaves very similarly to <code>select()</code> in that we pass it the <code>tibbel</code> object, call the columns we wish to sort by and a <code>tibble</code> is returned. Similarly, the object will not be overwritten, but if a <code>tibble</code> is provided as input, a <code>tibble</code> will be returned as output.</p>
 <p>By default, we have given you the object sorted by the <code>wilkinson_p</code> column. If we wish to sort by gene set size, we would sort on the <code>gs_size</code> column.</p>
 <pre class="r"><code>arrange(Enrichment, gs_size)</code></pre>
-<p>This will sort in increasing order by default, but to switch this to decreasing order, we can wrap the column name in the <code>desc()</code> function.</p>
+<p>This will sort in increasing order by default, but to switch this to decreasing (or <em>descending</em>) order, we can wrap the column name in the <code>desc()</code> function.</p>
 <pre class="r"><code>arrange(Enrichment, desc(gs_size))</code></pre>
 <p>Now the largest gene sets are the first ones shown.</p>
 </div>
@@ -1877,8 +1884,8 @@ de &lt;- here::here(&quot;data/de.tsv&quot;) %&gt;%
   left_join(de)</code></pre>
 <p>Notice that <code>left_join()</code> has figured out where everything goes in a few milliseconds. However, there are some missing values. If we check the <code>nDE</code> column there are multiple gene sets where no genes were formally considered as DE, so these will be missing from the <code>de</code> objects.</p>
 <p>Just so you believe us, try looking for the gene set <code>&quot;GO_COPI_VESICLE_COAT&quot;</code> which should be the second row of <code>Enrichment</code>.</p>
-<pre class="r"><code>filter(Enrichment, gs_name == &quot;GO_COPI_VESICLE_COAT&quot;)
-filter(de, gs_name == &quot;GO_COPI_VESICLE_COAT&quot;)</code></pre>
+<pre class="r"><code>filter(Enrichment, str_detect(gs_name, &quot;GO_COPI_VESICLE_COAT&quot;))
+filter(de, str_detect(gs_name, &quot;GO_COPI_VESICLE_COAT&quot;))</code></pre>
 </div>
 <div id="right_join" class="section level4">
 <h4><code>right_join()</code></h4>

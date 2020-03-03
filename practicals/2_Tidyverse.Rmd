@@ -141,13 +141,13 @@ Name the chunk `import` then paste these lines of code into the chunk.
 
 Let's see what we've actually done
 
-### `library(readr)`
+#### `library(readr)`
 
 The first line is telling `R` to load the package `readr`.
 This package contains the function `read_csv()` which is what parses the plain-text file into the R Environment.
 We've already loaded this package in our first chunk as part of the `tidyverse`, so we can actually delete this line from our `import` chunk. (Please do so.)
 
-### `Enrichment <- read_csv("data/Enrichment.csv")`
+#### `Enrichment <- read_csv("data/Enrichment.csv")`
 
 The second line is where the importing actually happens.
 Hopefully this looks like normal R code to you know, where we have an object name (`Enrichment`) followed by the assignment operator (`<-`).
@@ -155,15 +155,15 @@ The data that we're placing into this object is the output from the function `re
 
 The GUI has automatically decided on the object name `Enrichment` as this was taken from the file name by dropping the `.csv` suffix.
 
-### `View(Enrichment)`
+#### `View(Enrichment)`
 
 The third line has opened up our Excel-like preview.
 For those who really like this format, this can provide a familiar way to inspect your data.
 However, for those who are R purists, this actually looks horrifying!
-Once you've had a quick browse, close the preview.
+Once you've had a quick browse, close the preview and wash your eyes out after seeing such dirty things.
 
 We're also going to delete this third line from our `import` chunk.
-This preview is designed for interactive inspection of the data, and when we're compiling our R Markdown document we can't interact with the data like this.
+This preview is designed for interactive inspection of the data, and when we're compiling our R Markdown document we *simply can't interact with the data like this.*
 
 An alternative way of viewing the data object is to simply enter the name of the object in the **Console**.
 Do this, and notice all of the information that has been presented to you here.
@@ -177,12 +177,24 @@ For this dataset, some of the columns are fairly wide so this also makes our liv
 These features are why many R users prefer this preview, as you can see all of that important summary information as well as having a sneak peak at the contents.
 Using the Excel-like `View()` command, in some people's opinions, is actually **less** informative.
 
+<button onclick="myFunction('glimpse')">Another way to preview data</button>
+<div id="glimpse" style="display: none;">
+
+An additional way to preview your data is to use the function `glimpse()`, which offers similar information to just typing the name of the `tibble`, but may yield a few more insights into the first few values.
+As you can see, this view doesn't restrict the width of columns like the basic `print()` function does for a `tibble`.
+
+```{r, eval=FALSE}
+glimpse(Enrichment)
+```
+
+</div>
+
 ### Changing the Defaults
 
 All of the settings for `read_csv()` were guessed by the R Studio GUI and for the most part, these will be correct.
 Can we change these using the GUI?
 
-Re-open the GUI by clicking on the file, but once again don't click <kbd>Import</kbd>.
+Re-open the GUI by clicking on the file, but once again **do not click** <kbd>Import</kbd>.
 
 1. Try changing the name to `enrichment` at the bottom left, then click anywhere else in the GUI. You'll notice that the Code Preview has updated to reflect this.
 2. Uncheck the `First Row as Names` check-box.
@@ -190,12 +202,13 @@ Re-open the GUI by clicking on the file, but once again don't click <kbd>Import<
 However, notice that the column names have now changed, the types of data in each column have changes, and the code has changed to include the argument `col_names = FALSE`.
 Re-check the check-box to make sure we don't accidentally do anything silly.
 3. Uncheck the `Open Data Viewer` check-box. **What changed?**
-4. Change the `Delimiter:` drop-down menu to anything other than a comma. Although this would also be a bad idea for this dataset, notice that the code changes along with the preview. This may be useful if you have tab-separated data, or if you have any other delimiter. 
+4. Change the `Delimiter:` drop-down menu to anything other than a comma. *Although this would also be a bad idea for this dataset*, notice that the code changes along with the preview. This may be useful if you have tab-separated data, or if you have any other delimiter. 
 5. Click the <kbd>Cancel</kbd> button to make sure we import anything silly into our R Environment.
 
 In our last change above, the import function changed to `read_delim()` instead of `read_csv()`.
 `read_delim()` is actually the main function whilst `read_csv()` is actually a wrapper with all arguments preset to values that work for a `csv`.
 Additional functions like `read_tsv()` do the same thing for tab-separated files.
+We'll explore `read_tsv()` a little later in our session.
 
 ## Using Code to Import Data
 
@@ -246,7 +259,7 @@ In short, these are very much like spreadsheets with clear rows and columns, but
 
 1. All values in a column **must be of the same type** (i.e. `character`, `numeric`, `integer`, `logical`), however, each column *can be of a different type to the other columns*
 2. **All columns must be the same length**
-3. **Column names must be specified.** If not, R will add generic column names
+3. **Column names must be specified.** If not, R will add generic column names like `X1`, `X2` etc
 4. *Row names are optional.*
 
 This final point is one of the things that sets a `tibble` apart from a `data.frame`. 
@@ -266,12 +279,12 @@ Sometimes, you will hear `tibble` objects referred to as `data.frame` objects as
 ### Subsetting a `tibble/data.frame`
 
 Regardless of which type of `data.frame` or `tibble` that you have, we can subset the object using square brackets after the object name, with rows and columns specified using `object[row,column]`.
-We could just print the first row of `Enrichment` using `Enrichment[1,]`
+We could just print the entire first row of `Enrichment` using `Enrichment[1,]`
 Or we could print the first 3 columns using `Enrichment[,1:3]`.
-Combining the two to print the the first 5 rows and first 5 columns would be `Enrichment[1:5, 1:5]`
+Combining the two to print the the first row and first 3 columns would be `Enrichment[1, 1:3]`
 
-We can also call columns or rows by name, although given that tibbles have no rownames, rownames cannot be used for tibble objects.
-Note that when doing this, we use the c() function to combine the names we want as a `character` vector.
+We can also call columns or rows by name, although given that tibbles have no rownames, rownames cannot be used to print specific rows from `tibble` objects.
+Note that when doing this for column names below, we use the c() function to combine the names we want as a `character` vector, enclosing the column name in qoutation marks.
 
 ```{r, results='hide'}
 Enrichment[1:5, c("gs_name", "nDE")]
@@ -281,13 +294,14 @@ In general, we encourage using column names, rather than the numeric positions.
 This can be more robust if you accidentally change the column order, and is also far easier to understand when other people (e.g. you in the future when you’ve forgotten what you did in the past) read your code.
 
 Another common way to extract information from a single column is to use the `$` symbol, and the square brackets. In this case, our column is treated as a vector and we only need to specify the position in the brackets, without a comma. 
-In the following, we’ll just grab the first two gene sets.
+In the following, we’ll just grab the first two entries in the `gs_name` column.
 
 ```{r}
 Enrichment$gs_name[1:2]
 ```
 
-Although we haven't formally mentioned it, this is also how you can subset a vector, like the `hi` vector we used last time.
+Although we haven't formally mentioned it, using square brackets like the chunk above is also how you can subset a vector, like the `hi` vector we used last time.
+We will more formally discuss vectors in a later practical.
 
 ## Introducing `dplyr`
 
@@ -318,7 +332,7 @@ select(Enrichment, starts_with("gs_"))
 
 **What would've happened if we'd just used `starts_with("gs")`?**
 
-Although `everything()` may initially seem pointless, we can also this within select `select()` to rearrange our columns.
+Although `everything()` may initially seem pointless, we can also this within `select()` to simply rearrange our columns.
 
 ```{r}
 select(Enrichment, contains("DE"), everything())
@@ -332,11 +346,12 @@ select(Enrichment, -contains("DE"))
 
 **Notice that through the above calls to `select()`, we never overwrote our original object, because we never used the `<-` symbol to assign anything to a new object.** 
 `select()` simply takes a `tibble/data.frame` as input and returns the same.
+Although we will create new objects later today, this concept of returning an object of the same type as the input is an important one.
 
 ### Using `arrange()` to sort columns
 
 A common strategy in Excel is to sort your data by the values in a particular column. 
-The function that `dplyr` introduces is `arrange()` and it behaves very similarly to `select()` in that we pass it the object, then call the columns we wish to sort by.
+The function that `dplyr` introduces is `arrange()` and it behaves very similarly to `select()` in that we pass it the `tibbel` object, call the columns we wish to sort by and a `tibble` is returned.
 Similarly, the object will not be overwritten, but if a `tibble` is provided as input, a `tibble` will be returned as output.
 
 By default, we have given you the object sorted by the `wilkinson_p` column. 
@@ -346,7 +361,7 @@ If we wish to sort by gene set size, we would sort on the `gs_size` column.
 arrange(Enrichment, gs_size)
 ```
 
-This will sort in increasing order by default, but to switch this to decreasing order, we can wrap the column name in the `desc()` function.
+This will sort in increasing order by default, but to switch this to decreasing (or *descending*) order, we can wrap the column name in the `desc()` function.
 
 ```{r}
 arrange(Enrichment, desc(gs_size))
@@ -720,8 +735,8 @@ If we check the `nDE` column there are multiple gene sets where no genes were fo
 Just so you believe us, try looking for the gene set `"GO_COPI_VESICLE_COAT"` which should be the second row of `Enrichment`.
 
 ```{r}
-filter(Enrichment, gs_name == "GO_COPI_VESICLE_COAT")
-filter(de, gs_name == "GO_COPI_VESICLE_COAT")
+filter(Enrichment, str_detect(gs_name, "GO_COPI_VESICLE_COAT"))
+filter(de, str_detect(gs_name, "GO_COPI_VESICLE_COAT"))
 ```
 
 #### `right_join()`
