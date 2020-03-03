@@ -1,7 +1,7 @@
 ---
 title: "BIOINF3005/7160: Transcriptomics Applications"
 subtitle: "Working With Text in R"
-date: "4^th^ March, 2020"
+date: "6^th^ March, 2020"
 output: 
   html_document:
     toc: yes
@@ -60,7 +60,7 @@ For this section, we're going to manipulate text and the package we'll look at i
 
 ### Start a new R Markdown Document
 
-Making sure you're in the appropriate R Project, create a new R Markdown file called `TextManipulation.Rmd`.
+Making sure you're in the appropriate R Project (`~/transcriptomics/practical_1`), create a new R Markdown file called `TextManipulation.Rmd`.
 Throughout this section, please write copious notes to yourself about what we are doing.
 We will note give you exact guidance on these notes, but remember that you are creating a reference document for yourself so you can find your way around later.
 Take the time to write everything in a way that you find clear.

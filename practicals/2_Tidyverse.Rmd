@@ -39,11 +39,13 @@ Firstly, we'll import the file into R, and then we'll learn how to manipulate th
 ## Setting up our workspace
 
 Before we go any further, we need to keep developing our good programming practice.
-If you don't already have an R Project for `practical_2`, create a new project with this name as a subdirectory of your `transcriptomics_applications` directory.
+If you don't already have an R Project for `practical_2`, create a new project with this name as a subdirectory of your `~/transcriptomics` directory.
 **Call a tutor over if you can't remember how to do this.**
 
 Once you have an R Project ready to go for `practical_2`, create a new directory called `data` within this directory.
-Copy the file `Enrichment.csv` to this directory.
+We already have your data for today on your VM and this will be located in `~/data/transcriptomics`.
+The two files we'll work on today are called `Enrichment.csv` and `de.csv`.
+Copy the file `Enrichment.csv` to `practical_2/data` so today's data will be nicely contained with an R project.
 
 Once you have `Enrichment.csv` in your `data` directory, begin a new R Markdown document and save this as `DataImport.Rmd` in your project root directory.
 As per usual, delete everything after the `setup` chunk.
@@ -658,20 +660,20 @@ An example directory tree might look like the following:
 |-- usr
 ```
 
-Returning to our working directory, after `/home/student/`, you should see `transcriptomics_applications/practical_2` and this is the complete path to your working directory.
+Returning to our working directory, after `/home/student/`, you should see `transcriptomics/practical_2` and this is the complete path to your working directory.
 
 We can look in our current directory using `list.files()`, so hopefully that will give you your markdown document(s) and the data folder.
-If we wanted to look up a directory, we could try `list.files("..")` and that will step back into `/home/student/transcriptomics_applications` and you should see the directories `practical_1` and `practical_2` there.
+If we wanted to look up a directory, we could try `list.files("..")` and that will step back into `/home/student/transcriptomics` and you should see the directories `practical_1` and `practical_2` there.
 We can also look into our data folder using `list.files("data")`, and that should give us the two files `Enrichment.csv` and `de.tsv`.
 
 This is how we can navigate around from our working directory, and if your R Markdown file is going to be compiled from your project root directory, you're likely to never have any dramas.
 However, when we collaborate with others it can get a bit more tricky.
-It's very possible, that we provide `"data/Enrichment.csv"` as `"/home/student/transcriptomics_applications/practical_2/data/Enrichment.csv"`, and if you then sent that to an tutor who is going to mark your assignment, that folder probably won't exist on their machine.
-If your tutor is `linda`, her folder may be `"/home/linda/transcriptomics_applications/practical_2/data/Enrichment.csv"`, or it may be completely different.
+It's very possible, that we provide `"data/Enrichment.csv"` as `"/home/student/transcriptomics/practical_2/data/Enrichment.csv"`, and if you then sent that to an tutor who is going to mark your assignment, that folder probably won't exist on their machine.
+If your tutor is `linda`, her folder may be `"/home/linda/transcriptomics/practical_2/data/Enrichment.csv"`, or it may be completely different.
 
 There is a package called `here` on your VMs which helps us get around this.
 Within the package `here` is a function of the same name (`here()`) which looks for the `.Rproj` file, and considers that directory as the project root.
-This enables portability, as by using `here::here()` on your system you'll get `"/home/student/transcriptomics_applications/practical_2/`, whilst Linda would get `"/home/linda/transcriptomics_applications/practical_2/`, or the complete path to wherever she has her `practical_2.Rproj` file.
+This enables portability, as by using `here::here()` on your system you'll get `"/home/student/transcriptomics/practical_2/`, whilst Linda would get `"/home/linda/transcriptomics/practical_2/`, or the complete path to wherever she has her `practical_2.Rproj` file.
 
 If we then provide a further directory to `here::here()`, we can look down into sub-directories with ease.
 For example, `here::here("data")` would provide the complete path to the `data` directory for practical 2 in a machine-agnostic fashion, as long as you are working with an R project called `practical_2`.
