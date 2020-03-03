@@ -52,9 +52,10 @@ For example, `sd()`, `var()`, `cor()` and `rnorm()` all live in the `stats` pack
 Alternatively, `abs()`, `max()`, `log()` and other functions live in `base` are they are the fundamental functions required for performing many calculations.
 If you go to the help page for any of these, you'll see the package name at the top left of each help page in the curly braces.
 
-There are thousands of packages available, and loading them all every time we start `R` would take hours, so for each analysis, we just need to load the packages that are relevant to each analysis.
+At last count, there are >17,00 packages available, and loading them all every time we start `R` would take hours, so for each analysis, we just need to load the packages that are relevant to each analysis.
+Most packages are hosted on the [`CRAN` package repository](https://cran.r-project.org/), although we've installed most of the packages you'll need.
 For this section, we're going to manipulate text and the package we'll look at is `stringr`.
-
+As we mentioned, we've already placed this on your VM.
 
 ## Working with Text 
 
@@ -62,12 +63,13 @@ For this section, we're going to manipulate text and the package we'll look at i
 
 Making sure you're in the appropriate R Project (`~/transcriptomics/practical_1`), create a new R Markdown file called `TextManipulation.Rmd`.
 Throughout this section, please write copious notes to yourself about what we are doing.
-We will note give you exact guidance on these notes, but remember that you are creating a reference document for yourself so you can find your way around later.
+We will not give you exact guidance on these notes, but remember that you are creating a reference document for yourself so you can find your way around later.
 Take the time to write everything in a way that you find clear.
 **It's far better to go slowly and understand everything, than to finish but to have no idea what you've done.**
 
 Once you've got your new R Markdown document, make sure you're happy with the YAML header, then delete everything after the first chunk (`setup`).
 **Compile just to check you haven't broken anything.**
+When creating an R Markdown document, it can be good practice to compile regularly just to check that you haven't done anything silly.
 
 A good tip is to load all packages you need for a workflow at the beginning of the R Markdown document. 
 This helps identify any potential conflicts between packages early, as sometimes two packages don't play well together, and may even have identically named functions.
@@ -80,11 +82,12 @@ library(stringr)
 ```
 
 When executed, this will load the package `stringr`, which has a raft of functions for manipulating text.
-Often we'll need to know these tricks as our sample names may have multiple genotypes or treatment embedded in them, and knowing how to get these pieces of information out can be very helpful.
+Often we'll need to know these tricks as our sample names may have multiple genotypes or treatments embedded in them, and knowing how to get these pieces of information out can be very helpful.
 Other times, we need to know how to correct typos longs the lines of sex being recorded as `male`, `female`, `M`, `m`, `f` or `F` all in the same document.
 This type of thing happens more than you may realise, especially when dealing with large datasets that have a lot of manually entered values.
+Alternatively we may need to remove a file suffix to make our plots look nicer.
 
-The first thing we'll need to do is create a character vector that we'll work with for this section.
+The first thing we'll need to do to get underway, is create a character vector that we'll work with for this session.
 Create new chunk called `hi` and create the vector `hi` as follows.
 
 ```{r hi}
@@ -159,7 +162,7 @@ This is mostly not the function you'll be after, but you may choose it by accide
 
 In `stringr`, syntax is based on regular expressions, so we can also **set a wild-card character by using the `.` symbol.**
 For those familiar with regular expressions, this will be old news, but for those who are not familiar with `regexp` syntax this may be a new way of working with text.
-Some of you may also be familiar with using the `*` symbol as a plain-text wild-card, but importantly the `*` symbol doesn't work in that manner here and actually has a completely different meaning.
+Some of you may also be familiar with using the `*` symbol as a plain-text wild-card, but importantly the `*` symbol doesn't work in that manner here and actually *has a completely different meaning*.
 
 ```{r}
 str_remove_all(hi, "Mu")
