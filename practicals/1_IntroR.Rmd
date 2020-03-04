@@ -672,5 +672,5 @@ This will be the topic for next week's practical sessions.
 
 # The Next Section
 
-Once you've reached this point, **go to the next section** for this weeks practicals: [Working With Text](Using_stringr.html)
+Once you've reached this point, **go to the next section** for this weeks practicals: [Working With Text](1_Using_stringr.html)
 
