@@ -59,4 +59,3 @@ makeSampleNames <- function(id){
     assign("librarySizes", librarySizes, envir = .GlobalEnv)
     
 }
-makeSampleNames("a1018048")
