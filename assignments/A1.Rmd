@@ -1,0 +1,142 @@
+---
+title: "Transcriptomics Applications"
+subtitle: "Assignment 1"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE, 
+    warning = FALSE,
+    message = FALSE
+)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+# Instructions
+
+## Submission Format [3 marks]
+
+This is assignment is due by 5pm, **Tuesday 24th March**.
+
+- Submissions must be made as a *zip archive* containing 3 files:
+    1. Your **source R Markdown Document** (with an Rmd suffix)
+    2. A **compiled pdf**, showing all code
+    3. The **signed cover sheet** as required by the University
+- All 3 file names **within the zip archive** must start with your student number.
+However the name of the zip archive is not important as myUni will likely modify this during submission. [See here for help creating a zip archive](#creating-a-zip-archive)
+    
+*All questions are to be answered on the same R Markdown / PDF, regardless of if they require a plain text answer, or require execution of code.*
+
+We **strongly advise** working in the folder `~/transcriptomics/assignment1` on your virtual machine.
+Using an R Project for each individual assignment is also strongly advised.
+
+## Creating a zip archive {.tabset}
+
+### On Your VM
+
+If all files required for submission *are contained on your VM*:
+
+1. Select all three files using the **Files** pane in R Studio
+2. Click export
+3. They will automatically be placed into a single zip archive. Please name this in whatever informative name you decide is suitable, but it should contain the suffix `.zip`
+
+### Windows
+
+If all files are on your on your *local Windows machine*:
+
+1. Using File Explorer, enter the folder containing all 3 files
+2. Select all files simultaneously by using <kbd>Ctrl</kbd> + Click
+3. Right click on one of the files and select `Send to > Compressed (zipped) folder`
+4. Rename as appropriate, ensuring the archive ends with the suffix `.zip`
+
+### Mac OS
+
+If all the files are on your *local macOS machine`:
+
+1. Locate the items to zip in the Mac Finder (file system)
+2. Right-click on a file, folder, or files you want to zip
+3. Select “Compress Items”
+4. Find the newly created .zip archive in the same directory and name as appropriate
+
+# Questions
+
+```{r}
+marks <- tibble(q = 0, marks = 3)
+q <- 1
+```
+
+
+### Question `r q` [8 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 8)
+    )
+```
+
+
+Choose two different RNA types and contrast them with each other.
+Aspects to consider may be method of transcription, cellular location, post-transcriptional processing, biological function or any other aspect which you determine to be important
+
+```{r}
+q <- q + 1
+```
+
+### Question `r q` [3 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 3)
+    )
+```
+
+
+In R, you will commonly encounter 3 types of 'unexpected' output.
+1) Errors, 2) Warnings and 3) Messages.
+Describe the role of each of these and how to interpret them.
+
+```{r}
+q <- q + 1
+```
+
+### Question `r q` [6 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 6)
+    )
+```
+
+
+Two possible definitions of a gene are given by the high-profile journal [Nature](https://www.nature.com/scitable/definition/gene-29/) and the US [National Institute of Health](https://ghr.nlm.nih.gov/primer/basics/gene).
+Discuss the limitations of these definitions, giving particular consideration to promoters and protein products which arise from multiple distinct locations within the genome.
+Two interesting discussion on this subject are available in [this paper](https://www.genetics.org/content/205/4/1353) and [this lecture](https://youtu.be/TiaQG0UZPAU).
+Feel free to use these resources, or find your own.
+
+```{r}
+q <- q + 1
+```
+
+### Question `r q` [ marks]
+
+<!-- Provide a unique set of filenames for each student and ask them to form a tibble extracting the key information. -->
+<!-- Also ask them to summarise the metadata, by merging with additional information -->
+
+# Total `r sum(marks$marks)` marks
+
+```{r}
+write_csv(marks, here::here("assignments", "A1.csv"))
+```
+
