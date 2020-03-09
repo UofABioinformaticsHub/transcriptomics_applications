@@ -1529,7 +1529,7 @@ div.tocify {
 <li>All 3 file names <strong>within the zip archive</strong> must start with your student number. However the name of the zip archive is not important as myUni will likely modify this during submission. <a href="#creating-a-zip-archive">See here for help creating a zip archive</a></li>
 </ul>
 <p><em>All questions are to be answered on the same R Markdown / PDF, regardless of if they require a plain text answer, or require execution of code.</em></p>
-<p>We <strong>strongly advise</strong> working in the folder <code>~/transcriptomics_applications/assignment1</code> on your virtual machine. Using an R Project for each individual assignment is also strongly advised.</p>
+<p>We <strong>strongly advise</strong> working in the folder <code>~/transcriptomics/assignment1</code> on your virtual machine. Using an R Project for each individual assignment is also strongly advised.</p>
 </div>
 <div id="creating-a-zip-archive" class="section level2 tabset">
 <h2>Creating a zip archive</h2>
@@ -1574,18 +1574,32 @@ div.tocify {
 <h3>Question 2 [3 marks]</h3>
 <p>In R, you will commonly encounter 3 types of ‘unexpected’ output. 1) Errors, 2) Warnings and 3) Messages. Describe the role of each of these and how to interpret them.</p>
 </div>
-<div id="question-3-6-marks" class="section level3">
-<h3>Question 3 [6 marks]</h3>
-<p>Two possible definitions of a gene are given by the high-profile journal <a href="https://www.nature.com/scitable/definition/gene-29/">Nature</a> and the US <a href="https://ghr.nlm.nih.gov/primer/basics/gene">National Institute of Health</a>. Discuss the limitations of these definitions, giving particular consideration to promoters and protein products which arise from multiple distinct locations within the genome. Two interesting discussion on this subject are available in <a href="https://www.genetics.org/content/205/4/1353">this paper</a> and <a href="https://youtu.be/TiaQG0UZPAU">this lecture</a>. Feel free to use these resources, or find your own.</p>
+<div id="question-3-8-marks" class="section level3">
+<h3>Question 3 [8 marks]</h3>
+<p>Two possible definitions of a gene are given by the high-profile journal <a href="https://www.nature.com/scitable/definition/gene-29/">Nature</a> and the US <a href="https://ghr.nlm.nih.gov/primer/basics/gene">National Institute of Health</a>. Discuss the limitations of these definitions, giving particular consideration to promoters and protein products which arise from multiple distinct locations within the genome. Two interesting discussion on this subject are available in <a href="https://www.genetics.org/content/205/4/1353">this paper</a> and <a href="https://youtu.be/TiaQG0UZPAU">this lecture</a>. Feel free to use these resources, or find your own. Provide references where appropriate.</p>
 </div>
-<div id="question-4-marks" class="section level3">
-<h3>Question 4 [ marks]</h3>
-<!-- Provide a unique set of filenames for each student and ask them to form a tibble extracting the key information. -->
-<!-- Also ask them to summarise the metadata, by merging with additional information -->
+<div id="question-4-13-marks" class="section level3">
+<h3>Question 4 [13 marks]</h3>
+<p>For this question, you will need a list of file names. Each student will be given a unique set so that everyone has their own unique problems to solve. <em>This is specifically to encourage collaboration between students without any risk of plagiarism.</em></p>
+<p>To obtain your own set of file names, please execute the following lines of code, <strong>using your own student number instead of the example given</strong> (`“a1234567”’).</p>
+<pre class="r"><code>source(&quot;https://uofabioinformaticshub.github.io/transcriptomics_applications/assignments/A1Funs.R&quot;)
+makeSampleNames(&quot;a1234567&quot;)</code></pre>
+<p>After you have run these lines of code, you will have two objects in your workspace called <code>sampleNames</code> and <code>librarySizes</code>. These are the two objects which we will work with for the next two questions</p>
+<ol style="list-style-type: lower-alpha">
+<li>Include the above code chunk in your submission, with an informative chunk label, and using a label that does not include any white-space. [2 marks]</li>
+<li>In a plain text paragraph or sentence, use the function <code>pander()</code> from the package <code>pander</code> to present the sample names that you have using in-line code of the style <code>`r function(objectName)`</code> [1 mark]</li>
+<li>Using the <code>sampleNames</code> provided, create a <code>tibble</code> containing the metadata for your experiment. This tibble should be named <code>metaData</code> and should minimally contain the columns 1) date, 2) sex, 3) group, 4) researcher, 5) reads, and 6) sampleID. You will have to use functions from <code>stringr</code> and <code>dplyr</code> to perform this task. [7 marks]</li>
+<li>Create a table summarising the number of samples per experimental group paying attention to the spread of sample sex within each group. Use <code>pander()</code> to present this table in your submission, including an appropriate table caption. [3 marks]</li>
+</ol>
+</div>
+<div id="question-5-6-marks" class="section level3">
+<h3>Question 5 [6 marks]</h3>
+<p>Combine your <code>metaData</code> object created in Question 4 with the object <code>librarySizes</code> and generate a barplot of the library sizes for all samples. Colour your bars by the experimental treatment group, and ensure that all axes and other labels are of a standard suitable for publication.</p>
+<p>Do you think that any of your metadata columns may have contributed to the variation in library sizes? Provide a clear explanation. (<em>Please note that your answer may different to any other student’s answer</em>)</p>
 </div>
 </div>
-<div id="total-20-marks" class="section level1">
-<h1>Total 20 marks</h1>
+<div id="total-41-marks" class="section level1">
+<h1>Total: 41 marks</h1>
 </div>
 
 

@@ -1,5 +1,6 @@
 makeSampleNames <- function(id){
-    
+    require(tibble)
+    require(magrittr)
     err <- paste(
         "Your ID doesn't appear to have been specified correctly.\n",
         "It should be of the form a1234567."
@@ -54,7 +55,7 @@ makeSampleNames <- function(id){
     # Export the library sizes
     librarySizes <- tibble(
         sampleName = sampleNames,
-        lib.size = rpois(N, 2e7)
+        lib.size = rpois(N, 2.5e7) + rnorm(N, 0, 2e6)
     )
     assign("librarySizes", librarySizes, envir = .GlobalEnv)
     

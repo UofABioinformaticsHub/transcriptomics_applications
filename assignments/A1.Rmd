@@ -110,6 +110,61 @@ Describe the role of each of these and how to interpret them.
 q <- q + 1
 ```
 
+### Question `r q` [8 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 8)
+    )
+```
+
+
+Two possible definitions of a gene are given by the high-profile journal [Nature](https://www.nature.com/scitable/definition/gene-29/) and the US [National Institute of Health](https://ghr.nlm.nih.gov/primer/basics/gene).
+Discuss the limitations of these definitions, giving particular consideration to promoters and protein products which arise from multiple distinct locations within the genome.
+Two interesting discussion on this subject are available in [this paper](https://www.genetics.org/content/205/4/1353) and [this lecture](https://youtu.be/TiaQG0UZPAU).
+Feel free to use these resources, or find your own.
+Provide references where appropriate.
+
+```{r}
+q <- q + 1
+```
+
+### Question `r q` [13 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 13)
+    )
+```
+
+
+For this question, you will need a list of file names.
+Each student will be given a unique set so that everyone has their own unique problems to solve.
+*This is specifically to encourage collaboration between students without any risk of plagiarism.*
+
+To obtain your own set of file names, please execute the following lines of code, **using your own student number instead of the example given** (`"a1234567"').
+
+```{r, echo=TRUE, eval=FALSE}
+source("https://uofabioinformaticshub.github.io/transcriptomics_applications/assignments/A1Funs.R")
+makeSampleNames("a1234567")
+```
+
+
+After you have run these lines of code, you will have two objects in your workspace called `sampleNames` and `librarySizes`.
+These are the two objects which we will work with for the next two questions
+
+a. Include the above code chunk in your submission, with an informative chunk label, and using a label that does not include any white-space. [2 marks]
+b. In a plain text paragraph or sentence, use the function `pander()` from the package `pander` to present the sample names that you have using in-line code of the style `` `r knitr::inline_expr("function(objectName)")` `` [1 mark]
+c. Using the `sampleNames` provided, create a `tibble` containing the metadata for your experiment. This tibble should be named `metaData` and should minimally contain the columns 1) date, 2) sex, 3) group, 4) researcher, 5) reads, and 6) sampleID. You will have to use functions from `stringr` and `dplyr` to perform this task. [7 marks]
+d. Create a table summarising the number of samples per experimental group paying attention to the spread of sample sex within each group. Use `pander()` to present this table in your submission, including an appropriate table caption. [3 marks]
+
+
+```{r}
+q <- q + 1
+```
+
 ### Question `r q` [6 marks]
 
 ```{r}
@@ -119,22 +174,13 @@ marks <- marks %>%
     )
 ```
 
+Combine your `metaData` object created in Question `r q - 1` with the object `librarySizes` and generate a barplot of the library sizes for all samples.
+Colour your bars by the experimental treatment group, and ensure that all axes and other labels are of a standard suitable for publication.
 
-Two possible definitions of a gene are given by the high-profile journal [Nature](https://www.nature.com/scitable/definition/gene-29/) and the US [National Institute of Health](https://ghr.nlm.nih.gov/primer/basics/gene).
-Discuss the limitations of these definitions, giving particular consideration to promoters and protein products which arise from multiple distinct locations within the genome.
-Two interesting discussion on this subject are available in [this paper](https://www.genetics.org/content/205/4/1353) and [this lecture](https://youtu.be/TiaQG0UZPAU).
-Feel free to use these resources, or find your own.
+Do you think that any of your metadata columns may have contributed to the variation in library sizes? Provide a clear explanation. (*Please note that your answer may different to any other student's answer*)
 
-```{r}
-q <- q + 1
-```
 
-### Question `r q` [ marks]
-
-<!-- Provide a unique set of filenames for each student and ask them to form a tibble extracting the key information. -->
-<!-- Also ask them to summarise the metadata, by merging with additional information -->
-
-# Total `r sum(marks$marks)` marks
+# Total: `r sum(marks$marks)` marks
 
 ```{r}
 write_csv(marks, here::here("assignments", "A1.csv"))
