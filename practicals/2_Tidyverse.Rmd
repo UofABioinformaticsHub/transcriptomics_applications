@@ -179,17 +179,14 @@ For this dataset, some of the columns are fairly wide so this also makes our liv
 These features are why many R users prefer this preview, as you can see all of that important summary information as well as having a sneak peak at the contents.
 Using the Excel-like `View()` command, in some people's opinions, is actually **less** informative.
 
-<button onclick="myFunction('glimpse')">Another way to preview data</button>
-<div id="glimpse" style="display: none;">
+#### Another way to preview data
 
-An additional way to preview your data is to use the function `glimpse()`, which offers similar information to just typing the name of the `tibble`, but may yield a few more insights into the first few values.
+One more additional way to preview your data is to use the function `glimpse()`, which offers similar information to just typing the name of the `tibble`, but may yield a few more insights into the first few values.
 As you can see, this view doesn't restrict the width of columns like the basic `print()` function does for a `tibble`.
 
 ```{r, eval=FALSE}
 glimpse(Enrichment)
 ```
-
-</div>
 
 ### Changing the Defaults
 
@@ -1010,10 +1007,10 @@ And contrary to popular belief (LOL), there are some very intelligent programmer
 
 This is one of the features that draws much disdain from the critics of R, *and justifiably so*.
 In contrast, languages such as `golang` (or `go`, a Google-designed language at the heart of much of their software) enforce the use of namespaces for every function call.
-There is considerable merit to this as it simply sidesteps this entire problem.
+There is considerable merit to this as it simply sidesteps this entire problem, and adds greater clarity to code.
 However, `golang` is not in the situation of trying to ensure that code from 20-25 years ago is still theoretically executable, which R (foolishly) attempts.
 `go` simply didn't exist that long ago so doesn't have to juggle design decisions from different programming paradigms and eras.
-We have learned a great deal about intelligent software design since the 1970s, and R is saddled with many problems from it's ancient origins that have often been 'solved' poorly.
+We have learned a great deal about intelligent software design since the 1970s, and R is saddled with many problems from it's "ancient" origins that have often been "solved" poorly.
 If you know how to work around them when they crop up, R can still be an incredibly powerful tool.
 
 If you're interested in the historical popularity of programming languages, have a [look at this video](https://youtu.be/Og847HVwRSI) that goes back to even before Steve and Dan were born.

@@ -1,6 +1,6 @@
 ---
 title: "BIOINF3005/7160: Transcriptomics Applications"
-subtitle: "Reshaping Data with `tidyr"
+subtitle: "Reshaping & Plotting Data with the `tidyverse`"
 date: "13^th^ March, 2020"
 output: 
   html_document:
@@ -40,7 +40,7 @@ In our previous session, we learned how to:
 - Use the `SQL`-like features of `dplyr` to work with our data
 - How to print markdown tables from a `tibble`
 
-In this session, we'll look at working with `tibble` objects once again, but this time we'll learn to change the shape of them.
+In this session, we'll look at working with `tibble` objects once again, but this time we'll learn to change the shape of them, and make some amazing looking plots.
 After that, we'll try to import some more challenging data.
 
 ### Setup
@@ -48,8 +48,8 @@ After that, we'll try to import some more challenging data.
 Before we go any further, we need to ensure we're developing our good programming practice.
 Make sure you are in your `practical_2` R Project and that all of the directories look correct in your **Files** pane.
 
-You should already have `Enrichment.csv` in your `data` subdirectory, so once you've checked for that, begin a new R Markdown document and save this as `Using_tidyr.Rmd` in your project root directory.
-As per usual, delete everything after the initial `setup` chunk that is provided for you by default.
+The datasets we'll use for today are `topTable.csv` and `cpm.csv`, which will be in `~/data/transcriptomics`.
+Please copy these into your `practical_2` directory.
 
 Last time we discovered that setting `message = FALSE` inside the call to `knitr::opts_chunk$set()` helped hide the helpful messages that the `tidyverse` prints for us, so please add that to your setup chunk.
 If all goes well, it should look at little like this:
@@ -67,17 +67,6 @@ Now we have our `setup` chunk, let's create a `packages` chunk and load the `tid
 library(tidyverse)
 ```
 
-Today we'll look at the package `tidyr` which is loaded by default with the `tidyverse` and is actually where the name came from.
+Today we'll look at the packages `ggplot2` and `tidyr` which are loaded by default with the `tidyverse` and the second of these is actually where the name came from.
 
-The next step is to load the `Enrichment` dataset from the last section, and then we'll be ready to go for today.
-A good name for this chunk might be `Enrichment`, or `import`, or `load_Enrichment`.
-Whichever makes it clear to you what you're doing.
-
-```{r}
-Enrichment <- read_csv("data/Enrichment.csv")
-```
-
-```{r, results='markup'}
-glimpse(Enrichment)
-```
 
