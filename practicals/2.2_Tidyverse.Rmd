@@ -30,9 +30,9 @@ if (interactive()) setwd(here::here("practicals"))
 ```
 
 
-## Introduction
+# Introduction
 
-### Outline
+## Outline
 
 In our previous session, we learned how to:
 
@@ -40,10 +40,10 @@ In our previous session, we learned how to:
 - Use the `SQL`-like features of `dplyr` to work with our data
 - How to print markdown tables from a `tibble`
 
-In this session, we'll look at working with `tibble` objects once again, but this time we'll learn to change the shape of them, and make some amazing looking plots.
-After that, we'll try to import some more challenging data.
+In this session, we'll look at working with `tibble` objects once again, but this time we'll learn to change the shape of them, and make some amazing looking plots using  the packages `ggplot2` and `tidyr`.
+These are both loaded by default with the `tidyverse` and the second of these is actually where the name came from.
 
-### Setup
+## Setup
 
 Before we go any further, we need to ensure we're developing our good programming practice.
 Make sure you are in your `practical_2` R Project and that all of the directories look correct in your **Files** pane.
@@ -67,6 +67,82 @@ Now we have our `setup` chunk, let's create a `packages` chunk and load the `tid
 library(tidyverse)
 ```
 
-Today we'll look at the packages `ggplot2` and `tidyr` which are loaded by default with the `tidyverse` and the second of these is actually where the name came from.
+The first file we'll load is `topTable.csv`, so follow this first chunk with a chunk that loads this file.
+If you're unsure, check back to the last practical.
+Name this chunk something appropriate like `topTable`.
 
+```{r topTable, echo=FALSE}
+topTable <- read_csv("data/topTable.csv")
+```
+
+# Plotting in `R`
+
+## Base Graphics
+
+In our initial introduction to R Markdown, we actually saw a few of the basic plotting functions which form part of the base installation of R.
+These are loaded with the core package `graphics` and can be useful for quick plots, but in general can be difficult to work with for more complicated plots.
+Let's have a quick look through these before moving to `ggplot2` as they can be of some use in some circumstances.
+
+#### `plot()`
+
+The most generic of the plotting functions is `plot()` and we explored this already using.
+
+```{r, fig.show='hide'}
+x <- 1:10
+x_sq <- x^2
+plot(x, x_sq)
+```
+
+To really understand what's happened here, let's check the help page. (`?plot`).
+The key arguments here are `x` and `y` and in it's simplest form, these are the x-values and y-values for a plot, passed to the function as vectors.
+However, notice that the explanation of `x` is a little more complicated:
+
+> Alternatively, a single plotting structure, function or _any **R** object with a plot method_ can be provided.
+
+This is telling us that we can also pass a `data.frame` (like `pressure`) to `plot()`.
+Whilst this version of the function `plot()` works with two vectors, try typing `?plot.data.frame`.
+This is the plotting method for a `data.frame` which `R` automatically applies if you pass ` data.frame` to the argument `x`, and you've just had a sneak peak at `S3` method dispatch.
+Let's not dig any deeper for now, but let's have a quick look at `pressure` and `plot(pressure)`.
+
+```{r, fig.show='hide'}
+glimpse(pressure)
+plot(pressure)
+```
+
+Notice that `plot.data.frame()` has placed the first column of `pressure` as the x-values, followed by the second column as the y-values.
+In addition, the column names have been set as the axis names.
+
+The complete set of arguments able to be called when using `plot()` can be found by look at the help page for `plot.default()`.
+The main argument we'll look at is `type` and we can change the plot type from points (`type = "p"`) to a line (`type = "l"`).
+
+We can also set one or both axes to be on the log scale using `log = "y"`, as well as setting limits using `xlim` and `ylim`.
+Have a quick play using `xlim = c(200, 400)` and a few similar values.
+
+#### `hist()`
+
+This is a very easy way to make histograms from a numeric vector.
+The inbuilt vector `Nile` contains the flow of the river Nile from 1871 to 1970, and this is effectively a simple numeric vector.
+
+```{r, fig.show='hide'}
+glimpse(Nile)
+hist(Nile)
+```
+
+#### `boxplot()`
+
+The third of the base plotting functions worth a quick look is `boxplot()`.
+For this function, we'll need a categorical variable for the x-axis, and a numeric variable for the y-axis.
+A good example for this may be the built-in dataset `ToothGrowth`.
+
+```{r}
+glimpse(ToothGrowth)
+```
+
+Here we'll use `supp` as the categorical variable and `len` as the numeric.
+To generate a boxplot, we need to use the `formula` syntax in R, where the `~` symbol can be reads *depends on*.
+In this context, we would write `len~supp` to indicate that the length of the teeth *depends on* the vitamin C supplement method.
+
+```{r, fig.show='hide'}
+boxplot(len~supp, data = ToothGrowth)
+```
 
