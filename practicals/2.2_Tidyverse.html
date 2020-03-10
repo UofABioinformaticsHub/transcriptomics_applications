@@ -1588,7 +1588,14 @@ hist(Nile)</code></pre>
 <p>Here we’ll use <code>supp</code> as the categorical variable and <code>len</code> as the numeric. To generate a boxplot, we need to use the <code>formula</code> syntax in R, where the <code>~</code> symbol can be reads <em>depends on</em>. In this context, we would write <code>len~supp</code> to indicate that the length of the teeth <em>depends on</em> the vitamin C supplement method.</p>
 <pre class="r"><code>boxplot(len~supp, data = ToothGrowth)</code></pre>
 </div>
+<div id="a-quick-challenge" class="section level4">
+<h4>A quick challenge</h4>
+<p>Today’s main dataset is <code>topTable</code> which contains two columns detailing gene ids and gene names, followed by four numeric columns. There’s nothing here able to be meaningfully visualised using <code>boxplot()</code>, but try using <code>hist()</code> and <code>plot</code> to makes some plots from this object. Useful examples might be a histogram of p-values or logFC values. Similarly, a scatterplot of logFC against logCPM might be meaningful.</p>
 </div>
+</div>
+</div>
+<div id="introducing-ggplot2" class="section level1">
+<h1>Introducing <code>ggplot2</code></h1>
 </div>
 
 

@@ -146,3 +146,11 @@ In this context, we would write `len~supp` to indicate that the length of the te
 boxplot(len~supp, data = ToothGrowth)
 ```
 
+#### A quick challenge
+
+Today's main dataset is `topTable` which contains two columns detailing gene ids and gene names, followed by four numeric columns.
+There's nothing here able to be meaningfully visualised using `boxplot()`, but try using `hist()` and `plot` to makes some plots from this object.
+Useful examples might be a histogram of p-values or logFC values.
+Similarly, a scatterplot of logFC against logCPM might be meaningful.
+
+# Introducing `ggplot2`
