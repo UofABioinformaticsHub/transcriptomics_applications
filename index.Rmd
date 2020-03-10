@@ -91,7 +91,7 @@ pracs %>%
 ```{r}
 ass <- tribble(
     ~Url, ~Topic, ~`Due Date`,
-    "", "Not Yet Released", "2020-03-23"
+    "assignments/A1.html", "Introductory Work", "2020-03-24"
 ) %>%
     mutate(
         Assessment = paste("Assessment", seq_len(nrow(.)) )
