@@ -1548,9 +1548,9 @@ knitr::opts_chunk$set(
     message = FALSE
 )
 ```</code></pre>
-<p>Now we have our <code>setup</code> chunk, let’s create a <code>packages</code> chunk and load the <code>tidyverse</code>.</p>
+<p>Now we have our <code>setup</code> chunk, let’s create a <code>packages</code> chunk and load the <code>tidyverse</code>, which is usually our starting point for an R Markdown document.</p>
 <pre class="r"><code>library(tidyverse)</code></pre>
-<p>The first file we’ll load is <code>topTable.csv</code>, so follow this first chunk with a chunk that loads this file. If you’re unsure, check back to the last practical. Name this chunk something appropriate like <code>topTable</code>.</p>
+<p>The first file we’ll load for this section is <code>topTable.csv</code>, so follow this first chunk with a chunk that loads this file. If you’re unsure, check back to the last session. Name this chunk something appropriate like <code>topTable</code>.</p>
 </div>
 </div>
 <div id="plotting-in-r" class="section level1">
@@ -1560,42 +1560,51 @@ knitr::opts_chunk$set(
 <p>In our initial introduction to R Markdown, we actually saw a few of the basic plotting functions which form part of the base installation of R. These are loaded with the core package <code>graphics</code> and can be useful for quick plots, but in general can be difficult to work with for more complicated plots. Let’s have a quick look through these before moving to <code>ggplot2</code> as they can be of some use in some circumstances.</p>
 <div id="plot" class="section level4">
 <h4><code>plot()</code></h4>
-<p>The most generic of the plotting functions is <code>plot()</code> and we explored this already using.</p>
+<p>The most generic of the plotting functions is <code>plot()</code> and we explored this already last week using.</p>
 <pre class="r"><code>x &lt;- 1:10
 x_sq &lt;- x^2
 plot(x, x_sq)</code></pre>
-<p>To really understand what’s happened here, let’s check the help page. (<code>?plot</code>). The key arguments here are <code>x</code> and <code>y</code> and in it’s simplest form, these are the x-values and y-values for a plot, passed to the function as vectors. However, notice that the explanation of <code>x</code> is a little more complicated:</p>
-<blockquote>
-<p>Alternatively, a single plotting structure, function or <em>any <strong>R</strong> object with a plot method</em> can be provided.</p>
-</blockquote>
-<p>This is telling us that we can also pass a <code>data.frame</code> (like <code>pressure</code>) to <code>plot()</code>. Whilst this version of the function <code>plot()</code> works with two vectors, try typing <code>?plot.data.frame</code>. This is the plotting method for a <code>data.frame</code> which <code>R</code> automatically applies if you pass <code>data.frame</code> to the argument <code>x</code>, and you’ve just had a sneak peak at <code>S3</code> method dispatch. Let’s not dig any deeper for now, but let’s have a quick look at <code>pressure</code> and <code>plot(pressure)</code>.</p>
-<pre class="r"><code>glimpse(pressure)
-plot(pressure)</code></pre>
-<p>Notice that <code>plot.data.frame()</code> has placed the first column of <code>pressure</code> as the x-values, followed by the second column as the y-values. In addition, the column names have been set as the axis names.</p>
-<p>The complete set of arguments able to be called when using <code>plot()</code> can be found by look at the help page for <code>plot.default()</code>. The main argument we’ll look at is <code>type</code> and we can change the plot type from points (<code>type = &quot;p&quot;</code>) to a line (<code>type = &quot;l&quot;</code>).</p>
-<p>We can also set one or both axes to be on the log scale using <code>log = &quot;y&quot;</code>, as well as setting limits using <code>xlim</code> and <code>ylim</code>. Have a quick play using <code>xlim = c(200, 400)</code> and a few similar values.</p>
+<p>To really understand what’s happened here, let’s check the help page. (<code>?plot</code>). The key arguments here are <code>x</code> and <code>y</code> and in it’s simplest form, these are the x-values and y-values for a plot, passed to the function as vectors.</p>
+<p>We could pass any two vectors here, and could even grab the <code>logCPM</code> and <code>logFC</code> columns from <code>topTable</code>. This is commonly known as an MD plot which is Mean-Difference, where the x-axis is mean expression across all samples, and the y-axis is the difference in expression between treatment groups.</p>
+<pre class="r"><code>plot(topTable$logCPM, topTable$logFC)</code></pre>
 </div>
 <div id="hist" class="section level4">
 <h4><code>hist()</code></h4>
-<p>This is a very easy way to make histograms from a numeric vector. The inbuilt vector <code>Nile</code> contains the flow of the river Nile from 1871 to 1970, and this is effectively a simple numeric vector.</p>
-<pre class="r"><code>glimpse(Nile)
-hist(Nile)</code></pre>
+<p>This is a very easy way to make histograms from a numeric vector. A classic example might be one of the columns from <code>topTable</code>. Try using hist on <code>topTable$logCPM</code>, which shows the range of expression values in our data, as measured using the value <code>logCPM</code></p>
+<pre class="r"><code>hist(topTable$logCPM)</code></pre>
+<p>Another handy trick for when you’re working in R Markdown is to use the <code>fig.cap</code> argument in the chunk header. For the above chunk try adding <code>fig.cap = &quot;Distribution of expression values as measured using logCPM&quot;</code> to the chunk header, and you should see the figure caption appear below the plot. Importantly, the use of <code>fig.cap</code> is not dependent on any of the plotting functions, and can also be used with <code>ggplot2</code> as we’ll see later.</p>
 </div>
 <div id="boxplot" class="section level4">
 <h4><code>boxplot()</code></h4>
-<p>The third of the base plotting functions worth a quick look is <code>boxplot()</code>. For this function, we’ll need a categorical variable for the x-axis, and a numeric variable for the y-axis. A good example for this may be the built-in dataset <code>ToothGrowth</code>.</p>
+<p>The third of the base plotting functions worth a quick look is <code>boxplot()</code>. For this function, we really need a categorical variable for the x-axis, and a numeric variable for the y-axis. Our <code>topTable</code> object isn’t so good for this particular function, but a good example for this may be the built-in dataset <code>ToothGrowth</code>, which contains measurements of tooth length from rats given vitamin C supplements using two methods and three doses.</p>
 <pre class="r"><code>glimpse(ToothGrowth)</code></pre>
-<p>Here we’ll use <code>supp</code> as the categorical variable and <code>len</code> as the numeric. To generate a boxplot, we need to use the <code>formula</code> syntax in R, where the <code>~</code> symbol can be reads <em>depends on</em>. In this context, we would write <code>len~supp</code> to indicate that the length of the teeth <em>depends on</em> the vitamin C supplement method.</p>
+<p>Here we’ll use <code>supp</code> as the <em>categorical</em> variable and <code>len</code> as the numeric. To generate a boxplot, we need to use the <code>formula</code> syntax in R, where the <code>~</code> symbol can be read as <em>depends on</em>. In this context, we would write <code>len~supp</code> to indicate that the length of the teeth (<code>len</code>) <em>depends on</em> the vitamin C supplement method (<code>supp</code>).</p>
 <pre class="r"><code>boxplot(len~supp, data = ToothGrowth)</code></pre>
-</div>
-<div id="a-quick-challenge" class="section level4">
-<h4>A quick challenge</h4>
-<p>Today’s main dataset is <code>topTable</code> which contains two columns detailing gene ids and gene names, followed by four numeric columns. There’s nothing here able to be meaningfully visualised using <code>boxplot()</code>, but try using <code>hist()</code> and <code>plot</code> to makes some plots from this object. Useful examples might be a histogram of p-values or logFC values. Similarly, a scatterplot of logFC against logCPM might be meaningful.</p>
 </div>
 </div>
 </div>
 <div id="introducing-ggplot2" class="section level1">
 <h1>Introducing <code>ggplot2</code></h1>
+<p>Now that we’ve quickly explored some of the old-school plotting functions, let’s look at the package <code>ggplot2</code> which starts out a bit less intuitive, but quickly enables far more plotting power and flexibility. <code>ggplot2</code> was introduced about 10 years ago by Hadley Wickham, and made him a bit of a celebrity amongst R programmers. This package was an implementation of the <em>Grammar of Graphics</em> and uses a completely different approach to R’s basic graphics that we’ve just seen.</p>
+<p>(NB: The package is <code>ggplot2.</code> There was an initial version that was never released by Hadley, however you may hear both ggplot and ggplot2 used in conversation. Formally, ggplot2 is the name of the package and this is what must be loaded. The primary function we use inside the package is called <code>ggplot()</code> so this is the source of the dual language.)</p>
+<p>The first thing we need to do when using <code>ggplot</code> is to initialise the plotting area, and then we decide what <em>plotting geometry we’d like to use</em>. This is done in a layered approach, which may seem strange at first, but is actually very powerful.</p>
+<p>In our first call to <code>ggplot()</code> below, <strong>we first pass the data object specifying which values we wish to show as ‘plotting aesthetics’.</strong> To make a nicer version of our previous MD plot, we’d put logCPM on the x-axis and logFC on the y-axis, so <em>these are our plotting aesthetics</em>. According to <code>ggplot()</code> syntax, we need to wrap these inside the function <code>aes()</code>.</p>
+<pre class="r"><code>ggplot(topTable, aes(x = logCPM, y = logFC))</code></pre>
+<p>This will initialise the plotting area and you’ll see the axis labels looking a little nicer than before, but there will be no points shown. This is because we haven’t defined which geometry we’re going to use. The most obvious one to use would be points, so to include this, we add a plotting layer using the <code>+</code> symbol, and call the function <code>geom_point()</code> to ensure that points are drawn.</p>
+<pre class="r"><code>ggplot(topTable, aes(x = logCPM, y = logFC)) +
+    geom_point()</code></pre>
+<p>Now we have a slightly improved version of our previous plot, but we still have a pesky grey background, which is Hadley’s default setting. (Apparently, he likes it.) <code>ggplot2</code> comes with a set of themes that we can add as additional plotting layers. A very useful one is <code>theme_bw()</code>, which controls numerous plot attributes like the panel background, axis line colour, axis labels, tick marks, legends etc. Let’s simply add <code>theme_bw()</code> as our next plotting layer, and the plot will almost be good enough to publish!</p>
+<pre class="r"><code>ggplot(topTable, aes(x = logCPM, y = logFC)) +
+    geom_point() +
+    theme_bw()</code></pre>
+<p>Let’s add another couple of layers!</p>
+<p>It’s very common to apply a threshold for differential expression where we consider anything with a logFC between <span class="math inline">\(\pm 1\)</span> to not be ‘biologically relevant’, despite any statistical support. This is based on the fact that logFC is reported on the log2 scale so these values correspond to a doubling or halving of the expression levels, which is a common-use threshold. This may or may not be realistic, but it is common. Let’s add horizontal lines indicating this range, using the function <code>geom_hline()</code>, which stands for a horizontal line.</p>
+<pre class="r"><code>ggplot(topTable, aes(x = logCPM, y = logFC)) +
+    geom_point() +
+    geom_hline(yintercept = c(-1, 1), colour = &quot;blue&quot;, linetype = 2) +
+    theme_bw()</code></pre>
+<p>The two easy things to see are how we’ve set the colour of the lines (colour = “blue”), and the type of line to be dashed (linetype = 2). Notice that we quoted the word “blue”. As we haven’t defined any object called blue, we needed to quote this so R knows that this is an actual character string indicating a value. R has 657 colour values predefined with names and unsurprisingly “blue” is one of them.</p>
+<p>Also notice that we passed two values <code>c(-1, 1)</code> to the argument <code>yintercept</code> which drew two lines for us.</p>
 </div>
 
 

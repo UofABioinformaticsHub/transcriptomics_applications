@@ -24,6 +24,7 @@ knitr::opts_chunk$set(
     message = FALSE,
     warning = FALSE,
     fig.align = "center",
+    fig.show = "hide",
     results = "hide"
     )
 if (interactive()) setwd(here::here("practicals"))
@@ -61,19 +62,20 @@ If all goes well, it should look at little like this:
     )
     ```
 
-Now we have our `setup` chunk, let's create a `packages` chunk and load the `tidyverse`.
+Now we have our `setup` chunk, let's create a `packages` chunk and load the `tidyverse`, which is usually our starting point for an R Markdown document.
 
 ```{r}
 library(tidyverse)
 ```
 
-The first file we'll load is `topTable.csv`, so follow this first chunk with a chunk that loads this file.
-If you're unsure, check back to the last practical.
+The first file we'll load for this section is `topTable.csv`, so follow this first chunk with a chunk that loads this file.
+If you're unsure, check back to the last session.
 Name this chunk something appropriate like `topTable`.
 
 ```{r topTable, echo=FALSE}
 topTable <- read_csv("data/topTable.csv")
 ```
+
 
 # Plotting in `R`
 
@@ -85,7 +87,7 @@ Let's have a quick look through these before moving to `ggplot2` as they can be 
 
 #### `plot()`
 
-The most generic of the plotting functions is `plot()` and we explored this already using.
+The most generic of the plotting functions is `plot()` and we explored this already last week using.
 
 ```{r, fig.show='hide'}
 x <- 1:10
@@ -95,62 +97,108 @@ plot(x, x_sq)
 
 To really understand what's happened here, let's check the help page. (`?plot`).
 The key arguments here are `x` and `y` and in it's simplest form, these are the x-values and y-values for a plot, passed to the function as vectors.
-However, notice that the explanation of `x` is a little more complicated:
 
-> Alternatively, a single plotting structure, function or _any **R** object with a plot method_ can be provided.
+We could pass any two vectors here, and could even grab the `logCPM` and `logFC` columns from `topTable`.
+This is commonly known as an MD plot which is Mean-Difference, where the x-axis is mean expression across all samples, and the y-axis is the difference in expression between treatment groups.
 
-This is telling us that we can also pass a `data.frame` (like `pressure`) to `plot()`.
-Whilst this version of the function `plot()` works with two vectors, try typing `?plot.data.frame`.
-This is the plotting method for a `data.frame` which `R` automatically applies if you pass ` data.frame` to the argument `x`, and you've just had a sneak peak at `S3` method dispatch.
-Let's not dig any deeper for now, but let's have a quick look at `pressure` and `plot(pressure)`.
-
-```{r, fig.show='hide'}
-glimpse(pressure)
-plot(pressure)
+```{r}
+plot(topTable$logCPM, topTable$logFC)
 ```
 
-Notice that `plot.data.frame()` has placed the first column of `pressure` as the x-values, followed by the second column as the y-values.
-In addition, the column names have been set as the axis names.
-
-The complete set of arguments able to be called when using `plot()` can be found by look at the help page for `plot.default()`.
-The main argument we'll look at is `type` and we can change the plot type from points (`type = "p"`) to a line (`type = "l"`).
-
-We can also set one or both axes to be on the log scale using `log = "y"`, as well as setting limits using `xlim` and `ylim`.
-Have a quick play using `xlim = c(200, 400)` and a few similar values.
 
 #### `hist()`
 
 This is a very easy way to make histograms from a numeric vector.
-The inbuilt vector `Nile` contains the flow of the river Nile from 1871 to 1970, and this is effectively a simple numeric vector.
+A classic example might be one of the columns from `topTable`.
+Try using hist on `topTable$logCPM`, which shows the range of expression values in our data, as measured using the value `logCPM`
 
 ```{r, fig.show='hide'}
-glimpse(Nile)
-hist(Nile)
+hist(topTable$logCPM)
 ```
+
+Another handy trick for when you're working in R Markdown is to use the `fig.cap` argument in the chunk header.
+For the above chunk try adding `fig.cap = "Distribution of expression values as measured using logCPM"` to the chunk header, and you should see the figure caption appear below the plot.
+Importantly, the use of `fig.cap` is not dependent on any of the plotting functions, and can also be used with `ggplot2` as we'll see later.
+
 
 #### `boxplot()`
 
 The third of the base plotting functions worth a quick look is `boxplot()`.
-For this function, we'll need a categorical variable for the x-axis, and a numeric variable for the y-axis.
-A good example for this may be the built-in dataset `ToothGrowth`.
+For this function, we really need a categorical variable for the x-axis, and a numeric variable for the y-axis.
+Our `topTable` object isn't so good for this particular function, but a good example for this may be the built-in dataset `ToothGrowth`, which contains measurements of tooth length from rats given vitamin C supplements using two methods and three doses.
 
 ```{r}
 glimpse(ToothGrowth)
 ```
 
-Here we'll use `supp` as the categorical variable and `len` as the numeric.
-To generate a boxplot, we need to use the `formula` syntax in R, where the `~` symbol can be reads *depends on*.
-In this context, we would write `len~supp` to indicate that the length of the teeth *depends on* the vitamin C supplement method.
+Here we'll use `supp` as the *categorical* variable and `len` as the numeric.
+To generate a boxplot, we need to use the `formula` syntax in R, where the `~` symbol can be read as *depends on*.
+In this context, we would write `len~supp` to indicate that the length of the teeth (`len`) *depends on* the vitamin C supplement method (`supp`).
 
 ```{r, fig.show='hide'}
 boxplot(len~supp, data = ToothGrowth)
 ```
 
-#### A quick challenge
-
-Today's main dataset is `topTable` which contains two columns detailing gene ids and gene names, followed by four numeric columns.
-There's nothing here able to be meaningfully visualised using `boxplot()`, but try using `hist()` and `plot` to makes some plots from this object.
-Useful examples might be a histogram of p-values or logFC values.
-Similarly, a scatterplot of logFC against logCPM might be meaningful.
-
 # Introducing `ggplot2`
+
+Now that we've quickly explored some of the old-school plotting functions, let's look at the package `ggplot2` which starts out a bit less intuitive, but quickly enables far more plotting power and flexibility.
+`ggplot2` was introduced about 10 years ago by Hadley Wickham, and made him a bit of a celebrity amongst R programmers. 
+This package was an implementation of the *Grammar of Graphics* and uses a completely different approach to R’s basic graphics that we've just seen. 
+
+(NB: The package is `ggplot2.` There was an initial version that was never released by Hadley, however you may hear both ggplot and ggplot2 used in conversation. Formally, ggplot2 is the name of the package and this is what must be loaded. The primary function we use inside the package is called `ggplot()` so this is the source of the dual language.)
+
+The first thing we need to do when using `ggplot` is to initialise the plotting area, and then we decide what *plotting geometry we’d like to use*. 
+This is done in a layered approach, which may seem strange at first, but is actually very powerful.
+
+In our first call to `ggplot()` below, **we first pass the data object specifying which values we wish to show as 'plotting aesthetics'.** 
+To make a nicer version of our previous MD plot, we’d put logCPM on the x-axis and logFC on the y-axis, so *these are our plotting aesthetics*. 
+According to `ggplot()` syntax, we need to wrap these inside the function `aes()`.
+
+```{r}
+ggplot(topTable, aes(x = logCPM, y = logFC))
+```
+
+This will initialise the plotting area and you’ll see the axis labels looking a little nicer than before, but there will be no points shown. 
+This is because we haven’t defined which geometry we’re going to use. 
+The most obvious one to use would be points, so to include this, we add a plotting layer using the `+` symbol, and call the function `geom_point()` to ensure that points are drawn.
+
+```{r}
+ggplot(topTable, aes(x = logCPM, y = logFC)) +
+    geom_point()
+```
+
+Now we have a slightly improved version of our previous plot, but we still have a pesky grey background, which is Hadley’s default setting. 
+(Apparently, he likes it.) 
+`ggplot2` comes with a set of themes that we can add as additional plotting layers. 
+A very useful one is `theme_bw()`, which controls numerous plot attributes like the panel background, axis line colour, axis labels, tick marks, legends etc. 
+Let’s simply add `theme_bw()` as our next plotting layer, and the plot will almost be good enough to publish!
+
+```{r}
+ggplot(topTable, aes(x = logCPM, y = logFC)) +
+    geom_point() +
+    theme_bw()
+```
+
+Let’s add another couple of layers!
+
+It’s very common to apply a threshold for differential expression where we consider anything with a logFC between $\pm 1$ to not be 'biologically relevant', despite any statistical support. 
+This is based on the fact that logFC is reported on the log2 scale so these values correspond to a doubling or halving of the expression levels, which is a common-use threshold. 
+This may or may not be realistic, but it is common. 
+Let’s add horizontal lines indicating this range, using the function `geom_hline()`, which stands for a horizontal line.
+
+```{r}
+ggplot(topTable, aes(x = logCPM, y = logFC)) +
+    geom_point() +
+    geom_hline(yintercept = c(-1, 1), colour = "blue", linetype = 2) +
+    theme_bw()
+```
+
+
+The two easy things to see are how we’ve set the colour of the lines (colour = "blue"), and the type of line to be dashed (linetype = 2). 
+Notice that we quoted the word “blue”. 
+As we haven’t defined any object called blue, we needed to quote this so R knows that this is an actual character string indicating a value. 
+R has 657 colour values predefined with names and unsurprisingly “blue” is one of them.
+
+Also notice that we passed two values `c(-1, 1)` to the argument `yintercept` which drew two lines for us.
+
+
