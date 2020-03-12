@@ -7,16 +7,6 @@ output:
     toc: yes
     toc_float: yes
 ---
-<script>
-function myFunction(i) {
-  var x = document.getElementById(i);
-  if (x.style.display === "none") {
-    x.style.display = "block";
-  } else {
-    x.style.display = "none";
-  }
-}
-</script>
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
@@ -28,6 +18,7 @@ knitr::opts_chunk$set(
     results = "hide"
     )
 if (interactive()) setwd(here::here("practicals"))
+library(scales)
 ```
 
 
@@ -164,7 +155,7 @@ The most obvious one to use would be points, so to include this, we add a plotti
 
 ```{r}
 ggplot(topTable, aes(x = logCPM, y = logFC)) +
-    geom_point()
+  geom_point()
 ```
 
 Now we have a slightly improved version of our previous plot, but we still have a pesky grey background, which is Hadley’s default setting. 
@@ -175,30 +166,542 @@ Let’s simply add `theme_bw()` as our next plotting layer, and the plot will al
 
 ```{r}
 ggplot(topTable, aes(x = logCPM, y = logFC)) +
-    geom_point() +
-    theme_bw()
+  geom_point() +
+  theme_bw()
 ```
 
 Let’s add another couple of layers!
 
 It’s very common to apply a threshold for differential expression where we consider anything with a logFC between $\pm 1$ to not be 'biologically relevant', despite any statistical support. 
-This is based on the fact that logFC is reported on the log2 scale so these values correspond to a doubling or halving of the expression levels, which is a common-use threshold. 
+This is based on the fact that logFC is reported on the log~2~ scale so these values correspond to a doubling or halving of the expression levels.
 This may or may not be realistic, but it is common. 
 Let’s add horizontal lines indicating this range, using the function `geom_hline()`, which stands for a horizontal line.
 
 ```{r}
 ggplot(topTable, aes(x = logCPM, y = logFC)) +
-    geom_point() +
-    geom_hline(yintercept = c(-1, 1), colour = "blue", linetype = 2) +
-    theme_bw()
+  geom_point() +
+  geom_hline(
+    yintercept = c(-1, 1), colour = "red", linetype = 2
+  ) +
+  theme_bw()
 ```
 
 
-The two easy things to see are how we’ve set the colour of the lines (colour = "blue"), and the type of line to be dashed (linetype = 2). 
-Notice that we quoted the word “blue”. 
-As we haven’t defined any object called blue, we needed to quote this so R knows that this is an actual character string indicating a value. 
-R has 657 colour values predefined with names and unsurprisingly “blue” is one of them.
+The two easy things to see are how we’ve set the colour of the lines (colour = "red"), and the type of line to be dashed (linetype = 2). 
+Notice that we quoted the word “red”. 
+As we haven’t defined any object called red, we needed to quote this so R knows that this is an actual character string indicating a value. 
+R has 657 colour values predefined with names and unsurprisingly “red” is one of them.
 
 Also notice that we passed two values `c(-1, 1)` to the argument `yintercept` which drew two lines for us.
 
+### Adding a line of best fit
 
+Another common requirement is to add a line of 'best fit' through our data.
+We can perform this in `ggplot2` using `geom_smooth()`.
+
+```{r}
+ggplot(topTable, aes(x = logCPM, y = logFC)) +
+  geom_point() +
+  geom_hline(
+    yintercept = c(-1, 1), colour = "red", linetype = 2
+  ) +
+  geom_smooth() +
+  theme_bw()
+```
+
+`geom_smooth()` looks at your data and decided what the best option for your data is, and here it has chosen to fit a curve using a statistical approach known as a *generalised additive model* (`method = 'gam'`).
+This is completely beyond the scope of this course, but can often make a nice curve through your data.
+An alternative for plotting a curve is to use `method = "loess"`, however this is slightly slower than `method = 'gam'` for large datasets.
+
+A straight regression line can be drawn using `method = "lm"`.
+Although it might be hard to see on some monitors, by default the standard errors for the line will be plotted as a shaded region around the line.
+We can turn this off by adding the argument `se = FALSE`.
+
+```{r}
+ggplot(topTable, aes(x = logCPM, y = logFC)) +
+  geom_point() +
+  geom_hline(
+    yintercept = c(-1, 1), colour = "red", linetype = 2
+  ) +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_bw()
+```
+
+
+## Tidying the plot a bit more
+
+Now we’ve got a pretty good looking plot, we might like to tidy up our x-axis label. 
+All we need to do is provide the values as a character string to the function `labs()`.
+
+```{r}
+ggplot(topTable, aes(x = logCPM, y = logFC)) +
+  geom_point() +
+  geom_hline(
+    yintercept = c(-1, 1), colour = "blue", linetype = 2
+  ) +
+  theme_bw() +
+  labs(x = "Average Expression (logCPM)")
+```
+
+We can use this to change the labels for any attribute we plot, such as the x and y axes, colours, shapes etc.
+
+## Revisiting Our Histogram
+
+Right at the beginning, we made a histogram of our p-values using the base plotting function `hist()`. 
+An alternative method would be to make this plot using `ggplot2`. 
+By default, the histograms don’t look great in `ggplot2`, but with a bit of tweaking, they can be an improvement on those made using the base function.
+
+To set this up for ggplot2, our x aesthetic would be the p-values themselves, whilst the y aesthetic would be the counts in each bin along the x-axis. 
+When using the geometry function `geom_histogram()`, `ggplot2` will generate these summaries internally, as did the function `hist()`. 
+The default number of bins is generated internally by `geom_histogram()` using a function called `stat_bin()`, with the number of bins set to 30. 
+If you don’t set the number of bins, you’ll see a *friendly message that looks like R is angry*, telling you to pick a better value.
+
+```{r}
+ggplot(topTable, aes(x = PValue)) +
+  geom_histogram() +
+  theme_bw()
+```
+
+The best way to tidy this up is to manually set the outline `colour` and the internal `fill` colour.
+We can set the number of bins (e.g. `bins = 50`) or set the width of the bins (`binwidth = 0.02`).
+
+```{r}
+ggplot(topTable, aes(x = PValue)) +
+  geom_histogram(
+    fill = "grey", colour = "black", binwidth = 0.02
+  ) +
+  theme_bw()
+```
+
+As I'm sure you'll agree, this didn't make much effort to improve.
+
+## Creating a Volcano Plot
+
+Now that we’ve made a pretty reasonable plot showing how expression levels change against their average value, we might like to create what is known as a Volcano Plot. 
+In this type of plot, we would place the difference in expression (i.e. logFC) on the x-axis, and a measure of statistical significance on the y-axis. 
+A common measure of significance is the p-value and for the purposes of plotting, a useful transformation is −log~10~.
+Using this approach, −log~10~(0.01)=2 and −log~10~(0.001)=3 and so on. 
+This is a way of obtaining an increasing score for significance which looks informative on a plot. 
+Additionally, we know that p-values between 0.05 and 1 are not very interesting, so this transformation will squash them together whilst highlighting the differences in significance for low p-values (i.e. p < 0.05). 
+We can actually perform this transformation directly in `ggplot()`!
+
+```{r}
+ggplot(topTable, aes(logFC, -log10(PValue))) +
+  geom_point() +
+  labs(y = "-log10(p)") +
+  theme_bw()
+```
+
+As with the MD plot above, we can add lines to act as a visual guide for a logFC beyond the range $\pm 1$.
+This time, however, they'll be vertical lines, so we use `geom_vline()`.
+
+```{r}
+ggplot(topTable, aes(logFC, -log10(PValue))) +
+  geom_point() +
+  geom_vline(
+    xintercept = c(-1, 1), linetype = 2, colour = "blue"
+  ) +
+  labs(y = "-log10(p)") +
+  theme_bw()
+```
+
+
+As you can see, we have some highly-significant genes here with p-values < 10^-10^! 
+
+This is a pretty reasonable looking plot already, but wouldn’t it be great to show a few extra things like: 1) gene names, 2) which genes are considered DE, or 3) which p-value corresponds to an FDR (i.e False Discovery Rate) of 0.05? 
+For that, we’ll need to integrate with `dplyr`.
+
+# Combining `dplyr` with `ggplot`
+
+In all of the above, we passed the `tibble` called `topTable` to the `ggplot()` function as the first argument.
+For the astute amongst you, you'll realise that we could have piped in the data using `%>%`.
+
+For example, our last plot could also have been created using.
+
+```{r}
+topTable %>%
+  ggplot(aes(logFC, -log10(PValue))) +
+  geom_point() +
+  geom_vline(
+    xintercept = c(-1, 1), linetype = 2, colour = "blue"
+  ) +
+  labs(y = "-log10(p)") +
+  theme_bw()
+```
+
+Notice that we used the `magrittr` to pass the data, but once we're plotting using `ggplot2`, we use the `+` symbol.
+Without getting into the complexity of these, this is because we're *adding layers*, as opposed to taking one object then executing a function on it.
+There was a package called `ggvis` which tried this, but Hadley abandoned it a few years ago once he figured out a few more tricks for `ggplot2`.
+
+## Creating a Temporary Column
+
+A clearly useful plotting trick here might be to colour points based on whether we consider them to be differentially expressed (DE), which is always in the context of a two-way comparison.
+The simplest way to define a gene as DE would be to simply define a cutoff for significance using the p-values.
+Let's have a look at using p < 0.01 as our initial threshold.
+
+```{r}
+topTable %>% 
+  dplyr::filter(PValue < 0.01) %>% 
+  tail()
+```
+
+This gives us the last few values, and notice that this corresponds to an FDR of `r percent(max(dplyr::filter(topTable, PValue < 0.01)$FDR), accuracy = 0.1)`.
+That means we can expect about `r percent(max(dplyr::filter(topTable, PValue < 0.01)$FDR), accuracy = 0.1)` of the genes which make this cutoff to be 'false discoveries', but we won't know which ones.
+This would be considered pretty reasonable in the real world.
+
+Now let's create a column 'on the fly'.
+
+```{r}
+topTable %>%
+  mutate(DE = PValue < 0.01)
+```
+
+Notice how this created a column with `TRUE` (and `FALSE`) in it?
+We can use this to colour our points by passing this column to the `colour` argument in the plotting aesthetics (`aes()`).
+As we're getting a few parameters here, I've gone for a formatting choice, where I'm spreading functions across multiple lines.
+This is a personal choice, but does greatly help with readability.
+
+```{r}
+topTable %>%
+  mutate(DE = PValue < 0.01) %>%
+  ggplot(
+    aes(logFC, -log10(PValue), colour = DE)
+  ) +
+  geom_point() +
+  geom_vline(
+    xintercept = c(-1, 1), linetype = 2, colour = "blue"
+  ) +
+  labs(y = "-log10(p)") +
+  theme_bw()
+```
+
+So that's literally how easy it is to colour specific points!
+Unfortunately, those colours aren't great so let's change them.
+A good choice might be grey and red, and we can set these using the additional layer `scale_colour_manual()`.
+(Notice that in our legend, `FALSE` comes first, so this will be the first colour that we set.)
+
+```{r}
+topTable %>%
+  mutate(DE = PValue < 0.01) %>%
+  ggplot(
+    aes(logFC, -log10(PValue), colour = DE)
+  ) +
+  geom_point() +
+  geom_vline(
+    xintercept = c(-1, 1), linetype = 2, colour = "blue"
+  ) +
+  labs(y = "-log10(p)") +
+  scale_colour_manual(values = c("grey", "red")) +
+  theme_bw()
+```
+
+**Do you think our guide-lines at $\pm 1$ are informative?**
+**If we used these as an additional selection criteria, would we lose many genes?**
+
+## Using `dplyr` inside `geom_*()`
+
+The next thing that we might like to add to this plot would be gene names.
+These are in the column `gene_name` and we can add these using `geom_text()`, but before we do that, it's worth thinking about what might happen.
+If we just add names for every gene, all names will appear over each other and the plot will be a mess.
+Maybe we could start by adding names for those which are DE and have a logFC > 1.
+To do this, we can use `dplyr::filter()` **inside** the call to `geom_text()`.
+
+```{r}
+topTable %>%
+  mutate(DE = PValue < 0.01) %>%
+  ggplot(
+    aes(logFC, -log10(PValue), colour = DE)
+  ) +
+  geom_point() +
+  geom_vline(
+    xintercept = c(-1, 1), linetype = 2, colour = "blue"
+  ) +
+  geom_text(
+    aes(label = gene_name),
+    data = . %>%
+      filter(DE & logFC > 1)
+  ) +
+  labs(y = "-log10(p)") +
+  scale_colour_manual(values = c("grey", "red")) +
+  theme_bw()
+```
+
+This does look a little crap, so let's jump straight to the best way, which is to use `geom_text_repel()` from the package `ggrepel`.
+This is **not** part of the tidyverse, so will need to be added to your initial packages chunk.
+
+```{r}
+library(tidyverse)
+library(ggrepel)
+```
+
+```{r}
+topTable %>%
+  mutate(DE = PValue < 0.01) %>%
+  ggplot(
+    aes(logFC, -log10(PValue), colour = DE)
+  ) +
+  geom_point() +
+  geom_vline(
+    xintercept = c(-1, 1), linetype = 2, colour = "blue"
+  ) +
+  geom_text_repel(
+    aes(label = gene_name),
+    data = . %>%
+      filter(DE & logFC > 1),
+    show.legend = FALSE
+  ) +
+  labs(y = "-log10(p)") +
+  scale_colour_manual(values = c("grey", "red")) +
+  theme_bw()
+```
+
+Notice in the above that the labels will move as you resize the plot.
+(Try using the *Zoom* icon and resizing).
+I've also added `show.legend = FALSE` which removes the letter `a` that you may (or may not) have noticed in the legend.
+
+#### A Small Challenge
+
+The above plot looks a bit messy to me.
+Can you figure our how to just show labels for gene with a p-value < 1e-5, and with logFC outside the range $\pm 1$.
+
+**NB: There are multiple ways to do this!**
+
+# Reshaping Our Data with `tidyr`
+
+In the above we used `geom_point()` and `geom_histogram()` as our main geometry, with additional features added using `geom_vline()`, `geom_hline()`, `geom_smooth()` and `geom_text_repel()`.
+There are a considerable range of additional geoms available for plotting, including `geom_density()`, `geom_col()` and `geom_boxplot()`.
+
+To explore these let's load another dataset, which is actually the values which underlie the results in `topTable`.
+These are logCPM values, which are counts per million, on the log scale.
+When you have sequencing data, we count reads aligned to a gene and usually have 20-40million reads per sample.
+logCPM gives us a way to compare between samples, where we often have variable numbers of total reads for each sample.
+
+## Load the CPM values
+
+This is my path to the file.
+Please check yours as it may be different to mine.
+
+```{r}
+logCPM <- read_tsv("data/cpm.tsv")
+```
+
+Notice that we have gene IDs (but no gene names) followed by several sample names.
+It may be prudent to build a `data.frame` or `tibble` using these column names so we know what sample is what.
+
+These samples are a subset of a larger experiment involving mutants in the gene `psen2`.
+Here we have 6 month old wild-type and heterozygous mutants.
+The other information in the sample name is not relevant for us today.
+
+```{r}
+samples <- tibble(
+  sampleName = str_subset(colnames(logCPM), pattern = "Ps2")
+) %>%
+  mutate(
+    genotype = str_extract(sampleName, "(WT|Het)"),
+    number  = str_replace_all(sampleName, ".+F3_([0-9]+)_Fem", "\\1"),
+    shortName = paste(genotype, number, sep = "_")
+  )
+```
+
+## The most DE Gene
+
+A good starting point might be to look at the most highly-ranked DE gene, which is `cbr1` (ENSDARG00000036587).
+How do we turn this into a barplot?
+
+```{r}
+logCPM %>%
+  dplyr::filter(gene_id == "ENSDARG00000036587")
+```
+
+As we've seen, `ggplot2` likes to have a column for our x-values and another for our y-values, colours etc.
+**How do we change the shape of our data to get it into this shape?**
+
+The answer is the function `pivot_longer()` from the `tidyr` package (which we loaded with the `tidyverse`).
+
+```{r}
+logCPM %>%
+  dplyr::filter(gene_id == "ENSDARG00000036587") %>%
+  pivot_longer(
+    cols = starts_with("PS2"),
+    names_to = "sampleName",
+    values_to = "logCPM"
+  )
+```
+
+Notice how this has required three things:
+
+1. The columns to 'pivot', which we've specified using `cols = starts_with("Ps2")`
+2. The name of the new column where our original column names will go (`names_to`)
+3. The name of the new column where the values will go to.
+
+Now we have a column for our x-axis (`sampleName`) and a column for our values (`logCPM`).
+Let's give it a try.
+
+```{r}
+logCPM %>%
+  dplyr::filter(gene_id == "ENSDARG00000036587") %>%
+  pivot_longer(
+    cols = starts_with("PS2"),
+    names_to = "sampleName",
+    values_to = "logCPM"
+  ) %>%
+  ggplot(
+    aes(x = sampleName, y = logCPM)
+  ) +
+  geom_col() +
+  theme_bw()
+```
+
+Here we have our columns, but the sample names are illegible.
+Thankfully we created our object `samples` for precisely this reason, and we already know about `left_join()`.
+
+```{r}
+logCPM %>%
+  dplyr::filter(gene_id == "ENSDARG00000036587") %>%
+  pivot_longer(
+    cols = starts_with("PS2"),
+    names_to = "sampleName",
+    values_to = "logCPM"
+  ) %>%
+  left_join(samples)
+```
+
+1. Recreate the above plot using `shortName` instead of `sampleName`
+2. Change the fill of each bar using `fill = genotype`
+
+## Creating a Boxplot
+
+Instead of a bar plot, we might like to summarise these values into a boxplot.
+We actually don't need to change the code much at all.
+All we've done below is change the x-axis column to be genotype (as well as the fill), then changed `geom_col()` to `geom_boxplot()`
+
+```{r}
+logCPM %>%
+  dplyr::filter(gene_id == "ENSDARG00000036587") %>%
+  pivot_longer(
+    cols = starts_with("PS2"),
+    names_to = "sampleName",
+    values_to = "logCPM"
+  ) %>%
+  left_join(samples) %>% 
+  ggplot(
+    aes(x = genotype, y = logCPM, fill = genotype)
+  ) +
+  geom_boxplot() +
+  theme_bw()
+```
+
+## Multiple Genes.
+
+Let's now try multiple genes, by grabbing the first 2 from `topTable`.
+
+```{r}
+topTable %>%
+  slice(1:2)
+```
+
+The column `gene_id` here is the key, and we can use this to join the `logCPM` object.
+
+```{r}
+topTable %>%
+  slice(1:2) %>%
+  dplyr::select(starts_with("gene")) %>%
+  left_join(logCPM)
+```
+
+Can you see your way forward now?
+Beforehand, we only had one gene, but the exact same process will still work.
+
+```{r}
+topTable %>%
+  slice(1:2) %>%
+  dplyr::select(starts_with("gene")) %>%
+  left_join(logCPM) %>%
+  pivot_longer(
+    cols = starts_with("PS2"),
+    names_to = "sampleName",
+    values_to = "logCPM"
+  ) %>%
+  left_join(samples)
+```
+
+In our very first boxplot, we used `genotype` for the x-axis, but now we have two genes, so that doesn't really work any more.
+Maybe we should try putting the gene on the x-axis.
+
+```{r}
+topTable %>%
+  slice(1:2) %>%
+  dplyr::select(starts_with("gene")) %>%
+  left_join(logCPM) %>%
+  pivot_longer(
+    cols = starts_with("PS2"),
+    names_to = "sampleName",
+    values_to = "logCPM"
+  ) %>%
+  left_join(samples) %>%
+  ggplot(
+    aes(x = gene_name, y = logCPM, fill = genotype)
+  ) +
+  geom_boxplot() +
+  theme_bw()
+```
+
+That worked pretty well, as `ggplot` created groups based on the `gene_name` and the `genotype`.
+**Try this again for the top 6 genes.**
+
+Are you happy with how that looks?
+
+## Using facets
+
+`ggplot2` enables us to create separate panels (or facets) within the same plot using the two functions `facet_wrap()` and `facet_grid()`.
+We'll only use `facet_wrap()` to day, as we'll only split by one variable.
+If we had two variables, `facet_grid()` can be quite useful.
+If you're like me your code for the above task will look like this:
+
+```{r}
+topTable %>%
+  slice(1:6) %>%
+  dplyr::select(starts_with("gene")) %>%
+  left_join(logCPM) %>%
+  pivot_longer(
+    cols = starts_with("PS2"),
+    names_to = "sampleName",
+    values_to = "logCPM"
+  ) %>%
+  left_join(samples) %>%
+  ggplot(
+    aes(x = gene_name, y = logCPM, fill = genotype)
+  ) +
+  geom_boxplot() +
+  theme_bw()
+```
+
+To place every gene in it's own panel, we just add the 'layer' `facet_wrap()` which will break the data into panels based on the column we supply.
+We're also going to change the x-axis back to `genotype`
+
+```{r}
+topTable %>%
+  slice(1:6) %>%
+  dplyr::select(starts_with("gene")) %>%
+  left_join(logCPM) %>%
+  pivot_longer(
+    cols = starts_with("PS2"),
+    names_to = "sampleName",
+    values_to = "logCPM"
+  ) %>%
+  left_join(samples) %>%
+  ggplot(
+    aes(x = genotype, y = logCPM, fill = genotype)
+  ) +
+  geom_boxplot() +
+  facet_wrap(~gene_name) +
+  theme_bw()
+```
+
+If you like, try making this pretty with `labs()`, or try more genes.
+You can also try different numbers of rows and columns by specifying the argument `nrow = ` or `ncol = `.
+
+### Closing Comments
+
+We really just grabbed one function from `tidyr` today, but other important functions are `pivot_wider()` which does the reverse of the above; `unite()` which joins columns and `separate()` which separates columns.
+We'll probably use these as the course progresses.
