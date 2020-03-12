@@ -31,7 +31,7 @@ pracs <- tribble(
     ~Week, ~`Week Starting`, ~Lecture, ~Lecturer, ~LecUrl, ~Practical, ~PracUrl,
     1, "2020-03-02", "Introduction", "Stephen Pederson", "lectures/1_Introduction.pdf", "Introduction to R and `rmarkdown`", "practicals/1_IntroR.html",
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Manipulating Text in R", "practicals/1_Using_stringr.html",
-    2, "2020-03-09", "**Adelaide Cup Day**", "No Lecture", "", "Using the `tidyverse`", "practicals/2_Tidyverse.html",
+    2, "2020-03-09", "**Adelaide Cup Day**", "No Lecture", "", "Using the tidyverse", "practicals/2_Tidyverse.html",
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Plotting Data with the `tidyverse`", "practicals/2.2_Tidyverse.html",
     3, "2020-03-16", "Early Quantification Strategies", "Stephen Pederson", "", "Working with Vectors", "",
     4, "2020-03-23", "Quantification Strategies and Statistics", "Stephen Pederson", "", "Bioconductor", "",
@@ -134,3 +134,4 @@ Have you:
 [How To Ask Questions The Smart Way](http://www.catb.org/esr/faqs/smart-questions.html)
 
 [How to write a good bug report](https://musescore.org/en/developers-handbook/how-write-good-bug-report-step-step-instructions)
+
