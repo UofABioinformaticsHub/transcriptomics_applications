@@ -443,19 +443,19 @@
 
 \end{frame}
 
-\section{Microarray Technology}
-
-\begin{frame}{Microarrays}
-
-	\begin{itemize}
-		\item Microarrays effectively ushered in the modern era of transcriptomics
-		\item Purely interested in \textit{relative abundances}
-		\item Could measure expression levels for 1000’s of genes simultaneously, for \textit{the first time}		
-		\item Were essentially glass slides with probes affixed to them
-	\end{itemize}
-
-\end{frame}
-
+%\section{Microarray Technology}
+%
+%\begin{frame}{Microarrays}
+%
+%	\begin{itemize}
+%		\item Microarrays effectively ushered in the modern era of transcriptomics
+%		\item Purely interested in \textit{relative abundances}
+%		\item Could measure expression levels for 1000’s of genes simultaneously, for \textit{the first time}		
+%		\item Were essentially glass slides with probes affixed to them
+%	\end{itemize}
+%
+%\end{frame}
+%
 \begin{frame}{Microarrays}
 
 	\begin{center}
@@ -468,164 +468,164 @@
 	\end{center}
 
 \end{frame}
-
-\begin{frame}{Microarrays}
-
-	\begin{itemize}
-		\item Once again depends on reverse transcriptase for mRNA $\rightarrow$ cDNA
-		\item \textbf{No reliance on Sanger Sequencing}
-		\item Used probes (like a Northern blot) but the \textbf{cDNA is labelled and the probes are spatially fixed}
-		\begin{itemize}
-			\item Probes must be designed beforehand
-			\item Probes are fixed to the array in \textit{known locations}		
-		\end{itemize}
-	\end{itemize}
-
-\end{frame}
-
-\begin{frame}{Microarrays}
-
-	\begin{enumerate}
-
-		\item Fluorescent labelling during mRNA conversion to cDNA
-		\item Complimentary probes bind target sequences (hybridisation)
-		\item Fluorescence detection at each probe
-	
-	\end{enumerate}
-
-	\begin{center}
-	\textbf{Fluoresence Intensity $\propto$ mRNA abundance	}
-	\end{center}
-
-\end{frame}
-
-\begin{frame}{Microarrays}
-
-	\begin{center}
-	\includegraphics[scale=0.4]{figures/Microarrayhorizontal.png} 
-	\end{center}
-	
-	\blfootnote{Source: \url{https://commons.wikimedia.org/wiki/File:Microarray\_exp\_horizontal.svg}}
-
-\end{frame}
-
-\begin{frame}{Two Colour Microarrays}
-
-	\begin{itemize}
-		\item Probes with known sequences are at known locations
-		\begin{itemize}
-			\item Probes were ~65mer complimentary cDNA
-			\item Originally printed in local facilities
-		\end{itemize}
-		\item Samples are labelled with \textit{either} Cy3 (Green @ 570nm) or Cy5 (Red @ 670nm)
-		\item Both samples are hybridised to array
-		\item Relative Red/Green intensities were of interest
-		\item Gave an estimate of logFC within each array
-	\end{itemize}
-
-\end{frame}
-
-\begin{frame}{Two Colour Microarrays}
-
-	\begin{center}
-	\includegraphics[scale=0.5]{figures/2colour.jpg} 
-	~\\
-	A section of a two colour array\footfullcite{Shalon01071996}
-	\end{center}
-
-\end{frame}
-
-\begin{frame}{Two Colour Microarrays}
-
-	\begin{itemize}
-		\item Probes are ``printed" to the array
-		\begin{itemize}
-			\item Print tips can get clogged
-		\end{itemize}
-		\item Able to be customised for your own experiment
-		\begin{itemize}
-			\item We need a mapping file for probe location to target sequence
-		\end{itemize}
-		\item Both colours were scanned individually
-		\begin{itemize}
-			\item One scan detects red only, the next detects green only
-			\item Each scan would have to be aligned with the other
-		\end{itemize}
-		
-	\end{itemize}
-
-\end{frame}
-
-\begin{frame}{Two Colour Microarrays}
-
-	\begin{itemize}
-		\item Spots were detected using astronomical software
-		\begin{itemize}
-			\item Detection of true signal above background (DABG)
-		\end{itemize}
-		\item ``Spots" could be of variable size
-		\item Dye bias was noted $implies$ experiments often used dye swaps
-		\begin{itemize}
-			\item One sample might be labelled with red on one array, then labelled with green on the next
-		\end{itemize}
-	\end{itemize}
-
-\end{frame}
-
-\begin{frame}{Single Channel Microarrays}
-
-	\begin{itemize}
-		\item 3’ Arrays (Affymetrix) became the dominant transcriptomic technology until RNA seq
-		\item Probes target the 3’ end of transcripts - reduce issues with RNA degradation
-		\item Single channel (i.e. single colour)
-		\item One sample per arrays
-		\item $\sim$1,000,000 $\times$ 25-mer probes
-	\end{itemize}
-
-\end{frame}
-
-\begin{frame}{Single Channel Microarrays}
-
-	\begin{center}
-	\includegraphics[scale=0.25]{figures/Affymetrix.jpg} 
-	\end{center}
-	
-	\blfootnote{Source: \url{https://commons.wikimedia.org/wiki/File:Affymetrix-microarray.jpg}}
-
-\end{frame}
-
-
-\begin{frame}{Single Channel Microarrays}
-
-	\begin{itemize}
-		\item Manufacture used photolithography
-		\item Greater density of probes than two-colour arrays
-		\begin{itemize}
-			\item Shorter probes but far more of them
-		\end{itemize}
-		\item Also need a mapping file from location to probe sequence
-	\end{itemize}
-
-\end{frame}
-
-\begin{frame}{Single Channel Microarrays}
-
-	\begin{center}
-	\includegraphics[scale=0.4]{figures/microarrayLayout.jpg} 
-	\end{center}
-	
-	\blfootnote{Source: \url{https://universe-review.ca/R11-16-DNAsequencing.htm}}
-
-\end{frame}
-
-\begin{frame}{Single Channel Microarrays}
-
-	\begin{itemize}
-		\item Each 3' exon would be targeted by 11 unique probes
-		\item The set of 11 probes would be collected together as a single ``probeset"
-		\item Alternate isoforms with different 3' exons could be detected easily as they would have distinct probesets
-	\end{itemize}
-
-\end{frame}
+%
+%\begin{frame}{Microarrays}
+%
+%	\begin{itemize}
+%		\item Once again depends on reverse transcriptase for mRNA $\rightarrow$ cDNA
+%		\item \textbf{No reliance on Sanger Sequencing}
+%		\item Used probes (like a Northern blot) but the \textbf{cDNA is labelled and the probes are spatially fixed}
+%		\begin{itemize}
+%			\item Probes must be designed beforehand
+%			\item Probes are fixed to the array in \textit{known locations}		
+%		\end{itemize}
+%	\end{itemize}
+%
+%\end{frame}
+%
+%\begin{frame}{Microarrays}
+%
+%	\begin{enumerate}
+%
+%		\item Fluorescent labelling during mRNA conversion to cDNA
+%		\item Complimentary probes bind target sequences (hybridisation)
+%		\item Fluorescence detection at each probe
+%	
+%	\end{enumerate}
+%
+%	\begin{center}
+%	\textbf{Fluoresence Intensity $\propto$ mRNA abundance	}
+%	\end{center}
+%
+%\end{frame}
+%
+%\begin{frame}{Microarrays}
+%
+%	\begin{center}
+%	\includegraphics[scale=0.4]{figures/Microarrayhorizontal.png} 
+%	\end{center}
+%	
+%	\blfootnote{Source: \url{https://commons.wikimedia.org/wiki/File:Microarray\_exp\_horizontal.svg}}
+%
+%\end{frame}
+%
+%\begin{frame}{Two Colour Microarrays}
+%
+%	\begin{itemize}
+%		\item Probes with known sequences are at known locations
+%		\begin{itemize}
+%			\item Probes were ~65mer complimentary cDNA
+%			\item Originally printed in local facilities
+%		\end{itemize}
+%		\item Samples are labelled with \textit{either} Cy3 (Green @ 570nm) or Cy5 (Red @ 670nm)
+%		\item Both samples are hybridised to array
+%		\item Relative Red/Green intensities were of interest
+%		\item Gave an estimate of logFC within each array
+%	\end{itemize}
+%
+%\end{frame}
+%
+%\begin{frame}{Two Colour Microarrays}
+%
+%	\begin{center}
+%	\includegraphics[scale=0.5]{figures/2colour.jpg} 
+%	~\\
+%	A section of a two colour array\footfullcite{Shalon01071996}
+%	\end{center}
+%
+%\end{frame}
+%
+%\begin{frame}{Two Colour Microarrays}
+%
+%	\begin{itemize}
+%		\item Probes are ``printed" to the array
+%		\begin{itemize}
+%			\item Print tips can get clogged
+%		\end{itemize}
+%		\item Able to be customised for your own experiment
+%		\begin{itemize}
+%			\item We need a mapping file for probe location to target sequence
+%		\end{itemize}
+%		\item Both colours were scanned individually
+%		\begin{itemize}
+%			\item One scan detects red only, the next detects green only
+%			\item Each scan would have to be aligned with the other
+%		\end{itemize}
+%		
+%	\end{itemize}
+%
+%\end{frame}
+%
+%\begin{frame}{Two Colour Microarrays}
+%
+%	\begin{itemize}
+%		\item Spots were detected using astronomical software
+%		\begin{itemize}
+%			\item Detection of true signal above background (DABG)
+%		\end{itemize}
+%		\item ``Spots" could be of variable size
+%		\item Dye bias was noted $implies$ experiments often used dye swaps
+%		\begin{itemize}
+%			\item One sample might be labelled with red on one array, then labelled with green on the next
+%		\end{itemize}
+%	\end{itemize}
+%
+%\end{frame}
+%
+%\begin{frame}{Single Channel Microarrays}
+%
+%	\begin{itemize}
+%		\item 3’ Arrays (Affymetrix) became the dominant transcriptomic technology until RNA seq
+%		\item Probes target the 3’ end of transcripts - reduce issues with RNA degradation
+%		\item Single channel (i.e. single colour)
+%		\item One sample per arrays
+%		\item $\sim$1,000,000 $\times$ 25-mer probes
+%	\end{itemize}
+%
+%\end{frame}
+%
+%\begin{frame}{Single Channel Microarrays}
+%
+%	\begin{center}
+%	\includegraphics[scale=0.25]{figures/Affymetrix.jpg} 
+%	\end{center}
+%	
+%	\blfootnote{Source: \url{https://commons.wikimedia.org/wiki/File:Affymetrix-microarray.jpg}}
+%
+%\end{frame}
+%
+%
+%\begin{frame}{Single Channel Microarrays}
+%
+%	\begin{itemize}
+%		\item Manufacture used photolithography
+%		\item Greater density of probes than two-colour arrays
+%		\begin{itemize}
+%			\item Shorter probes but far more of them
+%		\end{itemize}
+%		\item Also need a mapping file from location to probe sequence
+%	\end{itemize}
+%
+%\end{frame}
+%
+%\begin{frame}{Single Channel Microarrays}
+%
+%	\begin{center}
+%	\includegraphics[scale=0.4]{figures/microarrayLayout.jpg} 
+%	\end{center}
+%	
+%	\blfootnote{Source: \url{https://universe-review.ca/R11-16-DNAsequencing.htm}}
+%
+%\end{frame}
+%
+%\begin{frame}{Single Channel Microarrays}
+%
+%	\begin{itemize}
+%		\item Each 3' exon would be targeted by 11 unique probes
+%		\item The set of 11 probes would be collected together as a single ``probeset"
+%		\item Alternate isoforms with different 3' exons could be detected easily as they would have distinct probesets
+%	\end{itemize}
+%
+%\end{frame}
 
 \end{document}
