@@ -4095,7 +4095,83 @@ x[5:1] == int_vec</pre>
 
 <pre class = 'prettyprint lang-r'>char_vec %in% &quot;red&quot;</pre>
 
-<pre >## [1] FALSE  TRUE FALSE</pre></article></slide>
+<pre >## [1] FALSE  TRUE FALSE</pre>
+
+</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Factors</h2></hgroup><article  id="factors">
+
+</article></slide><slide class=""><hgroup><h2>Factors</h2></hgroup><article  id="factors-1">
+
+<p>A common data type in statistics is a <em>categorical variable</em> (i.e. a <code>factor</code>)</p>
+
+<ul>
+<li>Data will be a set of common groups</li>
+</ul>
+
+<pre class = 'prettyprint lang-r'>pet_vec &lt;- c(&quot;Dog&quot;, &quot;Dog&quot;, &quot;Cat&quot;, &quot;Dog&quot;, &quot;Cat&quot;)</pre>
+
+<ul>
+<li>This is a <code>character</code> vector</li>
+</ul>
+
+</article></slide><slide class=""><hgroup><h2>Factors</h2></hgroup><article  id="factors-2">
+
+<ul>
+<li>We can simply coerce this to a vector of factors</li>
+<li>Categories will automatically be assigned alpha-numerically</li>
+</ul>
+
+<pre class = 'prettyprint lang-r'>pet_factors &lt;- as.factor(pet_vec)
+pet_factors</pre>
+
+<pre >## [1] Dog Dog Cat Dog Cat
+## Levels: Cat Dog</pre>
+
+<p>We can manually set these categories as <code>levels</code></p>
+
+<pre class = 'prettyprint lang-r'>pet_factors &lt;- factor(pet_vec, levels = c(&quot;Dog&quot;, &quot;Cat&quot;))</pre>
+
+</article></slide><slide class=""><hgroup><h2>Factors</h2></hgroup><article  id="factors-3">
+
+<ul>
+<li>These are actually stored as integers</li>
+<li>Each integer corresponds to a <code>level</code></li>
+</ul>
+
+<pre class = 'prettyprint lang-r'>str(pet_factors)
+as.integer(pet_factors)
+as.character(pet_factors)</pre>
+
+</article></slide><slide class=""><hgroup><h2>Factors</h2></hgroup><article  id="factors-4">
+
+<p><strong>What would happen if we think a <code>factor</code> vector is a <code>character</code> vector, and we use it to select values from a <code>vector</code>/<code>matrix</code>/<code>data.frame</code>?</strong></p>
+
+</article></slide><slide class=""><hgroup><h2>Factors</h2></hgroup><article  id="factors-5">
+
+<p><strong>What would happen if we think a <code>factor</code> vector is a <code>character</code> vector, and we use it to select values from a <code>vector</code>/<code>matrix</code>/<code>data.frame</code>?</strong></p>
+
+<pre class = 'prettyprint lang-r'>names(pet_vec) &lt;- pet_vec
+pet_vec</pre>
+
+<pre >##   Dog   Dog   Cat   Dog   Cat 
+## &quot;Dog&quot; &quot;Dog&quot; &quot;Cat&quot; &quot;Dog&quot; &quot;Cat&quot;</pre>
+
+<pre class = 'prettyprint lang-r'>pet_vec[pet_factors]</pre>
+
+<pre >##   Dog   Dog   Dog   Dog   Dog 
+## &quot;Dog&quot; &quot;Dog&quot; &quot;Dog&quot; &quot;Dog&quot; &quot;Dog&quot;</pre>
+
+<p><em>This is why I’m very cautious about <code>read.csv()</code> and the standard <code>data.frame</code> etc.</em></p>
+
+</article></slide><slide class=""><hgroup><h2>Factors</h2></hgroup><article  id="factors-6">
+
+<ul>
+<li>There is a tidyverse package <code>forcats</code></li>
+<li>A few improvements, particularly <code>fct_lump()</code> &amp; <code>fct_infreq()</code>
+
+<ul>
+<li>We can lump rare categories into <code>other</code> or order by frequency</li>
+</ul></li>
+</ul></article></slide>
 
 
   <slide class="backdrop"></slide>

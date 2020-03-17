@@ -884,3 +884,66 @@ One final and *important* test in `R`
 char_vec %in% "red"
 ```
 
+# Factors
+
+## Factors
+
+A common data type in statistics is a *categorical variable* (i.e. a `factor`)
+
+- Data will be a set of common groups
+
+```{r}
+pet_vec <- c("Dog", "Dog", "Cat", "Dog", "Cat")
+```
+
+- This is a `character` vector
+
+## Factors
+
+- We can simply coerce this to a vector of factors
+- Categories will automatically be assigned alpha-numerically
+
+```{r}
+pet_factors <- as.factor(pet_vec)
+pet_factors
+```
+
+We can manually set these categories as `levels`
+
+```{r}
+pet_factors <- factor(pet_vec, levels = c("Dog", "Cat"))
+```
+
+## Factors
+
+- These are actually stored as integers
+- Each integer corresponds to a `level`
+
+```{r, results='hide'}
+str(pet_factors)
+as.integer(pet_factors)
+as.character(pet_factors)
+```
+
+## Factors
+
+**What would happen if we think a `factor` vector is a `character` vector, and we use it to select values from a `vector`/`matrix`/`data.frame`?**
+
+## Factors
+
+**What would happen if we think a `factor` vector is a `character` vector, and we use it to select values from a `vector`/`matrix`/`data.frame`?**
+
+```{r}
+names(pet_vec) <- pet_vec
+pet_vec
+pet_vec[pet_factors]
+```
+
+*This is why I'm very cautious about `read.csv()` and the standard `data.frame` etc.*
+
+## Factors
+
+- There is a tidyverse package `forcats`
+- A few improvements, particularly `fct_lump()` & `fct_infreq()`
+    - We can lump rare categories into `other` or order by frequency
+    
