@@ -3352,7 +3352,7 @@ char_vec</pre>
 <li>All <code>R</code> data structures are built on these</li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Properties of a vector</h2></hgroup><article  id="properties-of-a-vector" class="build">
+</article></slide><slide class=""><hgroup><h2>Properties of a vector</h2></hgroup><article  class="build" id="properties-of-a-vector">
 
 <p>What properties might a vector have?</p>
 
@@ -3394,7 +3394,7 @@ char_vec</pre>
 <li><p>We have combined two vectors of length 1, to make a vector of length 2</p></li>
 </ul>
 
-</article></slide><slide class=""><hgroup><h2>Working with Vectors</h2></hgroup><article  id="working-with-vectors-1" class="build">
+</article></slide><slide class=""><hgroup><h2>Working with Vectors</h2></hgroup><article  class="build" id="working-with-vectors-1">
 
 <p><strong>What would happen if we combined two vectors of different types?</strong></p>
 
@@ -3404,7 +3404,7 @@ char_vec</pre>
 print(new_vec)
 typeof(new_vec)</pre>
 
-</article></slide><slide class=""><hgroup><h2>Working with Vectors</h2></hgroup><article  id="working-with-vectors-2" class="build">
+</article></slide><slide class=""><hgroup><h2>Working with Vectors</h2></hgroup><article  class="build" id="working-with-vectors-2">
 
 <p><strong>Q: What happened to the <code>logical</code> values?</strong></p>
 
@@ -3412,13 +3412,13 @@ typeof(new_vec)</pre>
 
 </article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Coercion</h2></hgroup><article  id="coercion">
 
-</article></slide><slide class=""><hgroup><h2>Coercion </h2><h3> Discussion Questions</h3></hgroup><article  id="coercion-discussion-questions" class="build">
+</article></slide><slide class=""><hgroup><h2>Coercion </h2><h3> Discussion Questions</h3></hgroup><article  class="build" id="coercion-discussion-questions">
 
 <p><strong>What other types could <code>logical</code> vectors be coerced into?</strong></p>
 
 <p>Try using the functions: <code>as.integer()</code>, <code>as.double()</code> &amp; <code>as.character()</code> on <code>logi_vec</code></p>
 
-</article></slide><slide class=""><hgroup><h2>Coercion</h2></hgroup><article  id="coercion-1" class="build">
+</article></slide><slide class=""><hgroup><h2>Coercion</h2></hgroup><article  class="build" id="coercion-1">
 
 <p><strong>Can <code>character</code> vectors be coerced into <code>numeric</code> vectors?</strong></p>
 
@@ -3551,7 +3551,7 @@ euro[[&quot;ESP&quot;]]</pre>
 <pre >##       ATS       BEF       DEM       ESP       FIM 
 ##  13.76030  40.33990   1.95583 166.38600   5.94573</pre>
 
-</article></slide><slide class=""><hgroup><h2>Vector Operations</h2></hgroup><article  id="vector-operations" class="build">
+</article></slide><slide class=""><hgroup><h2>Vector Operations</h2></hgroup><article  class="build" id="vector-operations">
 
 <p>We can also combine the above logical test and subsetting</p>
 
@@ -3565,7 +3565,7 @@ euro[[&quot;ESP&quot;]]</pre>
 
 <pre class = 'prettyprint lang-r'>dbl_vec[dbl_vec &gt; 1]</pre>
 
-</article></slide><slide class=""><hgroup><h2>Vector Operations</h2></hgroup><article  id="vector-operations-1" class="build">
+</article></slide><slide class=""><hgroup><h2>Vector Operations</h2></hgroup><article  class="build" id="vector-operations-1">
 
 <p>An additional logical test: <code>%in%</code> (read as: &ldquo;<em>is in</em>&rdquo;)</p>
 
@@ -4097,81 +4097,87 @@ x[5:1] == int_vec</pre>
 
 <pre >## [1] FALSE  TRUE FALSE</pre>
 
-</article></slide><slide class="segue dark nobackground level1"><hgroup class = 'auto-fadein'><h2>Factors</h2></hgroup><article  id="factors">
+<!-- # Factors -->
 
-</article></slide><slide class=""><hgroup><h2>Factors</h2></hgroup><article  id="factors-1">
+<!-- ## Factors -->
 
-<p>A common data type in statistics is a <em>categorical variable</em> (i.e. a <code>factor</code>)</p>
+<!-- A common data type in statistics is a *categorical variable* (i.e. a `factor`) -->
 
-<ul>
-<li>Data will be a set of common groups</li>
-</ul>
+<!-- - Data will be a set of common groups -->
 
-<pre class = 'prettyprint lang-r'>pet_vec &lt;- c(&quot;Dog&quot;, &quot;Dog&quot;, &quot;Cat&quot;, &quot;Dog&quot;, &quot;Cat&quot;)</pre>
+<!-- ```{r} -->
 
-<ul>
-<li>This is a <code>character</code> vector</li>
-</ul>
+<!-- pet_vec <- c("Dog", "Dog", "Cat", "Dog", "Cat") -->
 
-</article></slide><slide class=""><hgroup><h2>Factors</h2></hgroup><article  id="factors-2">
+<!-- ``` -->
 
-<ul>
-<li>We can simply coerce this to a vector of factors</li>
-<li>Categories will automatically be assigned alpha-numerically</li>
-</ul>
+<!-- - This is a `character` vector -->
 
-<pre class = 'prettyprint lang-r'>pet_factors &lt;- as.factor(pet_vec)
-pet_factors</pre>
+<!-- ## Factors -->
 
-<pre >## [1] Dog Dog Cat Dog Cat
-## Levels: Cat Dog</pre>
+<!-- - We can simply coerce this to a vector of factors -->
 
-<p>We can manually set these categories as <code>levels</code></p>
+<!-- - Categories will automatically be assigned alpha-numerically -->
 
-<pre class = 'prettyprint lang-r'>pet_factors &lt;- factor(pet_vec, levels = c(&quot;Dog&quot;, &quot;Cat&quot;))</pre>
+<!-- ```{r} -->
 
-</article></slide><slide class=""><hgroup><h2>Factors</h2></hgroup><article  id="factors-3">
+<!-- pet_factors <- as.factor(pet_vec) -->
 
-<ul>
-<li>These are actually stored as integers</li>
-<li>Each integer corresponds to a <code>level</code></li>
-</ul>
+<!-- pet_factors -->
 
-<pre class = 'prettyprint lang-r'>str(pet_factors)
-as.integer(pet_factors)
-as.character(pet_factors)</pre>
+<!-- ``` -->
 
-</article></slide><slide class=""><hgroup><h2>Factors</h2></hgroup><article  id="factors-4">
+<!-- We can manually set these categories as `levels` -->
 
-<p><strong>What would happen if we think a <code>factor</code> vector is a <code>character</code> vector, and we use it to select values from a <code>vector</code>/<code>matrix</code>/<code>data.frame</code>?</strong></p>
+<!-- ```{r} -->
 
-</article></slide><slide class=""><hgroup><h2>Factors</h2></hgroup><article  id="factors-5">
+<!-- pet_factors <- factor(pet_vec, levels = c("Dog", "Cat")) -->
 
-<p><strong>What would happen if we think a <code>factor</code> vector is a <code>character</code> vector, and we use it to select values from a <code>vector</code>/<code>matrix</code>/<code>data.frame</code>?</strong></p>
+<!-- ``` -->
 
-<pre class = 'prettyprint lang-r'>names(pet_vec) &lt;- pet_vec
-pet_vec</pre>
+<!-- ## Factors -->
 
-<pre >##   Dog   Dog   Cat   Dog   Cat 
-## &quot;Dog&quot; &quot;Dog&quot; &quot;Cat&quot; &quot;Dog&quot; &quot;Cat&quot;</pre>
+<!-- - These are actually stored as integers -->
 
-<pre class = 'prettyprint lang-r'>pet_vec[pet_factors]</pre>
+<!-- - Each integer corresponds to a `level` -->
 
-<pre >##   Dog   Dog   Dog   Dog   Dog 
-## &quot;Dog&quot; &quot;Dog&quot; &quot;Dog&quot; &quot;Dog&quot; &quot;Dog&quot;</pre>
+<!-- ```{r, results='hide'} -->
 
-<p><em>This is why I’m very cautious about <code>read.csv()</code> and the standard <code>data.frame</code> etc.</em></p>
+<!-- str(pet_factors) -->
 
-</article></slide><slide class=""><hgroup><h2>Factors</h2></hgroup><article  id="factors-6">
+<!-- as.integer(pet_factors) -->
 
-<ul>
-<li>There is a tidyverse package <code>forcats</code></li>
-<li>A few improvements, particularly <code>fct_lump()</code> &amp; <code>fct_infreq()</code>
+<!-- as.character(pet_factors) -->
 
-<ul>
-<li>We can lump rare categories into <code>other</code> or order by frequency</li>
-</ul></li>
-</ul></article></slide>
+<!-- ``` -->
+
+<!-- ## Factors -->
+
+<!-- **What would happen if we think a `factor` vector is a `character` vector, and we use it to select values from a `vector`/`matrix`/`data.frame`?** -->
+
+<!-- ## Factors -->
+
+<!-- **What would happen if we think a `factor` vector is a `character` vector, and we use it to select values from a `vector`/`matrix`/`data.frame`?** -->
+
+<!-- ```{r} -->
+
+<!-- names(pet_vec) <- pet_vec -->
+
+<!-- pet_vec -->
+
+<!-- pet_vec[pet_factors] -->
+
+<!-- ``` -->
+
+<!-- *This is why I'm very cautious about `read.csv()` and the standard `data.frame` etc.* -->
+
+<!-- ## Factors -->
+
+<!-- - There is a tidyverse package `forcats` -->
+
+<!-- - A few improvements, particularly `fct_lump()` & `fct_infreq()` -->
+
+<!--     - We can lump rare categories into `other` or order by frequency --></article></slide>
 
 
   <slide class="backdrop"></slide>
