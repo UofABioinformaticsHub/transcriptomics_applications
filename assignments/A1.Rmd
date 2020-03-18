@@ -30,8 +30,8 @@ This is assignment is due by 5pm, **Tuesday 24th March**.
 - Submissions must be made as a *zip archive* containing 3 files:
     1. Your **source R Markdown Document** (with an Rmd suffix)
     2. A **compiled pdf**, showing all code
-    3. The **signed cover sheet** as required by the University
-- All 3 file names **within the zip archive** must start with your student number.
+    3. The **signed cover sheet** as required by the University **[NB: This is no longer required]**
+- All file names **within the zip archive** must start with your student number.
 However the name of the zip archive is not important as myUni will likely modify this during submission. [See here for help creating a zip archive](#creating-a-zip-archive)
     
 *All questions are to be answered on the same R Markdown / PDF, regardless of if they require a plain text answer, or require execution of code.*
