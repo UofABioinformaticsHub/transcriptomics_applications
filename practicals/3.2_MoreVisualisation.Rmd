@@ -1,0 +1,592 @@
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 3.2: Additional Visualisation Strategies"
+date: "18^th^ March 2020"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+
+```{r, loadPackages, echo = FALSE, include = FALSE}
+library(knitr)
+opts_chunk$set(
+  echo = TRUE, include = TRUE, 
+  results = "hide",
+  warning = FALSE, message = FALSE, 
+  out.width = 800, fig.align = "center",
+  fig.show = "hide"
+)
+```
+  
+# Introduction
+
+In last week's sessions, we covered:
+
+- Importing Data using `readr`
+- Manipulating `data.frame` objects using `dplyr` and `tidyr`
+- Visualising Data using `ggplot2`
+
+All of this utilised packages loaded under the `tidyverse` framework, which is designed for seamless integration of the above packages.
+Today, we'll push ahead in a similar direction, but will also explore so different approaches to visualisation.
+If you finish all of last Friday's and this Friday's material before 11am, please feel free to work on your Assignment.
+
+On Monday, we dug more deeply into R data structures with the promise that it would all be incredibly helpful as you go.
+Hopefully, you'll see some of the benefits of that material today as well.
+
+## Today's Data
+
+The main two datasets for today will be the same as last week: 1) `cpm.tsv` (please name this `logCPM` when you load it) and 2) `topTable.csv`.
+Please ensure they are in a sensible location (perhaps `practical_3/data`) and if you are starting with today's work, begin a new R Markdown called `AdditionalVisualisation.Rmd`, or something else appropriate.
+If you have not finished last Friday's material, please resume from where you left off.
+
+Once you've started this R Markdown, please make any global settings in your `setup` chunk, load the tidyverse in your `packages` chunk, then load both of the above files.
+Once you have `logCPM` loaded, please form the object `samples` as we did in [last Friday's session](2.2_Tidyverse.html#load_the_cpm_values).
+
+Right at the end of today's session, we're going to use the `de.tsv` file as well, so you may as well load that at the start too.
+
+```{r echo = FALSE}
+library(tidyverse)
+library(pander)
+library(scales)
+logCPM <- read_tsv("data/cpm.tsv")
+topTable <- read_csv("data/topTable.csv")
+de <- read_tsv("data/de.tsv")
+samples <- samples <- tibble(
+  sampleName = str_subset(colnames(logCPM), pattern = "Ps2")
+) %>%
+  mutate(
+    genotype = str_extract(sampleName, "(WT|Het)"),
+    number  = str_replace_all(sampleName, ".+F3_([0-9]+)_Fem", "\\1"),
+    shortName = paste(genotype, number, sep = "_")
+  )
+```
+
+
+# Plotting Larger Datasets
+
+## Heatmaps
+
+At the end of the last section, we learned how to make a boxplot for multiple genes.
+This can be extremely informative when comparing a handful of genes across a few conditions.
+However, sometimes we might like to show a larger set of genes and a heatmap can be a beneficial way to communicate information about our gene expression.
+
+A great example might be to make a plot of the 20 most highly ranked DE genes in `topTable`.
+Let's have a quick look first.
+
+```{r}
+topTable %>%
+  slice(1:20)
+```
+
+We have gene IDs and gene names in this object, and if you recall, we had the sample-specific expression values in our `logCPM` object.
+Our goal will be to take these IDs from the `topTable` and use them to grab the expression values from `logCPM`.
+
+Let's try this initially using the `tidyverse`, then we'll move to a different approach.
+
+### Using `ggplot2`
+
+Here's our first heatmap, which I'm sure you'll agree looks terrible.
+In this code chunk we're actually doing a lot, so let's break it down:
+
+1. `topTable %>% slice(1:20) %>% dplyr::select(starts_with("gene"))`. Here we're just grabbing the top 20, along with the IDs and gene names
+2. `left_join(logCPM)`. Now we add the actual expression values
+3. `pivot_longer(...)`. Because `ggplot()` needs everything in single columns, we had to place all the expression values into the single column
+4. `left_join(samples)` allows us to join our sample annotations, such as genotypes
+
+From there we call `ggplot()` and use `geom_raster()` to fill the coloured boxes.
+
+```{r}
+topTable %>%
+  slice(1:20) %>%
+  dplyr::select(starts_with("gene")) %>%
+  left_join(logCPM) %>%
+  pivot_longer(
+    cols = starts_with("Ps2"),
+    values_to = "logCPM",
+    names_to = "sampleName"
+  ) %>%
+  left_join(samples) %>%
+  ggplot(
+    aes(x = shortName, y = gene_name, fill = logCPM)
+  ) +
+  geom_raster()
+```
+
+The main issues I would have with this are 1) we can't really tell our genotypes, 2) the genes aren't any any intelligent order, and 3) the colour scale is awful.
+
+To solve the first of these, we know that we can use `facet_wrap()`, so let's add this.
+(Don't create an entire new chunk unless you want to. It's OK to just add to the previous one.)
+
+```{r}
+topTable %>%
+  slice(1:20) %>%
+  dplyr::select(starts_with("gene")) %>%
+  left_join(logCPM) %>%
+  pivot_longer(
+    cols = starts_with("Ps2"),
+    values_to = "logCPM",
+    names_to = "sampleName"
+  ) %>%
+  left_join(samples) %>%
+  ggplot(
+    aes(x = shortName, y = gene_name, fill = logCPM)
+  ) +
+  geom_raster() +
+  facet_wrap(~genotype, scales = "free_x")
+```
+
+Let's try and change the gene ordering be sorting our initial values on `logFC` as that should hopefully give us genes with similar patterns being together.
+We'd have to add this early in the chain of commands though.
+
+```{r}
+topTable %>%
+  slice(1:20) %>%
+  arrange(desc(logFC)) %>%
+  dplyr::select(starts_with("gene")) %>%
+  left_join(logCPM) %>%
+  pivot_longer(
+    cols = starts_with("Ps2"),
+    values_to = "logCPM",
+    names_to = "sampleName"
+  ) %>%
+  left_join(samples) %>%
+  ggplot(
+    aes(x = shortName, y = gene_name, fill = logCPM)
+  ) +
+  geom_raster() +
+  facet_wrap(~genotype, scales = "free_x")
+```
+
+Now if you're session is like mine (and everyone else who uses R), you'll notice that this made no difference.
+**Why?**
+
+As you realise, there is an answer.
+If you look carefully, you'll notice that the gene names on the y-axis have been placed in alphabetic order.
+Under the hood, `ggplot` has converted this column into an R data type called a `factor`, which is really a categorical variable.
+When you think about plotting, this actually makes sense.
+We're plotting expression levels for a gene, which is really a category.
+Factors however are one of the simultaneous blessings and curses of R.
+Let's take a little side-step into their strange world.
+
+### Factors
+
+As we've discussed in class before, R by default likes to change character strings into `factors` when you load data using the older functions `read.csv()` and `read.delim()`.
+This is the explicit reason why we should avoid them and use the `tidyverse` (i.e. `readr::read_csv()`, `readr::read_tsv()` etc.) when loading data.
+Hopefully you'll understand why in about 10 minutes.
+
+Thanks to the statistical origins of R, `factors` are a common data type as much statistical analysis revolves around categorical variables.
+Even in this dataset we have genotype as a categorical variable, and we can think of genes as being categories for this plotting step as well.
+
+Let's explore them a little further by starting with a `character` vector.
+Here we see the classic repeated values so common to a categorical variable.
+
+```{r}
+pet_vec <- c("Dog", "Dog", "Cat", "Dog", "Cat")
+```
+
+To coerce this into a categorical variable we use `as.factor()` and the levels will automatically be set alpha-numerically, as we saw in our dodgy heatmap.
+
+```{r}
+pet_factors <- as.factor(pet_vec)
+pet_factors
+```
+
+Or we can manually set these categories as `levels` using the function `factor`, which creates a new vector from scratch without lazy coercion.
+
+```{r}
+pet_factors <- factor(pet_vec, levels = c("Dog", "Cat"))
+```
+
+Now these are categories, R actually stores this internally as an `integer` vector, with the class `factor` and the `attributes` which are levels.
+Each integer corresponds to one of the levels
+
+```{r, results='hide'}
+str(pet_factors)
+attributes(pet_factors)
+```
+
+So now, we can coerce our apparent "character" vector to numbers!
+
+```{r}
+as.integer(pet_factors)
+as.character(pet_factors)
+```
+
+This may seem weird, but is actually pretty sensible from the perspective of memory management: integers take less memory and now we only have a character vector of length 2 as an attribute.
+However, it can lead to problems when you think you have a character, but you have a factor.
+This is obviously why I don't like `read.csv()` and `read.delim()` as they automatically convert all character columns to factors.
+So does the command `data.frame()` if you're creating a `data.frame` from scratch.
+Again, this is why I explicitly advise using `tibble` objects, as they (wisely) do not do this for you.
+
+A clear hint as to whether you have a `character` or a `factor`, is that a `character` vector will always have quotation marks around it, whilst a `factor` vector **will not**.
+
+**What would happen if we think a `factor` vector is a `character` vector, and we use it to select values from a `vector`/`matrix`/`data.frame`?**
+
+First we'll do a rather obvious thing and name each value in `pet_vec` with it's value.
+Notice that for vectors, we can get away with repeated names.
+This wouldn't apply to column and rownames for any other more complicated objects.
+
+```{r}
+names(pet_vec) <- pet_vec
+pet_vec
+pet_vec[pet_factors]
+```
+
+Hopefully you can see that even though `pet_factors` looks like it should return `r as.character(pet_factors)`, it's actually calling the values `r pander(as.integer(pet_factors))` which are the underlying integers.
+
+There is a tidyverse package `forcats` which enables some nice work with `factors` and makes things reasonably easy for us.
+(It's loaded by default.)
+We won't explore these in great depth for now, but the key function we'll need for our data is `fct_inorder()`.
+
+To demonstrate on `pet_vec()`, this assign values in the order they appear (instead of alpha-numerically).
+
+```{r}
+fct_inorder(pet_vec)
+```
+
+A very useful alternative can be to assign categories by how common they are, using `fct_infreq()`.
+
+```{r}
+fct_infreq(pet_vec)
+```
+
+They give the same result here as not only is `Dog` the first value to appear, but it's also the most common.
+
+Let's now return to our dodgy heatmap, placing the line `mutate(gene_name = fct_inorder(gene_name)) %>%` directly after we've arranged our data by logFC.
+Now our heatmap will have the up-regulated genes at the bottom, with the down-regulated genes at the top.
+The colour still looks pretty bad though, so it's hard to tell.
+
+```{r}
+topTable %>%
+  slice(1:20) %>%
+  arrange(desc(logFC)) %>%
+  mutate(gene_name = fct_inorder(gene_name)) %>%
+  dplyr::select(starts_with("gene")) %>%
+  left_join(logCPM) %>%
+  pivot_longer(
+    cols = starts_with("Ps2"),
+    values_to = "logCPM",
+    names_to = "sampleName"
+  ) %>%
+  left_join(samples) %>%
+  ggplot(
+    aes(x = shortName, y = gene_name, fill = logCPM)
+  ) +
+  geom_raster() +
+  facet_wrap(~genotype, scales = "free_x") +
+  labs(x = "Sample", y = "Gene")
+```
+
+Let's use a better colour scale, with my suggestion being `scale_viridis_c()` (the `_c` stands for continuous values).
+The viridis scales have been design to provide comparable separation between colour on the black & white scale, as well as the colour scale.
+This makes them helpful for colour-blind people, and given how many men work in science, this is a genuine issue to be aware of.
+
+The options in the viridis family are (A) `magma`, (B) `inferno`, (C) `plasma`, (D) `viridis` or (E) `cividis`.
+By default we get viridis, so let's try magma to see if that looks any good.
+
+```{r}
+topTable %>%
+  slice(1:20) %>%
+  arrange(desc(logFC)) %>%
+  mutate(gene_name = fct_inorder(gene_name)) %>%
+  dplyr::select(starts_with("gene")) %>%
+  left_join(logCPM) %>%
+  pivot_longer(
+    cols = starts_with("Ps2"),
+    values_to = "logCPM",
+    names_to = "sampleName"
+  ) %>%
+  left_join(samples) %>%
+  ggplot(
+    aes(x = shortName, y = gene_name, fill = logCPM)
+  ) +
+  geom_raster() +
+  facet_wrap(~genotype, scales = "free_x") +
+  scale_fill_viridis_c(option = "magma") +
+  labs(x = "Sample", y = "Gene")
+```
+
+Hopefully you can see that changes in expression at the low end of expression values are just as evident as at the high end of expression values.
+
+For a final tweak, let's remove the background grey which you may see peaking out at the edges.
+We'll also remove that padding around the edges which is controlled by `scale = expand_scale()` within each axis.
+Notice that we have discrete x and y-axes here, so we use `scale_*_discrete()`
+
+```{r}
+topTable %>%
+  slice(1:20) %>%
+  arrange(desc(logFC)) %>%
+  mutate(gene_name = fct_inorder(gene_name)) %>%
+  dplyr::select(starts_with("gene")) %>%
+  left_join(logCPM) %>%
+  pivot_longer(
+    cols = starts_with("Ps2"),
+    values_to = "logCPM",
+    names_to = "sampleName"
+  ) %>%
+  left_join(samples) %>%
+  ggplot(
+    aes(x = shortName, y = gene_name, fill = logCPM)
+  ) +
+  geom_raster() +
+  facet_wrap(~genotype, scales = "free_x") +
+  scale_fill_viridis_c(option = "magma") +
+  scale_x_discrete(expand = expand_scale(c(0, 0))) +
+  scale_y_discrete(expand = expand_scale(c(0, 0))) +
+  labs(x = "Sample", y = "Gene") +
+  theme_bw() 
+```
+
+There are quite a few new concepts in the above:
+
+- We can modify any scale (fill, colour, size) using `scale_fill_coninuous()`, `scale_fill_discrete()` or whichever is appropriate for your needs at the time.
+- We can also modify our axes using `scale_x_discrete()`, `scale_x_continuous()` or whatever is appropriate.
+This can be very handy for setting limits, alternative labels etc.
+- Although we've not directly addressed it yet, we can modify many parameters using a call to `theme()`
+
+### Using themes
+
+The first thing we might like to change is the legend position.
+To save repeating all that code though, let's save that above plotting code as a `ggplot` objects
+
+```{r}
+p <- topTable %>%
+  slice(1:20) %>%
+  arrange(desc(logFC)) %>%
+  mutate(gene_name = fct_inorder(gene_name)) %>%
+  dplyr::select(starts_with("gene")) %>%
+  left_join(logCPM) %>%
+  pivot_longer(
+    cols = starts_with("Ps2"),
+    values_to = "logCPM",
+    names_to = "sampleName"
+  ) %>%
+  left_join(samples) %>%
+  ggplot(
+    aes(x = shortName, y = gene_name, fill = logCPM)
+  ) +
+  geom_raster() +
+  facet_wrap(~genotype, scales = "free_x") +
+  scale_fill_viridis_c(option = "magma") +
+  scale_x_discrete(expand = expand_scale(c(0, 0))) +
+  scale_y_discrete(expand = expand_scale(c(0, 0))) +
+  labs(x = "Sample", y = "Gene") +
+  theme_bw() 
+```
+
+Notice that this time a plot wasn't drawn, but we've created an object called `p`.
+We can modify this easily by just adding a call to `theme()` after we print it.
+
+```{r}
+p +
+  theme(
+    legend.position = "bottom"
+    )
+```
+
+As you can see in the help page `?theme`, there are a huge variety of options we can set using `theme()`.
+A very useful one of these may be to set the font-size so we can publish our amazing heatmap.
+
+To set any parameter which involves a character, in the Grammar of Graphic syntax we use a call to `element_text()`.
+This is one of many people's least favourite things about `ggplot2`, but it works well once you get the hang of it.
+Setting the argument `text` will set all text elements within the plot.
+
+```{r}
+p +
+  theme(
+    text = element_text(size = 12)
+  )
+```
+
+We could just set the axis text size using the argument `axis.text`.
+Notice that some of these values may be arbitrary and that `12` may not correspond to 12pt font.
+
+```{r}
+p +
+  theme(
+    axis.text = element_text(size = 12)
+  )
+```
+
+There is a huge amount to explore here, so let's just change one more thing, this being the panel strips at the top of the facets.
+These are shapes (i.e. rectangles) with an outline and fill, so we use `element_rect()` to change these to have a white background.
+
+```{r}
+p +
+  theme(
+    strip.background = element_rect(fill = "white"),
+  )
+```
+
+We could spend hours here changing the grid-lines, text angle and colours everywhere, but you can explore that when you feel the need at another time.
+
+### Using `pheatmap`
+
+One of the flaws with the above heatmap is we didn't have many options for grouping similar genes or samples.
+We managed something, but often you'll see a heatmap with a dendrogram at the top and side showing "clusters" of similar samples and genes.
+These is no simple option for this using `ggplot` so we'll have to turn to the package `pheatmap` which (surprisingly) is **not** part of the `tidyverse`.
+Let's load the package by adding this to our `packages` chunk.
+
+```{r}
+library(pheatmap)
+```
+
+The only function we need to know about in this package is also called `pheatmap()`, so let's check the help page (`?pheatmap`).
+This is a big & potentially confusing one, but the key point is that we need to **provide expression values as a** `matrix`.
+If you recall Monday's session, you'll know we can have rownames & column names on a matrix, but otherwise, everything must be the same type of value.
+Here, we'll need to have a matrix with our expression values contained in `logCPM`.
+
+Given Monday's session, there are two clear ways to do this.
+
+1. We could form a vector which contains the gene IDs that we need. Then we could make a matrix from `logCPM` and use this to select rows, using the `[,]` method. This is the classic, old-school way that you often come across when working outside the `tidyverse`.
+2. Or, we could use chains of commands which are "tidy" in their process, but step outside of the traditional world of `tibble` objects.
+
+Let's go for the tidy approach first, and if you have time, please explore the other option.
+We'll obviously start the same way, by selecting the genes and joining the logCPM values.
+
+```{r}
+topTable %>%
+  slice(1:20) %>%
+  select(starts_with("gene")) %>%
+  left_join(logCPM)
+```
+
+The data format we'll need from here is a matrix with gene names as the rownames, and samples as the column names.
+Remember that a tibble cannot have rownames (except 1:n) so we'll actually have to go via a generic `data.frame` now that we're leaving the `tidyverse`.
+Once we have a generic `data.frame`, we can move a column to being rownames using `column_to_rownames()`, then coercing to a matrix.
+
+```{r}
+topTable %>%
+  slice(1:20) %>%
+  select(starts_with("gene")) %>%
+  left_join(logCPM) %>%
+  select(-gene_id) %>%
+  as.data.frame() %>%
+  column_to_rownames("gene_name") %>%
+  as.matrix()
+```
+
+Now we're ready to send this to `pheatmap()` and you'll see the dendrograms, along with a few other key issues that we'll have to fix.
+The first of these to my eyes will be the sample names.
+
+```{r}
+topTable %>%
+  slice(1:20) %>%
+  select(starts_with("gene")) %>%
+  left_join(logCPM) %>%
+  select(-gene_id) %>%
+  as.data.frame() %>%
+  column_to_rownames("gene_name") %>%
+  as.matrix() %>%
+  pheatmap()
+```
+
+To fix those sample names, we could've done a `pivot_longer()` then `left_join(samples)` followed by a `pivot_wider()`, but that's probably a bit to complex.
+`pheatmap()` allows us to provide names as a names vector.
+We can get this from `samples` using a call to `set_names()` inside `pheatmap`
+
+```{r}
+topTable %>%
+  slice(1:20) %>%
+  select(starts_with("gene")) %>%
+  left_join(logCPM) %>%
+  select(-gene_id) %>%
+  as.data.frame() %>%
+  column_to_rownames("gene_name") %>%
+  as.matrix() %>%
+  pheatmap(
+    labels_col = samples$shortName %>%
+      set_names(samples$sampleName)
+  )
+```
+
+Now change the colour to a viridis pallet using the argument `color = viridis_pal(option = "magma")(100)` inside the call to `pheatmap()`.
+This function comes from the `scales` package, so we'll need to load that in our `packages` chunk.
+The function `viridis_pal()` is a strange function that returns another function, so this is why we need to supply `(100)` after that.
+(Just trust me on that one).
+Now we have a scale that looks pretty much like or previous one, but we have samples and genes clustered nicely.
+
+We can also place "cuts" in the heatmap to enhance any clusters.
+These are done using `cutree_cols` and `cutree_rows`.
+
+```{r}
+topTable %>%
+  slice(1:20) %>%
+  select(starts_with("gene")) %>%
+  left_join(logCPM) %>%
+  select(-gene_id) %>%
+  as.data.frame() %>%
+  column_to_rownames("gene_name") %>%
+  as.matrix() %>%
+  pheatmap(
+    color = viridis_pal(option = "magma")(100),
+    labels_col = samples$shortName %>%
+      set_names(samples$sampleName),
+    cutree_cols = 2,
+    cutree_rows = 3
+  )
+```
+
+Now we can clearly see our samples and genes which are showing similar behaviours.
+
+The final enhancement we're going to make is to add annotations to our columns to indicate genotype.
+To do this, we need to provide a `data.frame` with rownames that match our sample names, and columns that indicate our annotation value (i.e. genotype).
+The following will get us that.
+
+```{r}
+samples %>%
+  select(sampleName, genotype) %>%
+  as.data.frame() %>%
+  column_to_rownames("sampleName")
+```
+
+Now let's put this inside our call to `pheatmap()`.
+
+```{r}
+topTable %>%
+  slice(1:20) %>%
+  select(starts_with("gene")) %>%
+  left_join(logCPM) %>%
+  select(-gene_id) %>%
+  as.data.frame() %>%
+  column_to_rownames("gene_name") %>%
+  as.matrix() %>%
+  pheatmap(
+    color = viridis_pal(option = "magma")(100),
+    labels_col = samples$shortName %>%
+      set_names(samples$sampleName),
+    annotation_col = samples %>%
+      select(sampleName, genotype) %>%
+      as.data.frame() %>%
+      column_to_rownames("sampleName"),
+    cutree_cols = 2,
+    cutree_rows = 3
+  )
+```
+
+That's a pretty good heatmap really.
+However there are a few key points to make with this.
+
+`pheatmap()` does not use `ggplot2` syntax and we cannot add layers.
+Instead everything happens within the function `pheatmap()`.
+This can look messy, but splitting arguments onto their own lines and taking advantage of indentation can help this still be readable.
+The internals of `pheatmap` use a plotting syntax based on the package `grid` and whilst this is extremely powerful, if you can't find a simple way to modify this plot, digging under the surface to find a way around it can be virtually impossible.
+A classic example here is how to name the legend.
+There is a very hacky way to do it if you know your way around, but otherwise it's near impossible, even though *you'd think this was a fundamental requirement of the function*.
+With `ggplot2`, there's almost always a way.
+Choosing the plotting package will always be situation dependent, but `ggplot2` is a good first choice in most situations.
+
+## Challenge
+
+Using the object `de`, find the DE genes from the `HALLMARK_OXIDATIVE_PHOSPHORYLATION` gene set and make a heatmap of their expression values.
+You need to think about the following things:
+
+1. How do I get the values in the `DE` column for this pathway only, as a character vector. (hint: `str_split()`)
+2. Once I have these, how do I get the expression values from `logCPM`, given that we only have `gene_id` as a column, not `gene_name`
+
+Once you have that solved, try repeating this for the larger gene set `GO_CYTOSOLIC_PART`.
+This should only require a minor modification of your code, but you should see a completely different set of genes in your heatmap.
+
+
