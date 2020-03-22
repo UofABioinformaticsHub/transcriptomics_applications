@@ -622,33 +622,163 @@ The basic process for single channel arrays:
 
 \end{frame}
 
-\section{Alternative Arrays}
+%\section{Alternative Arrays}
+%
+%\begin{frame}{Illumina Arrays}
+%
+%	\begin{itemize}
+%		\item Illumina produced a microarray of 50-mer probes using barcoded beads
+%		\begin{itemize}
+%			\item Multiple beads per gene, randomly distributed across the array
+%			\item Dealt with spatial artefacts more effectively
+%		\end{itemize}
+%	\end{itemize}
+%	
+%	\begin{center}
+%	\includegraphics[scale=0.25]{figures/Beads.png} 
+%	\end{center}
+%
+%\blfootnote{Source: https://bioconductor.org/help/course-materials/2007/BioC2007/labs/beadarray/BioC2007\_beadarray\_slides.pdf}
+%
+%\end{frame}
+%
+%\begin{frame}{Illumina Methylation Arrays}
+%
+%	\begin{itemize}
+%		\item Still heavily used in methylation analysis (Illumina 450k and EpiC arrays)
+%		\item We compare proportions of methylated signal
+%		\item Target $>$450,000 genomic CpG dinucleotides
+%	\end{itemize}
+%
+%\end{frame}
 
-\begin{frame}{Illumina Arrays}
+\section{Hypothesis Testing}
 
-	\begin{itemize}
-		\item Illumina produced a microarray of 50-mer probes using barcoded beads
-		\begin{itemize}
-			\item Multiple beads per gene, randomly distributed across the array
-			\item Dealt with spatial artefacts more effectively
-		\end{itemize}
-	\end{itemize}
-	
+\begin{frame}{Hypothesis Testing}
+
+In biological research we often ask:
+
 	\begin{center}
-	\includegraphics[scale=0.25]{figures/Beads.png} 
+	\textbf{“Is something happening?” or “Is nothing happening?”}
 	\end{center}
 
-\blfootnote{Source: https://bioconductor.org/help/course-materials/2007/BioC2007/labs/beadarray/BioC2007\_beadarray\_slides.pdf}
+We might be comparing:
+
+	\begin{itemize}
+		\item Cell proliferation in response to antibiotics in media
+		\item mRNA abundance in two related cell types
+		\item Methylation levels across genomic regions
+		\item Allele frequencies in two populations
+	\end{itemize}
 
 \end{frame}
 
-\begin{frame}{Illumina Methylation Arrays}
+\begin{frame}{Hypothesis Testing}
+
+	How do we decide if our experimental results are “significant”?
 
 	\begin{itemize}
-		\item Still heavily used in methylation analysis (Illumina 450k and EpiC arrays)
-		\item We compare proportions of methylated signal
-		\item Target $>$450,000 genomic CpG dinucleotides
+		\item Is it normal variability?
+		\item What would the data look like if our \textit{experiment had no effect?}
+		\item What would our data look like if there was \textit{some kind of effect?}
 	\end{itemize}
+	
+	\textbf{Every experiment is considered as a random sample from all possible repeated experiments.}
+
+\end{frame}
+
+\begin{frame}{Sampling}
+
+Most experiments involve measuring something:
+
+	\begin{itemize}
+		\item Discrete values e.g. read counts, number of colonies
+		\item Continuous values e.g. Ct values, fluorescence intensity
+	\end{itemize}
+
+	\textbf{Every experiment is considered as a random sample from all possible repeated experiments.}
+
+\end{frame}
+
+\begin{frame}{Sampling}
+
+	Many data collections can also be considered as experimental datasets
+	
+	\begin{block}{Example 1}
+	In the 1000 Genomes Project a risk allele for T1D has a frequency of $\pi = 0.07$ in European Populations.
+	\end{block}
+	
+	~\\
+	\textbf{Does this mean, the allele occurs in exactly 7\% of Europeans?}
+
+\end{frame}
+
+\begin{frame}{Sampling}
+
+	\begin{block}{Example 2}
+	In our in vitro experiment, we found that 90\% of HeLa cells were lysed by exposure to our drug.
+	\end{block}
+	
+		\begin{itemize}
+			\item Does this mean that exactly 90\% of HeLa cells will always be destroyed?
+			\item What does this say about in vivo responses to the drug?
+		\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Population Parameters}
+
+	\begin{itemize}
+		\item Experimentally-obtained values represent an \textbf{estimate} of the true effect
+		\item More formally referred to as \textit{population-level parameters}
+		\item Every experiment is considered a \textit{random sample of the complete population}
+		\item Repeated experiments would give a \textbf{different} \textit{(but similar)} estimate
+	\end{itemize}
+	
+\pause	
+	
+	All population parameters are considered to be fixed values, e.g.
+
+	\begin{itemize}
+		\item Allele frequency ($\pi$) in a population
+		\item The average difference in mRNA levels
+	\end{itemize}		
+
+
+\end{frame}
+
+\begin{frame}{The Null Hypothesis}
+
+ All classical statistical testing involves:
+ 
+ 	\begin{enumerate}
+			\item a Null Hypothesis ($H_0$) and
+			\item an Alternative Hypothesis ($H_A$)
+	\end{enumerate}
+
+
+Why do we do this?
+\end{frame}
+
+\begin{frame}{The Null Hypothesis}
+
+	\begin{itemize}
+		\item \textit{We define $H_0$ so that we know what the data will look like if there is no effect}
+		\item The alternate ($H_A$) includes every other possibility besides $H_0$
+	\end{itemize}
+
+An experimental hypothesis may be:\\[3mm]
+\begin{block}{Example}
+	\begin{align*}
+	H_0:\mu=0 \text{ Vs } H_A:\mu \neq 0
+	\end{align*} 
+	
+Where $\mu$ represents the \textit{true average difference in a value }(e.g. mRNA expression levels)
+
+\end{block}
+
+
+
 
 \end{frame}
 
