@@ -60,8 +60,90 @@
 
 
 
-\section{Microarray Technology}
+\section{Hypothesis Testing}
 
+\begin{frame}{Hypothesis Testing}
+
+In biological research we often ask:
+
+	\begin{center}
+	\textbf{“Is something happening?” or “Is nothing happening?”}
+	\end{center}
+
+We might be comparing:
+
+	\begin{itemize}
+		\item Cell proliferation in response to antibiotics in media
+		\item mRNA abundance in two related cell types
+		\item Methylation levels across genomic regions
+		\item Allele frequencies in two populations
+	\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Hypothesis Testing}
+
+	How do we decide if our experimental results are “significant”?
+
+	\begin{itemize}
+		\item Is it normal variability?
+		\item What would the data look like if our \textit{experiment had no effect?}
+		\item What would our data look like if there was \textit{some kind of effect?}
+	\end{itemize}
+	
+	\textbf{Every experiment is considered as a random sample from all possible repeated experiments.}
+
+\end{frame}
+
+\begin{frame}{Sampling}
+
+Most experiments involve measuring something:
+
+	\begin{itemize}
+		\item Discrete values e.g. read counts, number of colonies
+		\item Continuous values e.g. Ct values, fluorescence intensity
+	\end{itemize}
+
+	\textbf{Every experiment is considered as a random sample from all possible repeated experiments.}
+
+\end{frame}
+
+\begin{frame}{Sampling}
+
+	Many data collections can also be considered as experimental datasets
+	
+	\begin{block}{Example 1}
+	In the 1000 Genomes Project a risk allele for T1D has a frequency of $\pi = 0.07$ in European Populations.
+	\end{block}
+	
+	~\\
+	\textbf{Does this mean, the allele occurs in exactly 7\% of Europeans?}
+
+\end{frame}
+
+\begin{frame}{Sampling}
+
+	\begin{block}{Example 2}
+	In our in vitro experiment, we found that 90\% of HeLa cells were lysed by exposure to our drug.
+	\end{block}
+	
+		\begin{itemize}
+			\item Does this mean that exactly 90\% of HeLa cells will always be destroyed?
+			\item What does this say about in vivo responses to the drug?
+		\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Population Parameters}
+
+	\begin{itemize}
+		\item Experimentally-obtained values represent an \textbf{estimate} of the true effect
+		\item More formally referred to as \textit{population-level parameters}
+		\item Every experiment is considered a \textit{random sample of the complete population}
+		\item Repeated experiments would give a \textbf{different} \textit{(but similar)} estimate
+	\end{itemize}
+
+\end{frame}
 
 
 \end{document}
