@@ -111,7 +111,7 @@
 	\end{enumerate}
 
 	\begin{center}
-	\textbf{Fluoresence Intensity $\propto$ mRNA abundance	}
+	\textbf{Fluorescence Intensity $\propto$ mRNA abundance	}
 	\end{center}
 
 \end{frame}
@@ -312,7 +312,7 @@
 	\end{itemize}
 	
 	\begin{center}
-		\textbf{Fluoresence Intensity $\propto$ mRNA abundance	}
+		\textbf{Fluorescence Intensity $\propto$ mRNA abundance	}
 	\end{center}
 
 \end{frame}
@@ -336,6 +336,8 @@
 		\begin{itemize}
 			\item Shorter probes but far more of them
 		\end{itemize}
+		\item Fixed array designs for each ``model" and organism
+		\item Probes designed based on known gene annotations at design-time 
 		\item Also need a mapping file from location to probe sequence
 	\end{itemize}
 
@@ -351,7 +353,7 @@
 
 \end{frame}
 
-\begin{frame}{Single Channel Microarrays}
+\begin{frame}{3’ Arrays}
 
 	\begin{itemize}
 		\item Each 3' exon would be targeted by 11 unique probes
@@ -365,14 +367,14 @@
 
 \end{frame}
 
-\begin{frame}{Single Channel Microarrays}
+\begin{frame}{3’ Arrays}
 
 	Key Technical Issues: 
 
 	\begin{enumerate}
 		\item Differences between \textbf{arrays}
 		\begin{itemize}
-			\item Hybridisation afterfacts, cDNA/RNA concentration artefacts
+			\item Hybridisation artefacts, cDNA/RNA concentration artefacts
 		\end{itemize}
 		\item Background Correction at the \textbf{probe} level
 		\begin{itemize}
@@ -425,6 +427,20 @@
 \blfootnote{Taken from \cite{pmid12538238}}	
 
 \end{frame}
+
+\begin{frame}{Quantile Normalisation}
+
+	\begin{center}
+		\includegraphics[scale=0.17]{figures/preNorm.png} 
+		~\\
+		\includegraphics[scale=0.17]{figures/postNorm.png} 
+	\end{center}
+
+\blfootnote{Source: Bolstad, Probe Level Quantile Normalization for High Density Oligonucleotide Array Data Unpublished Manuscript, 2001}	
+
+\end{frame}
+
+
 
 \begin{frame}{Background Correction}
 
@@ -526,6 +542,115 @@ The basic process for single channel arrays:
 
 \section{Whole Transcript Arrays}
 
+\begin{frame}{Whole Transcript Arrays}
+
+	\begin{itemize}
+		\item The second generation of Affymetrix arrays were Gene/Exon Arrays
+		\item Far greater density of probes ($\sim$5-6 fold)
+		\begin{itemize}
+			\item No \textit{MM/PM} pairs
+			\item Antigenomic and MisMatch probe groups
+		\end{itemize}
+		\item These target the whole transcript (WT), \textbf{NOT} just the 3' end
+		\item How does RNA degradation impact this?
+		\item How does alternate splicing impact this?
+	\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Whole Transcript Arrays}
+
+	\begin{center}
+	\includegraphics[scale=0.22]{figures/ArrayProbeLayout.png} 
+	\end{center}
+
+\blfootnote{Source: Affymetrix Technical Note}	
+
+\end{frame}
+
+\begin{frame}{Whole Transcript Arrays}
+
+\textbf{RNA Degradation}
+
+	\begin{itemize}
+		\item 3' Arrays had 11 probes targeting the 3' end
+		\item Easily comparable across genes to asses RNA quality
+		\item Not the case for WT Arrays
+	\end{itemize}
+
+\textbf{Alternate Splicing}
+
+	\begin{itemize}
+		\item Identifying the correct transcript remained largely unsolved
+		\item Some exons may be missing
+		\begin{itemize}
+			\item No true signal $implies$ biases expression estimates down
+			\item Can appear as changes in expression, e.g. a short transcript in one condition will yield a lower expression estimate than  a long transcript
+		\end{itemize}
+		
+	\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Whole Transcript Arrays}
+
+	\begin{itemize}
+		\item Before these technical problems were solved RNA Seq ``exploded"
+		\item How do we separate differential expression
+		\begin{itemize}
+			\item i.e. changes in transcriptional activity and regulation
+		\end{itemize}
+		\item from alternate isoform usage
+		\begin{itemize}
+			\item e.g. changes in the dominant isoform, alternate promoter usage
+		\end{itemize}
+		\item Many genes exist in \textit{multiple isoforms in the same tissue}
+	\end{itemize}
+	
+	\textbf{These still remain (somewhat) unsolved in RNA Seq}
+	
+\end{frame}
+
+\begin{frame}{Whole Transcript Arrays}
+
+	\begin{itemize}
+		\item Exon Arrays disappeared very quickly
+		\item Gene Arrays are still in active use (Cheap)
+		\item Both are limited to genes/transcripts defined at time of array design
+		\item Novel transcripts, retained introns etc \textbf{cannot} be detected 
+	\end{itemize}
+
+\end{frame}
+
+\section{Alternative Arrays}
+
+\begin{frame}{Illumina Arrays}
+
+	\begin{itemize}
+		\item Illumina produced a microarray of 50-mer probes using barcoded beads
+		\begin{itemize}
+			\item Multiple beads per gene, randomly distributed across the array
+			\item Dealt with spatial artefacts more effectively
+		\end{itemize}
+	\end{itemize}
+	
+	\begin{center}
+	\includegraphics[scale=0.25]{figures/Beads.png} 
+	\end{center}
+
+\blfootnote{Source: https://bioconductor.org/help/course-materials/2007/BioC2007/labs/beadarray/BioC2007\_beadarray\_slides.pdf}
+
+\end{frame}
+
+\begin{frame}{Illumina Methylation Arrays}
+
+	\begin{itemize}
+		\item Still heavily used in methylation analysis (Illumina 450k and EpiC arrays)
+		\item We compare proportions of methylated signal
+		\item Target $>$450,000 genomic CpG dinucleotides
+	\end{itemize}
+
+\end{frame}
 
 
 \end{document}
