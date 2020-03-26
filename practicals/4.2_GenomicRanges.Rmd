@@ -1,0 +1,503 @@
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 4.2: Genomic Ranges"
+date: "27^th^ March 2020"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+
+```{r, loadPackages, echo = FALSE, include = FALSE}
+library(knitr)
+opts_chunk$set(
+  echo = TRUE, include = TRUE, 
+  results = "hide",
+  warning = FALSE, message = FALSE, 
+  out.width = 800, fig.align = "center",
+  fig.show = "hide"
+)
+```
+
+# Introduction
+
+This session follow directly on from the previous session, picking up with `GRanges` objects and digging a little deeper.
+Please work in the same folder as Wednesday.
+
+Last time we used an `EnsDb` object to import `GRanges` objects directly which corresponded to genes, transcripts, promoters etc.
+Let's look at them a little more deeply, starting by building one, seeing how they interact with `data.frame` objects, then moving into the package `plyranges`.
+
+If time permits, we'll even use them for visualisations.
+
+# Genomic Ranges
+
+## The basics
+
+Let's start by loading the package `GenomicRanges` as well as the `tidyverse`.
+(You might notice we have a lot of conflicts now, so we'll probably end up using namespaces a fair bit)
+
+```{r}
+library(GenomicRanges)
+library(magrittr)
+library(tidyverse)
+```
+
+To form a `GRanges` object, we can actually use really simple coding strategies.
+As per usual, for a lot of the code, we won't save objects into our R Environment, but will just have a look at a how a few things work.
+
+```{r}
+GRanges("1:2-3:+")
+```
+
+Here we've created a simple object (without actually saving it) by passing a character vector of length 1.
+The function `GRanges` is smart enough to understand that we usually follow the chromosome with a `:`, separate our start & end points with a `-`, and assign strandedness following the range with another `:`.
+
+Knowing that we can handle a character vector, we can create multiple ranges at the same time.
+
+```{r}
+c(a = "1:2-3:+", b = "2:4-6:-") %>%
+    GRanges()
+```
+
+Here we've passed a named vector and these are passed to the `GRanges` object.
+
+```{r}
+c(a = "1:2-3:+", b = "2:4-6:-") %>%
+    GRanges() %>%
+    names()
+```
+
+Unlike a `data.frame` where the names are the column names, for a `GRanges` object the ranges are our features of interest, so these appear a little like rownames, but they are clearly not.
+
+```{r}
+c(a = "1:2-3:+", b = "2:4-6:-") %>%
+    GRanges() %>%
+    rownames()
+```
+
+This makes intuitive sense because for a `data.frame` we're often thinking about a statistical model so will have predictor or response variables in each column, whilst this is a very different situation here.
+
+### `Seqinfo` objects
+
+If we don't provide a `Seqinfo` object, `GRanges automatically makes one for us based on our provided data.
+
+```{r}
+c(a = "1:2-3:+", b = "2:4-6:-") %>%
+    GRanges() %>%
+    seqinfo()
+```
+
+Clearly this strategy can be useful for demonstrations, or coding on the fly, but can we add a `Seqinfo` object?
+Before we try it, let's make one.
+You might also notice that I've just used `Seqinfo` with an upper case `S`.
+This is common practice in `S4` programming, where formal `S4` classes begin with an upper-case letter.
+In general, functions and `S3` objects begin with lower case letters.
+
+```{r}
+mySeqInfo <- Seqinfo(
+    seqnames = as.character(1:2),
+    seqlengths = c(100, 50),
+    genome = "myToy.v1"
+)
+```
+
+The only essential component of a `Seqinfo` object is the sequence (or chromosome) names.
+This **must** be a character vector.
+In the above, we've also set lengths just for fun, as well as giving our genome build an informative name.
+
+To extract information from these objects, the two most useful functions are `seqlevels()` and `seqlengths`.
+If you really care, `genome()` can be helpful too.
+
+```{r}
+seqlevels(mySeqInfo)
+seqlengths(mySeqInfo)
+```
+
+We can now pass this object to the function `GRanges()` as the argument `seqinfo`.
+
+```{r}
+c(a = "1:2-3:+", b = "2:4-6:-") %>%
+    GRanges(seqinfo = mySeqInfo) %>%
+    seqinfo()
+```
+
+When we're constructing our own ranges, forming a `Seqinfo` object and explicitly specifying this is very wise.
+This way we can ensure that every object we create will be compatible with the others.
+
+Let's save this now that we have it in good shape, with a well structured `Seqinfo` object as the foundation.
+
+```{r}
+gr <- c(a = "1:2-3:+", b = "2:4-6:-") %>%
+    GRanges(seqinfo = mySeqInfo)
+```
+
+
+### Accessing other elements
+
+If we wish to get our chromosome names we call them using the function `seqnames()`.
+
+```{r}
+seqnames(gr)
+```
+
+This returns a `factor-Rle` which is something we've not seen before.
+`Rle` stands for Run-Length Encoded and is a very efficient way of storing long, repetitive vectors, and this one contains a `factor`.
+
+To demonstrate an `Rle`, if we had 10 repeated values, followed by another 12 repeated values, we could save this as a vector with 4 numbers instead of a vector with 22 numbers.
+
+Here's a normal character vector
+
+```{r}
+rep(c("a", "b"), times = c(10, 12))
+```
+
+Here's the same thing as an `Rle`.
+
+```{r}
+rep(c("a", "b"), times = c(10, 12)) %>%
+    Rle()
+```
+
+Hopefully this makes it clear that we have the values `"a"` and `"b"` for 10 and 12 repeats respectively.
+Now we're only using 4 numbers.
+This is very useful for genomic information where we may have hundreds or thousands of values just containing the same chromosome names over & over.
+For example:
+
+```{r}
+rep("chr1", 10000) %>% Rle()
+```
+
+This time, we used two values to represent 10,000 values.
+This is very memory efficient for genomic data.
+
+The other thing you may have noticed is that our original `seqnames(gr)` returned a `factor-Rle`.
+This means we can return our actual chromosome (or sequence) names using `seqlevels()`.
+
+```{r}
+seqlevels(gr)
+```
+
+### IRanges and subsetting
+
+While we're looking at the objects in detail, you'll notice that the `GRanges` class builds on the `IRanges` (Integer Ranges) class, and this is how the ranges are actually stored.
+
+```{r}
+ranges(gr)
+```
+
+Here you can see we have a start, end and width which are just integers.
+There's no genome information here.
+We can get these individual vectors out using the functions `start()`, `end()` and `width()`.
+
+```{r}
+start(gr)
+end(gr)
+width(gr)
+```
+
+You might also notice that the width is inclusive of the start and end points, which again makes since.
+In our object we have ranges that encompass 2nt or 3nt.
+
+As a final step, we can subset our 'larger' object by using the `[]` approach.
+
+```{r}
+gr[1]
+gr["a"]
+```
+
+## Building `GRanges` objects from a data.frame
+
+Often we start with a `data.frame` or other structure which is easy to coerce into a `data.frame`.
+This also gives us a chance to incorporate metadata columns, which are completely flexible in their format.
+
+Let's make a `tibble` which we'll coerce into a `GRanges` object.
+The columns we'll specify are the sequence name, the start position, the width of the range, as well as two random columns called `score` and `GC`.
+These represent possible test statistics and the GC content.
+After we've made the `tibble`, we'll set rownames as these will be passed the `GRanges` object, so we will need to take off the pretty wrapping paper of a `tibble` and just coerce to a boring old `data.frame`.
+
+```{r}
+set.seed(101) # Manually set the random seed
+df <- tibble(
+    seqnames = rep(c("1", "2"), each = 5),
+    start = seq(2, 10, by = 2) %>% rep(times = 2),
+    end = start + 0:9,
+    strand = sample(c("+", "-"), 10, TRUE),
+    score = rnorm(10),
+    GC = runif(10)
+) %>%
+    as.data.frame() %>%
+    set_rownames(letters[seq_len(nrow(.))])
+df
+```
+
+To create a `GRanges` object from this we just pass it to `makeGRangesFromDataFrame()`.
+Because we've used sensible column names we don't need to tell the function which column contains what, but sometimes, you do need to do that.
+
+```{r}
+gr2 <- df %>%
+    makeGRangesFromDataFrame(
+        keep.extra.columns = TRUE,
+        seqinfo = mySeqInfo
+    )
+gr2
+```
+
+Notice that this automatically coerced our `seqnames` and `strand` to an `Rle`.
+As well as that, we also have metadata (GC-content and our statistical results), which we can extract simply using the `mcols()` function.
+
+```{r}
+mcols(gr2)
+```
+
+Alternatively we can just extract the `ranges`, the `GRanges`, or any other information.
+
+```{r}
+ranges(gr2)
+granges(gr2)
+strand(gr2)
+start(gr2)
+names(gr2)
+gr2[1:3, "GC"]
+length(gr2)
+```
+
+## More advanced tricks
+
+We can merge overlapping ranges using `reduce`.
+Unfortunately, this function also exists in one of the `tidyverse` packages, so we'll have to call using the namespace.
+
+```{r}
+GenomicRanges::reduce(gr2)
+```
+
+Did that give you the output you expected?
+If not, can you figure out why not?
+
+We can also split these into a `GRangesList`, which is a formal class built on a list, but that must contain `GRanges` objects in every position.
+
+```{r}
+gr2 %>%
+    split(f = seqnames(.))
+```
+
+This is a vary handy structure as most of the functions designed for a `GRanges` object can be directly applied to this list.
+Given that this is often how we obtain *exon/transcript* structures, these are very common objects.
+
+Try and describe in your RMarkdown what the following functions do
+
+```{r}
+shift(gr2, 10)
+flank(gr2, 1)
+gaps(gr2)
+```
+
+This one might take some *very careful thought* to understand
+
+```{r}
+resize(gr2, width = 5, fix = 'start')
+resize(gr2, width = 3, fix = "center")
+```
+
+# `plyranges`
+
+A (mainly) Australian package which was release 2-3 years ago is called `plyranges`.
+Stuart's philosophy when writing this package was to bring the `tidyverse` philosophy into the `S4` `GenomicRanges` world.
+He reasoned that with `dplyr`, you always provide a `tibble` as input and return a tibble` as output.
+This should be viable for `GenomicRanges` as well, and this enables the `magrittr` to be used.
+
+For most of the functions in the package, he uses an underscore to separate words within function names, as we've seen with the `tidyverse`.
+
+```{r}
+library(plyranges)
+```
+
+The first set of function in this package are the `shift_` functions, where we can move our ranges.
+**Can you spot the difference in these two functions?**
+
+```{r}
+gr2 %>% shift_left(1)
+gr2 %>% shift_downstream(1)
+```
+
+In keeping with `dplyr`, we can now use the `filter` operation, which operates on values in the `mcols` slot.
+
+```{r}
+gr2 %>% filter(GC > 0.5)
+```
+
+If we wish to compare ranges, we can also use another set of `GenomicRanges` to subset the first.
+
+```{r}
+gr2 %>% filter_by_overlaps(gr)
+gr2 %>% filter_by_non_overlaps(gr)
+```
+
+
+And we can group ranges, just like we group a `tibble`.
+
+```{r}
+gr2 %>%
+    group_by(seqnames) %>%
+    filter(score == max(score))
+```
+
+```{r}
+gr2  %>%
+    group_by(seqnames) %>%
+    summarise(GC = mean(GC))
+```
+
+(Notice that in this last one, we didn't return a `GRanges`.
+This is one of the few exceptions in the package)
+
+We can also use `join` functions which behave similarly to those in `dplyr`.
+Again, try to explain what each of these does in your markdown.
+
+```{r}
+gr %>% join_nearest(gr2)
+gr %>% join_nearest_downstream(gr2)
+gr %>% join_nearest_upstream(gr2)
+```
+
+```{r}
+gr %>% join_overlap_intersect(gr2)
+gr %>% join_overlap_inner_directed(gr2)
+gr %>% join_overlap_inner_within(gr2)
+```
+
+This is a package under active development so many useful features are still being added.
+
+# Visualisation of Gene Models
+
+```{r}
+opts_chunk$set(
+    eval = FALSE
+)
+```
+
+
+Now that we're comfortable with `GRanges` objects, these are very helpful for visualisation within R, using the package `GViz`.
+We'll shift to a different dataset from here, and if you find any package, or dataset is missing from your VM, try using `BiocManager::install()` to install the required package(s).
+The first of these is `BSgenome.Hsapiens.UCSC.hg19`, so please (just using the Console) enter `BiocManager::install("BSgenome.Hsapiens.UCSC.hg19")`. 
+This will take a minute or two, as we're installing all of the sequence information for the human genome.
+When asked to update packages, please choose `n` in the interests of time.
+
+```{r}
+library(Gviz)
+library(BSgenome.Hsapiens.UCSC.hg19)
+```
+
+For this section, we're going to start by plotting some *CpG* Islands, which are GC rich regions which are often studied for their methylation status.
+These come with `GViz` as an object called `cpgIslands`
+
+```{r}
+data("cpgIslands")
+cpgIslands
+```
+
+This is a `GRanges` object which we can now use for plotting.
+`GViz` works as a series of layers, but in a very different fashion to `ggplot2`, so we'll using a different set of strategies here.
+This time, the layers effectively refer to different types of genomic features which appear in a fashion not dissimilar to facets under `ggplot`
+
+To use this approach, we first create each layer as a *track*, and for this one, we'll use the `GRanges` object to create an `AnnotationTrack()`.
+From there, we can simply call the workhorse function `plotTracks()`.
+(If you see an error, it's harmless but I'm not sure what it means.)
+
+```{r}
+cpg <- AnnotationTrack(cpgIslands, name="CpG")
+plotTracks(cpg)
+```
+
+A common trick when visualising genomic data is to include what's known as an *ideogram.*
+This is a "cartoon" representation of one chromosome, and often serves as a visual anchor for people.
+Let's define a few genomic values for our plot, which we'll make using chromosome 7 from the human genome build hg19, then we'll make our IdeogramTrack.
+(This may take a moment or two to setup)
+
+```{r}
+gen <- "hg19"
+chr <- "chr7"
+```
+
+```{r}
+ideo <- IdeogramTrack(genome = gen, chromosome = chr)
+plotTracks(list(ideo, cpg))
+```
+
+Notice that as we're now using more than one track, we pass this to `plotTracks()` as a `list`.
+The ranges of the object `cpg` are used to show the genomic location on the ideogram.
+
+One more annotation which can be informative is a `GenomeAxisTrack()`, which gives us the actual positions within the genomic region being displayed.
+
+```{r}
+ax <- GenomeAxisTrack()
+plotTracks(list(ideo, ax, cpg))
+```
+
+As we can see, the tracks are plotted in order, so let's formally create a list which we can add tracks to as we go.
+
+```{r}
+trackList <- list(
+    ideogram = ideo,
+    axis = ax,
+    CpG_Islands = cpg
+)
+plotTracks(trackList)
+```
+
+The data we're actually really interested in plotting today is contained in an object called `geneModels`.
+This is (inexplicably) provided as a `data.frame`, but these are clearly derived from a `GRanges` object.
+Let's convert it straight away.
+
+```{r}
+data("geneModels")
+gm <- geneModels %>% 
+    makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+genome(gm) <- gen
+```
+
+Now we can set this up as an additional track
+
+```{r}
+trackList$genes <- GeneRegionTrack(
+    range = gm, 
+    chromosome = chr, 
+    name ="Gene Model"
+)
+plotTracks(trackList)
+```
+
+We're also able to show sequence data, but this is only useful when zoomed right in.
+
+```{r}
+seqtrack <- SequenceTrack(Hsapiens, chromosome = chr)
+plotTracks(
+    c(trackList, seqtrack), 
+    from=26591822, to=26591852, 
+    cex=0.8
+    )
+```
+
+### Modifying Parameters
+
+So far, we've just used the default plotting parameters, but there are many modifications we can make.
+An obvious one might be to show the gene names.
+We know these are in the `mcols` slot in the `GRanges` objects, in the column `symbol`, so let's add these
+
+```{r}
+trackList$genes <- GeneRegionTrack(
+    range = gm, 
+    chromosome = chr, 
+    name = "Gene Model",
+    transcriptAnnotation = "symbol", 
+    background.title = "blue"
+)
+trackList$CpG_Islands <- AnnotationTrack(
+    range = cpgIslands, 
+    name="CpG",
+    background.title = "blue"
+    )
+plotTracks(trackList)
+```
+
+This is really as much as we'll have time for, but other tracks incorporating numeric variables, such as read counts can be added as well.
