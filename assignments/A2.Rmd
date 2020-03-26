@@ -1,0 +1,214 @@
+---
+title: "Transcriptomics Applications"
+subtitle: "Assignment 2"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE, 
+    warning = FALSE,
+    message = FALSE
+)
+```
+
+```{r}
+library(tidyverse)
+```
+
+# Instructions
+
+## Submission Format [3 marks]
+
+This is assignment is due by 5pm, **Thursday 9^th^ April**.
+
+- Submissions must be made as a *zip archive* containing 2 files:
+    1. Your **source R Markdown Document** (with an Rmd suffix)
+    2. A **compiled pdf**, showing all code
+- All file names **within the zip archive** must start with your student number.
+However the name of the zip archive is not important as myUni will likely modify this during submission. [See here for help creating a zip archive](#creating-a-zip-archive)
+    
+*All questions are to be answered on the same R Markdown / PDF, regardless of if they require a plain text answer, or require execution of code.*
+
+**Marks directly correspond to the amount of time and effort we expect for each question, so please answer with this is mind.**
+
+We **strongly advise** working in the folder `~/transcriptomics/assignment2` on your virtual machine.
+Using an R Project for each individual assignment is also strongly advised.
+
+## Creating a zip archive {.tabset}
+
+### On Your VM
+
+If all files required for submission *are contained on your VM*:
+
+1. Select both files using the **Files** pane in R Studio
+2. Click export
+3. They will automatically be placed into a single zip archive. Please name this in whatever informative name you decide is suitable, but it should contain the suffix `.zip`
+
+### Windows
+
+If all files are on your on your *local Windows machine*:
+
+1. Using File Explorer, enter the folder containing both files
+2. Select all files simultaneously by using <kbd>Ctrl</kbd> + Click
+3. Right click on one of the files and select `Send to > Compressed (zipped) folder`
+4. Rename as appropriate, ensuring the archive ends with the suffix `.zip`
+
+### Mac OS
+
+If all the files are on your *local macOS machine`:
+
+1. Locate the items to zip in the Mac Finder (file system)
+2. Right-click on a file, folder, or files you want to zip
+3. Select “Compress Items”
+4. Find the newly created .zip archive in the same directory and name as appropriate
+
+
+# Questions
+
+```{r}
+marks <- tibble(q = 0, marks = 3)
+q <- 1
+```
+
+
+## Question `r q` [3 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 3)
+    )
+```
+
+Many early technologies still have a relevant place in modern transcriptomics.
+Of the technologies covered in *Lecture 2: Early Transcriptomic Strategies*, which technology might be suitable for analysis of pri-miRNAs?
+Explain why in one or two brief sentences.
+
+```{r}
+q <- q + 1
+```
+
+## Question `r q` [8 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 8)
+    )
+```
+
+Briefly contrast **two** of the technologies presented in *Lecture 2: Early Transcriptomic Strategies* and *Lecture 3: Microarrays*.
+Discuss their strengths and limitations, paying particular attention to how each represented a breakthrough at the time they gained prominence.
+
+```{r}
+q <- q + 1
+```
+
+## Question `r q` [3 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 3)
+    )
+```
+
+When performing a statistical test, we usually frame our analysis in terms of a *Null Hypothesis* and an *Alternate Hypothesis*, eventually returning a $p$-value.
+Explain why we do this, including clear description of what a $p$-value represents?
+
+```{r}
+q <- q + 1
+```
+
+## Question `r q` [3 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 3)
+    )
+```
+
+When conducting a $T$-test, we estimate two population-level parameters.
+Interpret both of these, using the context of comparing gene expression patterns across two treatment groups.
+
+```{r}
+q <- q + 1
+```
+
+## Question `r q` [10 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 10)
+    )
+```
+
+To obtain your own set of qPCR data, please execute the following lines of code, **using your own student number instead of the example given** (`"a1234567"`).
+This will create an object called `qPCR` in your R Environment.
+This object will contain $C_t$ values for a *gene of interest* and a *housekeeper* gene, across two cell types.
+Each experiment is run as a series of pairs so that you will have 4 values for each pair (2X Cell Types + 2X Genes).
+
+```{r, echo=TRUE, eval=FALSE}
+source("https://uofabioinformaticshub.github.io/transcriptomics_applications/assignments/A2Funs.R")
+makeRT("a1234567")
+```
+
+
+For this question, please perform the following tasks, showing all code.
+Where suitable, use `pander()` to display the results.
+
+1. Generate a clearly labelled boxplot for each gene and cell type. 
+2. After generation of the boxplot, comment on the suitability of the housekeeper, paying particular note to the stability of it's expression between your cell types.
+3. Calculate the $\Delta C_t$ values for your gene of interest by normalising to the housekeeper
+4. Calculate the $\Delta \Delta C_t$ values for the comparison between cell types
+5. Using the above $\Delta \Delta C_t$ values, perform a $T$-test using the R function `t.test()` and interpret the output
+
+
+```{r}
+q <- q + 1
+```
+
+## Question `r q` [10 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 10)
+    )
+```
+
+For this question, you will need the objects `cpm.tsv`, `topTable.csv` and `de.tsv`.
+You will be assigned a *gene set* using the following command, again remembering to use your own student ID number.
+
+```{r, echo=TRUE, eval=FALSE}
+source("https://uofabioinformaticshub.github.io/transcriptomics_applications/assignments/A2Funs.R")
+chooseGeneSet("a1234567")
+```
+
+For this question, your task is to:
+
+1. Find which *differentially expressed* genes belong to this gene-set.
+These are provided in the object `de.tsv`, and these should be **formed into a `character` vector**.
+2. Restrict this character vector so that it only contains genes within `cpm.tsv`. (Hint: You can use `topTable.csv` to map from gene names to gene IDs)
+3. Using `pheatmap()`, create a heatmap of these genes using the expression values contained in `cpm.tsv`.
+For reference, these values are provided as `logCPM` values, which are suitable for plotting directly.
+Include an annotation for each sample, indicating which genotype it represents. 
+
+
+```{r}
+q <- q + 1
+```
+
+
+# Total: `r sum(marks$marks)` marks
+
+```{r}
+write_csv(marks, here::here("assignments", "A2.csv"))
+```
