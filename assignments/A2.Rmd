@@ -135,7 +135,7 @@ marks <- marks %>%
 ```
 
 When conducting a $T$-test, we estimate two population-level parameters.
-Interpret both of these, using the context of comparing gene expression patterns across two treatment groups.
+Describe both of these, using the context of comparing gene expression patterns across two treatment groups.
 
 ```{r}
 q <- q + 1
