@@ -302,8 +302,8 @@ resize(gr2, width = 3, fix = "center")
 # `plyranges`
 
 A (mainly) Australian package which was release 2-3 years ago is called `plyranges`.
-Stuart's philosophy when writing this package was to bring the `tidyverse` philosophy into the `S4` `GenomicRanges` world.
-He reasoned that with `dplyr`, you always provide a `tibble` as input and return a tibble` as output.
+Stuart's philosophy when writing this package was to bring the `tidyverse` philosophy into the `S4` and `GenomicRanges` world.
+He reasoned that with `dplyr`, you always provide a `tibble` as input and return a `tibble` as output.
 This should be viable for `GenomicRanges` as well, and this enables the `magrittr` to be used.
 
 For most of the functions in the package, he uses an underscore to separate words within function names, as we've seen with the `tidyverse`.
@@ -477,6 +477,11 @@ plotTracks(
     cex=0.8
     )
 ```
+
+```{r}
+gm
+```
+
 
 ### Modifying Parameters
 

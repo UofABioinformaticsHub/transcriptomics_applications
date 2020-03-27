@@ -1654,7 +1654,7 @@ resize(gr2, width = 3, fix = &quot;center&quot;)</code></pre>
 </div>
 <div id="plyranges" class="section level1">
 <h1><code>plyranges</code></h1>
-<p>A (mainly) Australian package which was release 2-3 years ago is called <code>plyranges</code>. Stuart’s philosophy when writing this package was to bring the <code>tidyverse</code> philosophy into the <code>S4</code> <code>GenomicRanges</code> world. He reasoned that with <code>dplyr</code>, you always provide a <code>tibble</code> as input and return a tibble<code>as output. This should be viable for</code>GenomicRanges<code>as well, and this enables the</code>magrittr` to be used.</p>
+<p>A (mainly) Australian package which was release 2-3 years ago is called <code>plyranges</code>. Stuart’s philosophy when writing this package was to bring the <code>tidyverse</code> philosophy into the <code>S4</code> and <code>GenomicRanges</code> world. He reasoned that with <code>dplyr</code>, you always provide a <code>tibble</code> as input and return a <code>tibble</code> as output. This should be viable for <code>GenomicRanges</code> as well, and this enables the <code>magrittr</code> to be used.</p>
 <p>For most of the functions in the package, he uses an underscore to separate words within function names, as we’ve seen with the <code>tidyverse</code>.</p>
 <pre class="r"><code>library(plyranges)</code></pre>
 <p>The first set of function in this package are the <code>shift_</code> functions, where we can move our ranges. <strong>Can you spot the difference in these two functions?</strong></p>
@@ -1732,6 +1732,7 @@ plotTracks(
     from=26591822, to=26591852, 
     cex=0.8
     )</code></pre>
+<pre class="r"><code>gm</code></pre>
 <div id="modifying-parameters" class="section level3">
 <h3>Modifying Parameters</h3>
 <p>So far, we’ve just used the default plotting parameters, but there are many modifications we can make. An obvious one might be to show the gene names. We know these are in the <code>mcols</code> slot in the <code>GRanges</code> objects, in the column <code>symbol</code>, so let’s add these</p>
