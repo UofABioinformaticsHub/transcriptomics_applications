@@ -540,219 +540,219 @@ The basic process for single channel arrays:
 
 \end{frame}
 
-%\section{Whole Transcript Arrays}
-%
-%\begin{frame}{Whole Transcript Arrays}
-%
-%	\begin{itemize}
-%		\item The second generation of Affymetrix arrays were Gene/Exon Arrays
-%		\item Far greater density of probes ($\sim$5-6 fold)
-%		\begin{itemize}
-%			\item No \textit{MM/PM} pairs
-%			\item Antigenomic and MisMatch probe groups
-%		\end{itemize}
-%		\item These target the whole transcript (WT), \textbf{NOT} just the 3' end
-%		\item How does RNA degradation impact this?
-%		\item How does alternate splicing impact this?
-%	\end{itemize}
-%
-%\end{frame}
-%
-%\begin{frame}{Whole Transcript Arrays}
-%
-%	\begin{center}
-%	\includegraphics[scale=0.22]{figures/ArrayProbeLayout.png} 
-%	\end{center}
-%
-%\blfootnote{Source: Affymetrix Technical Note}	
-%
-%\end{frame}
-%
-%\begin{frame}{Whole Transcript Arrays}
-%
-%\textbf{RNA Degradation}
-%
-%	\begin{itemize}
-%		\item 3' Arrays had 11 probes targeting the 3' end
-%		\item Easily comparable across genes to asses RNA quality
-%		\item Not the case for WT Arrays
-%	\end{itemize}
-%
-%\textbf{Alternate Splicing}
-%
-%	\begin{itemize}
-%		\item Identifying the correct transcript remained largely unsolved
-%		\item Some exons may be missing
-%		\begin{itemize}
-%			\item No true signal $implies$ biases expression estimates down
-%			\item Can appear as changes in expression, e.g. a short transcript in one condition will yield a lower expression estimate than  a long transcript
-%		\end{itemize}
-%		
-%	\end{itemize}
-%
-%\end{frame}
-%
-%\begin{frame}{Whole Transcript Arrays}
-%
-%	\begin{itemize}
-%		\item Before these technical problems were solved RNA Seq ``exploded"
-%		\item How do we separate differential expression
-%		\begin{itemize}
-%			\item i.e. changes in transcriptional activity and regulation
-%		\end{itemize}
-%		\item from alternate isoform usage
-%		\begin{itemize}
-%			\item e.g. changes in the dominant isoform, alternate promoter usage
-%		\end{itemize}
-%		\item Many genes exist in \textit{multiple isoforms in the same tissue}
-%	\end{itemize}
-%	
-%	\textbf{These still remain (somewhat) unsolved in RNA Seq}
-%	
-%\end{frame}
-%
-%\begin{frame}{Whole Transcript Arrays}
-%
-%	\begin{itemize}
-%		\item Exon Arrays disappeared very quickly
-%		\item Gene Arrays are still in active use (Cheap)
-%		\item Both are limited to genes/transcripts defined at time of array design
-%		\item Novel transcripts, retained introns etc \textbf{cannot} be detected 
-%	\end{itemize}
-%
-%\end{frame}
+\section{Whole Transcript Arrays}
 
+\begin{frame}{Whole Transcript Arrays}
 
+	\begin{itemize}
+		\item The second generation of Affymetrix arrays were Gene/Exon Arrays
+		\item Far greater density of probes ($\sim$5-6 fold)
+		\begin{itemize}
+			\item No \textit{MM/PM} pairs
+			\item Antigenomic and MisMatch probe groups
+		\end{itemize}
+		\item These target the whole transcript (WT), \textbf{NOT} just the 3' end
+		\item How does RNA degradation impact this?
+		\item How does alternate splicing impact this?
+	\end{itemize}
 
-\section{Hypothesis Testing}
+\end{frame}
 
-\begin{frame}{Hypothesis Testing}
-
-In biological research we often ask:
+\begin{frame}{Whole Transcript Arrays}
 
 	\begin{center}
-	\textbf{“Is something happening?” or “Is nothing happening?”}
+	\includegraphics[scale=0.22]{figures/ArrayProbeLayout.png} 
 	\end{center}
 
-We might be comparing:
+\blfootnote{Source: Affymetrix Technical Note}	
+
+\end{frame}
+
+\begin{frame}{Whole Transcript Arrays}
+
+\textbf{RNA Degradation}
 
 	\begin{itemize}
-		\item Cell proliferation in response to antibiotics in media
-		\item mRNA abundance in two related cell types
-		\item Methylation levels across genomic regions
-		\item Allele frequencies in two populations
+		\item 3' Arrays had 11 probes targeting the 3' end
+		\item Easily comparable across genes to asses RNA quality
+		\item Not the case for WT Arrays
 	\end{itemize}
 
-\end{frame}
-
-\begin{frame}{Hypothesis Testing}
-
-	How do we decide if our experimental results are “significant”?
+\textbf{Alternate Splicing}
 
 	\begin{itemize}
-		\item Is it normal variability?
-		\item What would the data look like if our \textit{experiment had no effect?}
-		\item What would our data look like if there was \textit{some kind of effect?}
-	\end{itemize}
-	
-	\textbf{Every experiment is considered as a random sample from all possible repeated experiments.}
-
-\end{frame}
-
-\begin{frame}{Sampling}
-
-Most experiments involve measuring something:
-
-	\begin{itemize}
-		\item Discrete values e.g. read counts, number of colonies
-		\item Continuous values e.g. Ct values, fluorescence intensity
-	\end{itemize}
-
-	\textbf{Every experiment is considered as a random sample from all possible repeated experiments.}
-
-\end{frame}
-
-\begin{frame}{Sampling}
-
-	Many data collections can also be considered as experimental datasets
-	
-	\begin{block}{Example 1}
-	In the 1000 Genomes Project a risk allele for T1D has a frequency of $\pi = 0.07$ in European Populations.
-	\end{block}
-	
-	~\\
-	\textbf{Does this mean, the allele occurs in exactly 7\% of Europeans?}
-
-\end{frame}
-
-\begin{frame}{Sampling}
-
-	\begin{block}{Example 2}
-	In our in vitro experiment, we found that 90\% of HeLa cells were lysed by exposure to our drug.
-	\end{block}
-	
+		\item Identifying the correct transcript remained largely unsolved
+		\item Some exons may be missing
 		\begin{itemize}
-			\item Does this mean that exactly 90\% of HeLa cells will always be destroyed?
-			\item What does this say about in vivo responses to the drug?
+			\item No true signal $implies$ biases expression estimates down
+			\item Can appear as changes in expression, e.g. a short transcript in one condition will yield a lower expression estimate than  a long transcript
 		\end{itemize}
-
-\end{frame}
-
-\begin{frame}{Population Parameters}
-
-	\begin{itemize}
-		\item Experimentally-obtained values represent an \textbf{estimate} of the true effect
-		\item More formally referred to as \textit{population-level parameters}
-		\item Every experiment is considered a \textit{random sample of the complete population}
-		\item Repeated experiments would give a \textbf{different} \textit{(but similar)} estimate
-	\end{itemize}
-	
-\pause	
-	
-	All population parameters are considered to be fixed values, e.g.
-
-	\begin{itemize}
-		\item Allele frequency ($\pi$) in a population
-		\item The average difference in mRNA levels
-	\end{itemize}		
-
-
-\end{frame}
-
-\begin{frame}{The Null Hypothesis}
-
- All classical statistical testing involves:
- 
- 	\begin{enumerate}
-			\item a Null Hypothesis ($H_0$) and
-			\item an Alternative Hypothesis ($H_A$)
-	\end{enumerate}
-
-
-Why do we do this?
-\end{frame}
-
-\begin{frame}{The Null Hypothesis}
-
-	\begin{itemize}
-		\item \textit{We define $H_0$ so that we know what the data will look like if there is no effect}
-		\item The alternate ($H_A$) includes every other possibility besides $H_0$
+		
 	\end{itemize}
 
-An experimental hypothesis may be:\\[3mm]
-\begin{block}{Example}
-	\begin{align*}
-	H_0:\mu=0 \text{ Vs } H_A:\mu \neq 0
-	\end{align*} 
+\end{frame}
+
+\begin{frame}{Whole Transcript Arrays}
+
+	\begin{itemize}
+		\item Before these technical problems were solved RNA Seq ``exploded"
+		\item How do we separate differential expression
+		\begin{itemize}
+			\item i.e. changes in transcriptional activity and regulation
+		\end{itemize}
+		\item from alternate isoform usage
+		\begin{itemize}
+			\item e.g. changes in the dominant isoform, alternate promoter usage
+		\end{itemize}
+		\item Many genes exist in \textit{multiple isoforms in the same tissue}
+	\end{itemize}
 	
-Where $\mu$ represents the \textit{true average difference in a value }(e.g. mRNA expression levels)
+	\textbf{These still remain (somewhat) unsolved in RNA Seq}
+	
+\end{frame}
 
-\end{block}
+\begin{frame}{Whole Transcript Arrays}
 
-
-
+	\begin{itemize}
+		\item Exon Arrays disappeared very quickly
+		\item Gene Arrays are still in active use (Cheap)
+		\item Both are limited to genes/transcripts defined at time of array design
+		\item Novel transcripts, retained introns etc \textbf{cannot} be detected 
+	\end{itemize}
 
 \end{frame}
+
+
+
+%\section{Hypothesis Testing}
+%
+%\begin{frame}{Hypothesis Testing}
+%
+%In biological research we often ask:
+%
+%	\begin{center}
+%	\textbf{“Is something happening?” or “Is nothing happening?”}
+%	\end{center}
+%
+%We might be comparing:
+%
+%	\begin{itemize}
+%		\item Cell proliferation in response to antibiotics in media
+%		\item mRNA abundance in two related cell types
+%		\item Methylation levels across genomic regions
+%		\item Allele frequencies in two populations
+%	\end{itemize}
+%
+%\end{frame}
+%
+%\begin{frame}{Hypothesis Testing}
+%
+%	How do we decide if our experimental results are “significant”?
+%
+%	\begin{itemize}
+%		\item Is it normal variability?
+%		\item What would the data look like if our \textit{experiment had no effect?}
+%		\item What would our data look like if there was \textit{some kind of effect?}
+%	\end{itemize}
+%	
+%	\textbf{Every experiment is considered as a random sample from all possible repeated experiments.}
+%
+%\end{frame}
+%
+%\begin{frame}{Sampling}
+%
+%Most experiments involve measuring something:
+%
+%	\begin{itemize}
+%		\item Discrete values e.g. read counts, number of colonies
+%		\item Continuous values e.g. Ct values, fluorescence intensity
+%	\end{itemize}
+%
+%	\textbf{Every experiment is considered as a random sample from all possible repeated experiments.}
+%
+%\end{frame}
+%
+%\begin{frame}{Sampling}
+%
+%	Many data collections can also be considered as experimental datasets
+%	
+%	\begin{block}{Example 1}
+%	In the 1000 Genomes Project a risk allele for T1D has a frequency of $\pi = 0.07$ in European Populations.
+%	\end{block}
+%	
+%	~\\
+%	\textbf{Does this mean, the allele occurs in exactly 7\% of Europeans?}
+%
+%\end{frame}
+%
+%\begin{frame}{Sampling}
+%
+%	\begin{block}{Example 2}
+%	In our in vitro experiment, we found that 90\% of HeLa cells were lysed by exposure to our drug.
+%	\end{block}
+%	
+%		\begin{itemize}
+%			\item Does this mean that exactly 90\% of HeLa cells will always be destroyed?
+%			\item What does this say about in vivo responses to the drug?
+%		\end{itemize}
+%
+%\end{frame}
+%
+%\begin{frame}{Population Parameters}
+%
+%	\begin{itemize}
+%		\item Experimentally-obtained values represent an \textbf{estimate} of the true effect
+%		\item More formally referred to as \textit{population-level parameters}
+%		\item Every experiment is considered a \textit{random sample of the complete population}
+%		\item Repeated experiments would give a \textbf{different} \textit{(but similar)} estimate
+%	\end{itemize}
+%	
+%\pause	
+%	
+%	All population parameters are considered to be fixed values, e.g.
+%
+%	\begin{itemize}
+%		\item Allele frequency ($\pi$) in a population
+%		\item The average difference in mRNA levels
+%	\end{itemize}		
+%
+%
+%\end{frame}
+%
+%\begin{frame}{The Null Hypothesis}
+%
+% All classical statistical testing involves:
+% 
+% 	\begin{enumerate}
+%			\item a Null Hypothesis ($H_0$) and
+%			\item an Alternative Hypothesis ($H_A$)
+%	\end{enumerate}
+%
+%
+%Why do we do this?
+%\end{frame}
+%
+%\begin{frame}{The Null Hypothesis}
+%
+%	\begin{itemize}
+%		\item \textit{We define $H_0$ so that we know what the data will look like if there is no effect}
+%		\item The alternate ($H_A$) includes every other possibility besides $H_0$
+%	\end{itemize}
+%
+%An experimental hypothesis may be:\\[3mm]
+%\begin{block}{Example}
+%	\begin{align*}
+%	H_0:\mu=0 \text{ Vs } H_A:\mu \neq 0
+%	\end{align*} 
+%	
+%Where $\mu$ represents the \textit{true average difference in a value }(e.g. mRNA expression levels)
+%
+%\end{block}
+%
+%
+%
+%
+%\end{frame}
 
 
 \end{document}
