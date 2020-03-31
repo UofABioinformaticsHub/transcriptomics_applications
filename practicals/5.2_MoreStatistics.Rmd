@@ -1,0 +1,25 @@
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 5.2: Linear Models and Dimensional Reduction"
+date: "3^rd^ April 2019"
+output: 
+  html_document: 
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE, 
+    results = "hide",
+    fig.show = "hide",
+    message = FALSE, 
+    warning = FALSE
+)
+library(pander)
+```
+
+
+- Cover linear models using gene expression data
+- Go through MDS & PCA in enough detail
+- Multiple plotting using `cowplot`

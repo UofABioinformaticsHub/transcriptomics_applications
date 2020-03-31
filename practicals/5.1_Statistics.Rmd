@@ -1,0 +1,611 @@
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 5.1: Basic Statistics"
+date: "1^st^ April 2019"
+output: 
+  html_document: 
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE, 
+    results = "hide",
+    fig.show = "hide",
+    message = FALSE, 
+    warning = FALSE
+)
+library(pander)
+```
+
+
+# Single Hypothesis Testing
+
+## Recap
+
+In the lectures we discussed a few things:
+
+### Normally Distributed Data
+
+1. Every experiment is a random sample of the complete set of all possible samples
+2. We define a *null hypothesis* ($H_0$) so we can describe what our data will look like if there are **no effects due to our experiment**
+3. The sample mean ($\bar{x}$) is Normally Distributed around the population mean ($\mu$)
+4. We can use our sample variance ($s^2$) to estimate population variance ($\sigma^2$)
+5. A $T$-statistic can be calculated using the formula <br> <center>$T = \frac{\bar{x} - \mu}{s / \sqrt{n}}$</center>
+6. We compare our $T$-statistic to a $t$-distribution to see how likely more extreme values are if $H_0$ is true, and reject $H_0$ if these $p$-values are suitably low.
+
+
+## Discussion Questions and Exercises
+
+### Q1: Sampling Discussion
+
+In the following, try to describe the value that the experiment is investigating
+
+a. The SNP at http://exac.broadinstitute.org/variant/3-8787263-G-A was found in 0.09% of 16366 South Asian genomes, and 0.05% of 8644 East Asian genomes. 
+    i. *What do these numbers represent?*
+    ii. *Do you think that these values represent normally distributed data?*
+b. In a qPCR experiment, the gene CTLA4 was found to be expressed in Treg cells at levels 10 times higher than those found in Th cells. *What is this number an estimate of?*
+c. In three transfection experiments, the average transfection efficiency was found to be 6%. *What is this number estimating?*
+
+### Q2: Sampling Discussion
+
+The average age of all students at the University of Adelaide was calculated. *Is this an estimate? Explain your reasoning*
+
+
+### Q3: The Sample Mean
+
+```{r}
+library(tidyverse)
+theme_set(theme_bw())
+```
+
+
+`R` allows us to easily take random samples from a normal distribution.
+We can generate 10 random samples from $\mathcal{N}(0, 1)$ using the following code.
+This is almost like we're conducting an experiment and we have 10 measurements.
+
+```{r}
+x <- rnorm(n = 10, mean = 0, sd = 1)
+```
+
+We could then find the mean of our experimental values (i.e. our *sample mean*) using the following.
+
+
+$$
+    \bar{x} = \frac{1}{10} \sum_{i = 1}^{10} x_i
+$$
+
+```{r}
+sum(x) / length(x)
+```
+
+The simpler way to calculate this would be:
+
+```{r}
+mean(x)
+```
+
+
+a) *Why was this value not equal to 0?*
+b) *Repeat the random sampling line several times in the Console and use `mean(x)` for each sample. Do you ever get 0 exactly?*
+
+We could actually repeat this experiment 1000 times, very quickly in `R`.
+The following command will form a matrix with 1000 columns, and each column will be 10 randomly sampled "experimental" values.
+
+```{r}
+rnd <- replicate(1000, rnorm(n = 10, mean = 0, sd = 1))
+```
+
+Let's just have a quick look to make sure we understand what this data looks like
+
+```{r}
+ncol(rnd)
+nrow(rnd)
+rnd[,1:5]
+```
+
+We could get the sample means from each column using the command `colMeans()` and plot a histogram.
+`ggplot` needs a `data.frame`/`tibble` so once we have $\bar{x}$ as a vector, we'll just make a `tibble` on the fly.
+The function `tibble()` will automatically assign the object name as the column name.
+
+```{r}
+xbar <- colMeans(rnd)
+head(xbar)
+length(xbar)
+tibble(xbar) %>%
+    ggplot(aes(xbar, stat(density))) +
+    geom_histogram(fill = "grey70", colour = "black", bins = 50)
+```
+
+This is a histogram of the sample means from each of our 1000 sets of random samples (i.e. our 1000 experiments). 
+(We've also used `stat(density)` to make sure we have frequencies on the y-axis instead of counts.)
+
+c) *Does it look like a normal distribution?*
+
+We know from lectures that each sample mean will itself be a random sample drawn from the distribution
+
+$$
+\bar{x} \sim \mathcal{N}(\mu, \frac{\sigma}{\sqrt{n}})
+$$
+
+In our example, we have used $\mu = 0$, $\sigma = 1$ and $n = 10$ to collect our "experimental" values.
+First let's check the distribution.
+The function `dnorm()` takes a value on the x-axis and calculates the value of the distribution (i.e. the probability density function) at that value.
+We can use this to get the y-values and plot the actual distribution.
+
+```{r}
+mu <- 0
+sigma <- 1
+n <- 10
+normDf <- tibble(
+    x = seq(-2, 2, length.out = 100),
+    y = dnorm(x, mean = mu, sd = sigma / sqrt(n))
+)
+ggplot(normDf, aes(x, y)) +
+    geom_line(colour = "blue")
+```
+
+Now we'll use a trick in `ggplot` where we can plot multiple data frames, by passing `normDf` to `geom_line()` using the `data` argument.
+This will give us our histogram, with the distribution overlaid.
+
+```{r}
+tibble(xbar) %>%
+    ggplot(
+        aes(xbar, stat(density))
+    ) +
+    geom_histogram(fill = "grey70", colour = "black", bins = 50) +
+    geom_line(
+        aes(x, y), 
+        data = normDf, 
+        colour = "blue"
+    )
+```
+
+Now we're comparing the distribution of our 1000 sample means to the theoretical distribution they should be drawn from.
+We can clearly see that each sample mean is genuinely a single random sample from this distribution.
+**Each column in `rnd` would be a normal experiment.**
+Effectively, we have just performed 1000 experiments, but in reality **we only have one** and that will be the data we analyse.
+
+### Q4: Sample Variances
+
+(It might be helpful to be clear on the relationship between the standard deviation ($\sigma$) and the variance ($\sigma^2).
+These are literally the same values, but one is the square/square-root of the other.
+Statisticians often just use whichever they feel like, and assume that everyone is keeping up.
+Here we're using $\sigma = 1$ which is conveniently the same as $\sigma^2$ for the value `1` only.)
+
+In the above, we knew the variance ($\sigma^2 = 1$) because we set this in our random sampling step.
+In reality we don't know this, so we would use our sample variance ($s^2$) and a $t$-test.
+Let's have a look at how the sample variances are distributed, including the true value ($\sigma$) as a vertical line.
+
+```{r}
+library(matrixStats)
+s2 <- colVars(rnd)
+tibble(s2) %>%
+    ggplot(aes(s2, stat(density))) +
+    geom_histogram(fill = "grey70", colour = "black", bins = 50) +
+    geom_vline(xintercept = sigma, linetype = 2, colour = "blue")
+```
+
+Notice that the sample variances ($s^2$) are **not normally distributed around the true variance** ($\sigma = 1$).
+(Variances are usually drawn from a scaled inverse $\chi^2$ distribution, which is well beyond the scope of this course)
+
+For these random samples, we knew the true value for the population mean  ($\mu = 5$).
+In reality, **we wouldn't know this** and we'd need to conduct a hypothesis test with a null hypothesis and alternate hypothesis.
+
+Let's test the hypothesis using $\mu = 5$ as the value of interest:
+
+$$
+H_0: \mu = 0 \quad \text{Vs} \quad H_A: \mu \neq 0
+$$
+
+
+To do this, we first calculate our $T$-statistic using:
+$$
+T = \frac{\bar{x} - \mu}{s / \sqrt{n}}
+$$
+Let's just do this on the first column to start with.
+We'll use the values of $\mu$ and $n$ from question 3, which should still be in your workspace.
+
+```{r}
+x <- rnd[,1]
+s <- sd(x)
+Tstat <- (mean(x) - mu) / (s / sqrt(n))
+df <- length(x) - 1
+```
+
+NB: Here the degrees of freedom is n - 1, so we would check this against the distribution for $t_9$.
+In my simulations I got the value $T =$ `r pander(Tstat)`.
+**What value did you get from the first column in your simulations?**
+
+Let's visualise this by first plotting the density of a $t_9$ distribution, then adding vertical lines for our obtained statistic.
+By my estimation, 1 in 20 of you should get a relatively extreme $T$-statistic, but considering we have $<20$ today, this may be no-one.
+
+First we'll create a `tibble` which will contain the x-values and y-values needed to make a pretty line that represents a $t_9$ distribution.
+We'll also include the $Z$-values which correspond to the standard normal distribution ($\mathcal{N}(0, 1)$) for the same x-value (or test-statistic).
+
+```{r}
+tstatDf <- tibble(
+    x = seq(-4, 4, length.out = 1000),
+    y = dt(x, df = df),
+    z = dnorm(x, mean = 0, sd = 1)
+)
+ggplot(tstatDf, aes(x = x, y = y)) +
+  geom_line(colour = "blue")
+```
+
+Let's overlay our standard normal distribution just to compare.
+
+```{r}
+ggplot(tstatDf, aes(x = x, y = y)) +
+    geom_line(colour = "blue") +
+    geom_line(aes(y = z), colour = "grey40")
+```
+
+Notice how our $t$-distribution has *fatter tails* than the standard normal, which means we're more likely to get more extreme values.
+This makes mathematical sense, as we're dividing by our estimate of variance ($s$) which adds additional uncertainty to the equation.
+
+Now let's add our own $T$-statistic from our experiment as vertical lines, and remove the standard normal line.
+(Note the multiplication by $\pm 1$ to get both positive & negative values.)
+
+```{r}
+ggplot(tstatDf, aes(x = x, y = y)) +
+    geom_line(colour = "blue") +
+    geom_vline(xintercept = c(-1, 1)*Tstat, colour = "black", linetype = 2)
+```
+
+We can also shade these areas using `geom_ribbon()`
+
+```{r}
+ggplot(tstatDf, aes(x = x, y = y)) +
+    geom_line(colour = "blue") +
+    geom_vline(xintercept = c(-1, 1)*Tstat, colour = "black", linetype = 2) +
+    geom_ribbon(
+        data = . %>% filter(x > abs(Tstat)),
+        aes(x = x, ymax = y, ymin = 0),
+        fill = "grey",
+        alpha = 0.5
+    ) +
+    geom_ribbon(
+        data = . %>% filter(x < -1*abs(Tstat)),
+        aes(x = x, ymax = y, ymin = 0),
+        fill = "grey",
+        alpha = 0.5
+    ) +
+  labs(x = "T", y = "") 
+```
+
+a) *Do you think we have a low or high probability of observing this $t$-statistic?*
+Let's check using the correct syntax for determining a $p$-value from a $T$-distribution.
+Notice that we're using the absolute value of the $T$-statistic.
+Yours may already be +ve, but others may not be and this ensures we **always** use the value that is $>0$, to get the upper tail as our first value.
+By symmetry around $0$, we then double that value to get our two-sided $p$-value, representing both shaded areas.
+
+```{r}
+2*pt(abs(Tstat), df, lower.tail = FALSE)
+```
+
+
+# Multiple Hypothesis Testing
+
+## Recap
+
+We also learned about:
+
+1. Type I and Type II errors
+2. The Family-Wise Error Rate (FWER)
+3. The Bonferroni Adjustment
+4. The False Discovery Rate
+
+### Q5: Multiple Test
+
+We could do the above procedure for every column in our matrix of random samples, which **we know** is a sample of 10 from $\mathcal{N}(5, 1)$.
+Note that in the below, we first calculate our sample means ($\bar{x}$) and sample standard deviations ($s$) as vectors.
+Considering our population mean **is known to be 0** in this instance, we should use this as our value ($\mu_0$) of interest.
+
+We then take advantage of R's vector capabilities to create a vector of $T$-statistics in one easy line of code.
+Feel free to marvel that in four lines, we've calculated 1000 sample means, 1000 sample standard deviations, 1000 $T$-statistics and 1000 $p-$values.
+
+
+```{r}
+mu0 <- 0
+xbar <- colMeans(rnd)
+s <- colSds(rnd)
+Tstat <- (xbar - mu0) / (s / sqrt(n))
+pValues <- 2*pt(abs(Tstat), df, lower.tail = FALSE)
+```
+
+In many analyses, we use $p < 0.05$ to reject $H_0$
+
+a) *How many pValues out of our $m = 1000$ tests do we see below 0.05?*
+
+```{r}
+sum(pValues < 0.05)
+```
+
+Remembering Is this about what you expected (1 in 20, or about 5%)
+
+
+b) Should we reject $H_0$ for these random samples? 
+c) If so, would this be a correct rejection of $H_0$, a Type I error or a Type II error?
+
+We could use the Bonferroni procedure to reduce our Type I errors, and control the Family Wise Error Rate (FWER)
+
+```{r}
+m <- ncol(rnd)
+alpha <- 0.05/m
+sum(pValues < alpha)
+```
+
+Now we, have removed any false positives, or Type 1 errors from our set of results.
+
+d) *Were there any true positives here that we've missed (i.e. were there any Type II errors)*
+
+In `R` we can simply adjust our $p$-values using the function `p.adjust()`.
+This will give identical results to the above, but instead each adjusted-$p$ value will be $min(1, p*m)$, where $m = 1000$ and represents the number of tests we are performing.
+
+```{r}
+adjustedP <- p.adjust(pValues, method = "bonferroni")
+sum(adjustedP < 0.05)
+```
+
+An alternative we briefly mentioned in lectures would be to allow a small number of false discoveries in our set of results.
+This is known as the FDR and we can easily obtain this in `R`.
+
+```{r}
+fdrP <- p.adjust(pValues, method = "fdr")
+sum(fdrP < 0.05) 
+```
+
+e) *Did you obtain different results using the two different methods?*
+f) *Explain why or why not?*
+
+Often we would present these results as a ranked table:
+
+```{r}
+tibble(
+    xbar, s, Tstat, 
+    p = pValues, 
+    FDR = fdrP, 
+    adjP = adjustedP
+) %>%
+    arrange(p)
+```
+
+
+Notice your lowest $p$-value.
+g) *Given that we have `r m` sample means from the actual* Null Hypothesis *does this seem about right?*
+h) *Are you surprised to see such an extreme $T$-statistic for this value?*
+i) *Looking at the sample mean ($\bar{x}$) and sample standard deviation ($s$) for that particular "experiment", was it the estimate of the population mean (i.e. $\bar{x}$ estimates $\mu$), or the estimate of the population variance (i.e. $s$ estimates $\sigma$) that caused this extreme statistic?*
+
+# T tests
+
+Now we've explored the distributions of the sample mean and how these are distributed around the population mean, let's perform some actual t-tests.
+For this we're going to use the `ToothGrowth` dataset which comes with `R`.
+This dataset contains measurements of the length of teeth in rats being given vitamin C supplements in three doses.
+It's a bit of a funny dataset, in that the dose looks numeric, but it's really categorical.
+
+```{r}
+head(ToothGrowth)
+```
+
+Let's create our own version as a `tibble`.
+Fortunately, the supplement method is already a `factor`, so we only need to create the dose variable as a categorical variable (i.e. a `factor`)
+
+```{r}
+myTeeth <- as_tibble(ToothGrowth) %>%
+    mutate(
+        doseCat = case_when(
+            dose == 0.5 ~ "Low",
+            dose == 1.0 ~ "Med",
+            dose == 2.0 ~ "High"
+        ),
+        doseCat = fct_inorder(doseCat)
+    )
+myTeeth
+```
+
+Let's look at our data first.
+
+```{r}
+myTeeth %>%
+    ggplot(aes(x = doseCat, y = len, fill = supp)) +
+    geom_boxplot()
+```
+
+We're going to perform a $T$-test at each of the three does levels:
+
+a) What is the population-level (or true) value that we are estimating here?
+b) What will $H_0$ and $H_A$ be? 
+c) Do you have an inkling as to whether any of these three groups may reject $H_0$?
+
+## Using vectors
+
+The most simple way to perform a $T$-test is to take the two vectors you are comparing and pass them to the function `t.test()`.
+This is **not** a paired $T$-test, and if we check the help page using `?t.test` you'll see that the argument `paired` is set to `FALSE` by default.
+This means we don't have to worry about that aspect of the test.
+
+```{r}
+x <- filter(myTeeth, supp == "VC", doseCat == "High")$len
+y <- filter(myTeeth, supp == "OJ", doseCat == "High")$len
+length(x)
+length(y)
+t.test(x, y) 
+```
+
+Here we can see a test-statistic which is near zero.
+This is **highly likely** under $H_0$, so we have a $p$-value near one ($p = 0.9639$).
+This means that if $H_0$ is true, we would see data as extreme, or more extreme than this experimental set of measurements about 96% of the time.
+
+
+## Using R formulae
+
+An alternative strategy would be to pass the entire data frame, subset to give just the values we want and then use a `formula`.
+
+```{r}
+t.test(len~supp, data = myTeeth, subset = doseCat == "High")
+```
+
+
+We've seen these formulae before when using `facet_wrap()`, but just as a recap, this means that `len` is dependent on `supp`.
+Notice that the results are identical (apart from the sign of the $T$-statistic being changed).
+
+## Testing all levels
+
+We know that we want to see if there is a difference at all dose levels, so how do we do this?
+The first thing you might like to know is that `tidy()` from the package `broom` will take the output of `t.test()` (or any other statistical test) and make a nice `tibble`
+
+```{r}
+library(broom)
+t.test(len~supp, data = myTeeth, subset = doseCat == "High") %>%
+    tidy()
+```
+
+A n experienced R programmer might now look at this and think
+
+> So if I test each dose level separately and create a `tibble`, I could then use `bind_rows()` to create a complete set of results
+
+To do this, we'd probably want to add another column (using `mutate()`) to indicate which dose level we are testing at.
+
+```{r}
+curLevel <- "High"
+t.test(len~supp, data = myTeeth, subset = doseCat == curLevel) %>%
+    tidy() %>%
+    mutate(doseCat = curLevel)
+```
+
+How would we step through each of the three levels?
+
+## Iteration
+
+The most obvious way is to create a vector of all dose categories and step through them
+
+```{r}
+levels(myTeeth$doseCat)
+for (lv in levels(myTeeth$doseCat)) {
+    cat("Now we could be analysing", lv, "\n")
+}
+```
+
+Here we've stepped through the levels in this column and firstly, we;ve set our place-holder `lv` to be `"Low"` and printed ourselves a message.
+Then we've repeated this for `"Med"`, and finally for `"High"`.
+This is classic iteration, as seen in many languages like *C++*.
+Whilst this strategy works in R, over a large number of iterations, it ends up being very slow.
+The R way to do this is to use the function `lapply()`, which allows us to apply a function to a list of values.
+Quite literally, `lapply()` stands for **l**ist **apply**.
+
+There are many ways we can do this in R, but a simple way might be to split our data into a list with three elements.
+Each of those containing a subset of the data, based on the value in `doseCat`.
+We can do this using the function `split()`, which takes a `data.frame`/`tibble` as it's first argument and a vector of values (usually a factor, i.e. `f`) on which to split the original object.
+
+```{r}
+myTeeth %>%
+    split(f = .$doseCat)
+```
+
+Now we have separated our data we can use `lapply` which allows us to apply a function to each element of the list.
+In the first example, we'll just apply the function `head()` to each element, which will just print the first 6 rows.
+
+```{r}
+myTeeth %>%
+    split(f = .$doseCat) %>%
+    lapply(head)
+```
+
+
+We could apply any suitable function that could operate on a `tibble` as it's first argument, like `nrow()`.
+
+```{r}
+myTeeth %>%
+    split(f = .$doseCat) %>%
+    lapply(nrow)
+```
+
+Some `dplyr` functions could also be applied if we wanted
+
+```{r}
+myTeeth %>%
+    split(f = .$doseCat) %>%
+    lapply(filter, len > 20)
+```
+
+Notice that inside `lapply`, each of the three `tibble` object in the list are passed to `filter` as the first argument.
+We then provide the filtering criteria as an additional argument and this is applied to each element of the list.
+
+### Inline functions
+
+What we're aiming for, is to apply the function `t.test(len~supp, data = ???)` to each element of the list.
+This presents a problem, as we know `lapply()` passes each list element as the first argument of the function.
+`t.test` takes a `formula` first, so we need to figure out how to pass this to the argument `data`.
+We do this by writing an inline function, which only ever exists while we call `lapply()`.
+
+```{r}
+myTeeth %>%
+    split(f = .$doseCat) %>%
+    lapply(function(x){
+        head(x)
+    })
+```
+
+Now we've passed each element to our new function (which is un-named) which has the single argument `x`.
+Knowing that `lapply()` passes each element of the list as the first argument, inside the function, each of the tibbles is now temporarily known as `x`.
+We've then passed this internally to the function `head()`.
+This is exactly what we did earlier, but it's a bit more convoluted.
+
+However, now we're setup to perform our three $T$-tests
+
+```{r}
+myTeeth %>%
+    split(f = .$doseCat) %>%
+    lapply(function(x){
+        t.test(len~supp, data = x)
+    })
+```
+
+Now we can do all of our manipulation inside this little function.
+
+
+```{r}
+myTeeth %>%
+    split(f = .$doseCat) %>%
+    lapply(function(x){
+        t.test(len~supp, data = x) %>%
+            tidy()
+    })
+```
+
+And now we can add the specific dose level we were testing
+
+```{r}
+myTeeth %>%
+    split(f = .$doseCat) %>%
+    lapply(function(x){
+        t.test(len~supp, data = x) %>%
+            tidy() %>%
+            mutate(doseCat = unique(x$doseCat))
+    })
+```
+
+Our final approach might look like this
+
+```{r}
+myTeeth %>%
+    split(f = .$doseCat) %>%
+    lapply(function(x){
+        t.test(len~supp, data = x) %>%
+            tidy() %>%
+            mutate(doseCat = unique(x$doseCat))
+    }) %>%
+    bind_rows() %>%
+    dplyr::select(
+        doseCat, estimate, statistic, p.value
+    ) %>%
+    mutate(adjP = p.adjust(p.value, "bonferroni"))
+```
+
+d) *Which dose levels would you accept or reject $H_0$ at?*
+e) *Do you think the final step of adjusting p-values was necessary?*
+f) *Does this seem about right from our initial plot?*
+
+Importantly, **this is very similar to what happens when we compare gene expression across multiple genes**.
+Away from where we're looking (i.e. inside a function), the data is split and the same test is applied to every single gene, then we adjust our $p$-values and consider a gene to be DE or not DE based on our adjusted $p$-values
