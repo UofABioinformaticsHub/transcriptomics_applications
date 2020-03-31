@@ -1617,7 +1617,7 @@ ggplot(normDf, aes(x, y)) +
 </div>
 <div id="q4-sample-variances" class="section level3">
 <h3>Q4: Sample Variances</h3>
-<p>(It might be helpful to be clear on the relationship between the standard deviation (<span class="math inline">\(\sigma\)</span>) and the variance ($^2). These are literally the same values, but one is the square/square-root of the other. Statisticians often just use whichever they feel like, and assume that everyone is keeping up. Here we’re using <span class="math inline">\(\sigma = 1\)</span> which is conveniently the same as <span class="math inline">\(\sigma^2\)</span> for the value <code>1</code> only.)</p>
+<p>(It might be helpful to be clear on the relationship between the standard deviation (<span class="math inline">\(\sigma\)</span>) and the variance (<span class="math inline">\(\sigma^2\)</span>). These are literally the same values, but one is the square/square-root of the other. Statisticians often just use whichever they feel like, and assume that everyone is keeping up. Here we’re using <span class="math inline">\(\sigma = 1\)</span> which is conveniently the same as <span class="math inline">\(\sigma^2\)</span> for the value <code>1</code> only.)</p>
 <p>In the above, we knew the variance (<span class="math inline">\(\sigma^2 = 1\)</span>) because we set this in our random sampling step. In reality we don’t know this, so we would use our sample variance (<span class="math inline">\(s^2\)</span>) and a <span class="math inline">\(t\)</span>-test. Let’s have a look at how the sample variances are distributed, including the true value (<span class="math inline">\(\sigma\)</span>) as a vertical line.</p>
 <pre class="r"><code>library(matrixStats)
 s2 &lt;- colVars(rnd)
@@ -1626,8 +1626,8 @@ tibble(s2) %&gt;%
     geom_histogram(fill = &quot;grey70&quot;, colour = &quot;black&quot;, bins = 50) +
     geom_vline(xintercept = sigma, linetype = 2, colour = &quot;blue&quot;)</code></pre>
 <p>Notice that the sample variances (<span class="math inline">\(s^2\)</span>) are <strong>not normally distributed around the true variance</strong> (<span class="math inline">\(\sigma = 1\)</span>). (Variances are usually drawn from a scaled inverse <span class="math inline">\(\chi^2\)</span> distribution, which is well beyond the scope of this course)</p>
-<p>For these random samples, we knew the true value for the population mean (<span class="math inline">\(\mu = 5\)</span>). In reality, <strong>we wouldn’t know this</strong> and we’d need to conduct a hypothesis test with a null hypothesis and alternate hypothesis.</p>
-<p>Let’s test the hypothesis using <span class="math inline">\(\mu = 5\)</span> as the value of interest:</p>
+<p>For these random samples, we knew the true value for the population mean (<span class="math inline">\(\mu = 0\)</span>). In reality, <strong>we wouldn’t know this</strong> and we’d need to conduct a hypothesis test with a null hypothesis and alternate hypothesis.</p>
+<p>Let’s test the hypothesis using <span class="math inline">\(\mu = 0\)</span> as the value of interest:</p>
 <p><span class="math display">\[
 H_0: \mu = 0 \quad \text{Vs} \quad H_A: \mu \neq 0
 \]</span></p>
@@ -1638,7 +1638,7 @@ T = \frac{\bar{x} - \mu}{s / \sqrt{n}}
 s &lt;- sd(x)
 Tstat &lt;- (mean(x) - mu) / (s / sqrt(n))
 df &lt;- length(x) - 1</code></pre>
-<p>NB: Here the degrees of freedom is n - 1, so we would check this against the distribution for <span class="math inline">\(t_9\)</span>. In my simulations I got the value <span class="math inline">\(T =\)</span> <em>-1.068</em>. <strong>What value did you get from the first column in your simulations?</strong></p>
+<p>NB: Here the degrees of freedom is n - 1, so we would check this against the distribution for <span class="math inline">\(t_9\)</span>. In my simulations I got the value <span class="math inline">\(T =\)</span> <em>-1.076</em>. <strong>What value did you get from the first column in your simulations?</strong></p>
 <p>Let’s visualise this by first plotting the density of a <span class="math inline">\(t_9\)</span> distribution, then adding vertical lines for our obtained statistic. By my estimation, 1 in 20 of you should get a relatively extreme <span class="math inline">\(T\)</span>-statistic, but considering we have <span class="math inline">\(&lt;20\)</span> today, this may be no-one.</p>
 <p>First we’ll create a <code>tibble</code> which will contain the x-values and y-values needed to make a pretty line that represents a <span class="math inline">\(t_9\)</span> distribution. We’ll also include the <span class="math inline">\(Z\)</span>-values which correspond to the standard normal distribution (<span class="math inline">\(\mathcal{N}(0, 1)\)</span>) for the same x-value (or test-statistic).</p>
 <pre class="r"><code>tstatDf &lt;- tibble(

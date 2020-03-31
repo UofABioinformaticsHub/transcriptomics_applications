@@ -169,7 +169,7 @@ Effectively, we have just performed 1000 experiments, but in reality **we only h
 
 ### Q4: Sample Variances
 
-(It might be helpful to be clear on the relationship between the standard deviation ($\sigma$) and the variance ($\sigma^2).
+(It might be helpful to be clear on the relationship between the standard deviation ($\sigma$) and the variance ($\sigma^2$).
 These are literally the same values, but one is the square/square-root of the other.
 Statisticians often just use whichever they feel like, and assume that everyone is keeping up.
 Here we're using $\sigma = 1$ which is conveniently the same as $\sigma^2$ for the value `1` only.)
@@ -190,10 +190,10 @@ tibble(s2) %>%
 Notice that the sample variances ($s^2$) are **not normally distributed around the true variance** ($\sigma = 1$).
 (Variances are usually drawn from a scaled inverse $\chi^2$ distribution, which is well beyond the scope of this course)
 
-For these random samples, we knew the true value for the population mean  ($\mu = 5$).
+For these random samples, we knew the true value for the population mean  ($\mu = 0$).
 In reality, **we wouldn't know this** and we'd need to conduct a hypothesis test with a null hypothesis and alternate hypothesis.
 
-Let's test the hypothesis using $\mu = 5$ as the value of interest:
+Let's test the hypothesis using $\mu = 0$ as the value of interest:
 
 $$
 H_0: \mu = 0 \quad \text{Vs} \quad H_A: \mu \neq 0
