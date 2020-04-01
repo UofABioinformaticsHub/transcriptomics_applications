@@ -299,7 +299,7 @@ We also learned about:
 
 ### Q5: Multiple Test
 
-We could do the above procedure for every column in our matrix of random samples, which **we know** is a sample of 10 from $\mathcal{N}(5, 1)$.
+We could do the above procedure for every column in our matrix of random samples, which **we know** is a sample of 10 from $\mathcal{N}(0, 1)$.
 Note that in the below, we first calculate our sample means ($\bar{x}$) and sample standard deviations ($s$) as vectors.
 Considering our population mean **is known to be 0** in this instance, we should use this as our value ($\mu_0$) of interest.
 

@@ -1638,7 +1638,7 @@ T = \frac{\bar{x} - \mu}{s / \sqrt{n}}
 s &lt;- sd(x)
 Tstat &lt;- (mean(x) - mu) / (s / sqrt(n))
 df &lt;- length(x) - 1</code></pre>
-<p>NB: Here the degrees of freedom is n - 1, so we would check this against the distribution for <span class="math inline">\(t_9\)</span>. In my simulations I got the value <span class="math inline">\(T =\)</span> <em>-1.076</em>. <strong>What value did you get from the first column in your simulations?</strong></p>
+<p>NB: Here the degrees of freedom is n - 1, so we would check this against the distribution for <span class="math inline">\(t_9\)</span>. In my simulations I got the value <span class="math inline">\(T =\)</span> <em>-0.5125</em>. <strong>What value did you get from the first column in your simulations?</strong></p>
 <p>Let’s visualise this by first plotting the density of a <span class="math inline">\(t_9\)</span> distribution, then adding vertical lines for our obtained statistic. By my estimation, 1 in 20 of you should get a relatively extreme <span class="math inline">\(T\)</span>-statistic, but considering we have <span class="math inline">\(&lt;20\)</span> today, this may be no-one.</p>
 <p>First we’ll create a <code>tibble</code> which will contain the x-values and y-values needed to make a pretty line that represents a <span class="math inline">\(t_9\)</span> distribution. We’ll also include the <span class="math inline">\(Z\)</span>-values which correspond to the standard normal distribution (<span class="math inline">\(\mathcal{N}(0, 1)\)</span>) for the same x-value (or test-statistic).</p>
 <pre class="r"><code>tstatDf &lt;- tibble(
@@ -1694,7 +1694,7 @@ ggplot(tstatDf, aes(x = x, y = y)) +
 </ol>
 <div id="q5-multiple-test" class="section level3">
 <h3>Q5: Multiple Test</h3>
-<p>We could do the above procedure for every column in our matrix of random samples, which <strong>we know</strong> is a sample of 10 from <span class="math inline">\(\mathcal{N}(5, 1)\)</span>. Note that in the below, we first calculate our sample means (<span class="math inline">\(\bar{x}\)</span>) and sample standard deviations (<span class="math inline">\(s\)</span>) as vectors. Considering our population mean <strong>is known to be 0</strong> in this instance, we should use this as our value (<span class="math inline">\(\mu_0\)</span>) of interest.</p>
+<p>We could do the above procedure for every column in our matrix of random samples, which <strong>we know</strong> is a sample of 10 from <span class="math inline">\(\mathcal{N}(0, 1)\)</span>. Note that in the below, we first calculate our sample means (<span class="math inline">\(\bar{x}\)</span>) and sample standard deviations (<span class="math inline">\(s\)</span>) as vectors. Considering our population mean <strong>is known to be 0</strong> in this instance, we should use this as our value (<span class="math inline">\(\mu_0\)</span>) of interest.</p>
 <p>We then take advantage of R’s vector capabilities to create a vector of <span class="math inline">\(T\)</span>-statistics in one easy line of code. Feel free to marvel that in four lines, we’ve calculated 1000 sample means, 1000 sample standard deviations, 1000 <span class="math inline">\(T\)</span>-statistics and 1000 <span class="math inline">\(p-\)</span>values.</p>
 <pre class="r"><code>mu0 &lt;- 0
 xbar &lt;- colMeans(rnd)
