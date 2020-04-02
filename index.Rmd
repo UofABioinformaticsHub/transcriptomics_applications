@@ -38,7 +38,7 @@ pracs <- tribble(
     4, "2020-03-23", "Microarrays and Statistics for Quantification", "Stephen Pederson", "lectures/3_MicroarrayTechnology.pdf", "The Bioconductor Project", "practicals/4.1_Bioconductor.html",
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Genomic Ranges", "practicals/4.2_GenomicRanges.html",
     5, "2020-03-30", "Statistics For Transcriptomics", "Stephen Pederson", "lectures/4_Statistics.pdf", "Basic Statistics in R", "practicals/5.1_Statistics.html",
-    NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "", "",
+    NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Differential Expression", "practicals/5.2_MoreStatistics.html",
     6, "2020-04-06", "RNA-Seq", "Zhipeng Qu", "", "Alignments and Visualisation", "",
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Using Git with RStudio", "",
     NA_integer_, "2020-04-13", "**Mid-Semester Break**", "No Lecture", "", "", "",
