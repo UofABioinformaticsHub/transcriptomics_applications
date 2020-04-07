@@ -1,0 +1,260 @@
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 6.1: Linear Models in Differential Expression"
+date: "8^th^ April 2019"
+output: 
+  html_document: 
+    toc: yes
+    toc_float: yes
+---
+
+
+# Introduction
+
+For today's session, we'll continue to look at the microarray dataset from last week and will perform differential expression analysis on this set of genes.
+The main focus today is to understand how to apply a statistical model to a dataset
+
+
+# Preparation
+
+## R Markdown
+
+In order to set ourselves up for the day, **please ensure you are in your `~/transcriptomics` folder**, and using an **R Project called `practical_6` within that folder.**
+If you can't find your way, then please ask for help.
+
+Begin an R Markdown and tidy up the YAML header.
+Here's an example YAML header (this is actually the YAML from this instruction page).
+Add your own name in the (currently missing) `author:` field if you'd like, and feel free to change or delete the title/subtitle.
+
+```
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 6.1: Linear Models in Differential Expression"
+date: "8^th^ April 2019"
+output: 
+  html_document: 
+    toc: yes
+    toc_float: yes
+---
+```
+
+After the header, add the usual `setup` chunk.
+Notice that I've added an extra line this time to ensure all figures are centre-aligned.
+
+```{r setup}
+knitr::opts_chunk$set(
+    echo = TRUE, 
+    message = FALSE, 
+    warning = FALSE,
+    fig.align = "center"
+)
+```
+
+```{r hideResults, echo=FALSE}
+knitr::opts_chunk$set(
+  results = "hide",
+  fig.show = "hide"
+)
+```
+
+
+The libraries we'll need for today are as follows, and we'll discuss all of these as we come across them during the session.
+
+```{r}
+library(Biobase)
+library(AnnotationHub)
+library(ensembldb)
+library(limma)
+library(magrittr)
+library(tidyverse)
+library(ggfortify)
+library(ggrepel)
+library(broom)
+theme_set(theme_bw())
+```
+
+## Today's Data
+
+The dataset we'll analyse is the same as last week as we're really just working on a continuation of this analysis
+
+```{r, eval=FALSE}
+chipEffects <- url("https://github.com/UofABioinformaticsHub/transcriptomics_applications/raw/master/practicals/data/chipEff.rds") %>%
+  read_rds()
+```
+
+```{r, echo=FALSE}
+chipEffects <- here::here("practicals/data/chipEff.rds") %>%
+  read_rds()
+```
+
+Let's also setup the same metadata object
+
+```{r makeSampleData}
+sampleData <- tibble(
+  array_id = colnames(chipEffects)
+) %>%
+  mutate(
+    cell_type = str_extract(array_id, "Th"),
+    PI16 = str_extract(array_id, "[\\+-]"),
+    PI16 = factor(PI16, levels = c("-", "+")),
+    donor = str_extract(array_id, "[0-9]")
+  )
+```
+
+
+
+# Differential Gene Expression
+
+In our last session we used a $T$-test to compare between two groups, and this is effectively what we do  for Differential Gene Expression Analysis.
+As a quick example, if we just grabbed our first gene and passed it to `t.test()`, this is what we'll do.
+
+```{r}
+x <- exprs(eset)[1,]
+df <- pData(eset) %>% mutate(x = x)
+t.test(x~PI16, data = df)
+```
+
+However, in the above code, we are restricted to the situation where we have **only two groups**.
+In reality, we often have more than two and we need to fit this using a more complete formula.
+
+## The Design Matrix
+
+The most common approach to statistical analysis is to form a design matrix which contains a column for every parameter we are trying to fit, and with a row for every sample.
+Fortunately, our experiment is simple, in that we have two groups so our design matrix is pretty simple.
+This gives us a good chance to look at it though.
+
+```{r}
+design <- model.matrix(~PI16, data = pData(eset))
+design
+```
+
+This parameterisation can appear counter-intuitive to many non-statisticians, so let's explore this a little.
+Our first column allows us to estimate our baseline expression level, in our reference sample group.
+Commonly in a linear model, the baseline is considered to be when our main predictor variable has the value $0$, and we can then fit the slope of the line as the next column.
+Hence the name `(Intercept)`.
+All we need to consider that this is going to provide the estimate of expression in our reference sample group.
+
+When we defined `PI16` as a `factor` in our initial `data.frame`, this is where we defined our reference group.
+The first factor in a categorical variable is always treated as the *intercept* or baseline term in this context.
+
+The important thing is that the second column allows us to estimate the difference in expression due to our second condition, here when we have PI16^+^ cells.
+This column is going to provide our direct estimate of logFC.
+
+Many people wonder why we don't fit an expression estimate for each cell type separately, and then calculate the difference between them.
+This can also be done and would use the following syntax:
+
+```{r}
+model.matrix(~0 + PI16, data= pData(eset))
+```
+
+This would provide estimates of expression for each cell type, and then we would have to define a second contrast matrix to compare between the two estimates.
+To a statistician this seems like extra work, when the same thing can be performed in one step using the first approach.
+However, there are many occasions where this is indeed the best approach.
+
+## Fitting A Linear Model
+
+Let's see how this model works using a simple linear fit on the first gene.
+
+```{r}
+gene1 <- lm(x ~ PI16, data = df)
+tidy(gene1)
+```
+
+Here we can see that the estimate of expression in our baseline cell type (PI16^-^) is 6.52, whilst the difference in expression for PI16^=^ cells is -0.26.
+In other words, the estimated logFC due to being a PI16^+^ cell is -0.26.
+The non-significant $p$-value (> 0.05) indicates that we would accept $H_0$ and consider that the true average logFC that we are estimating is indeed zero.
+
+Let's compare that to our `t.test()`"
+
+```{r}
+t.test(x ~ PI16, data = df) 
+```
+
+Notice that our sign is reversed, but our estimates and our $T$=statistics is the same.
+The slight difference in the $p$_values is likely due to alternative approaches to calculating the degrees of freedom.
+
+## Fitting the Complete Dataset
+
+One of the advantages of our type of approach here is that we are fitting the exact same statistical model to every gene.
+Once we have our design matrix, we pass this to a single function which will fit every gene.
+In `limma` that function is called `lmFit()`.
+
+```{r}
+fit <- lmFit(eset, design)
+```
+
+Notice how in one simple line, we fitted all `r nrow(eset)` genes.
+And it took about one second!
+
+If you enter the object name into the Console, you'll get a bit of an information dump, but there are some  important and recognisable things here.
+
+The first of these is the element `coefficients`.
+The first column is the estimated expression in our baseline (*PI16^-^*) cell type, whilst our second column estimates the logFC for our *PI16^+^* cells.
+
+The next element of interest is called `sigma` and this is our gene-specific estimate of the population standard deviation (also known as `s` in lectures).
+
+Next you may notice an element called `genes`, and because we have setup our `eset` object correctly, this are now included in the output here for convenience.
+Beneath the `genes` element is one called `Amean` and this is the average expression level we can use to make MA plots.
+
+
+### The Moderated T-Test
+
+As mentioned in the statistics lecture, as part of the fitting process we estimate the population variance for each gene.
+In transcriptomics this is explicitly assumed to be the same across sample groups or cell types, and is provided in the `fit` object as the element `sigma`.
+A near compulsory step in transcriptomics (for microarray data) is to incorporate an additional step in which an Empirical Bayes model is used to moderate these variance estimates.
+This reduces false positives which are due to unrealistically low estimates of variance, and provides additional power to detect genes with a large logFC, but which were ranked too low due to an excessively large variance estimate.
+To include this step, we simply call the function `eBayes()` after we've called `fit()`.
+This can be done in one chain using the `magrittr`.
+
+```{r}
+fit <- lmFit(eset, design) %>%
+  eBayes()
+```
+
+If we compare these moderated variances, you'll see the effect described above.
+
+```{r plotEBayes, echo=FALSE, fig.show='asis'}
+tibble(
+  initial = fit$sigma,
+  moderated = sqrt(fit$s2.post)
+) %>%
+  ggplot(aes(initial, moderated)) +
+  geom_point() +
+  geom_abline(slope= 1, colour = "blue") +
+  labs(
+    x = expression(paste(sigma, " [Initial Value]")),
+    y = expression(paste(sigma, " [Moderated Value]"))
+  )
+```
+
+
+## Obtaining a Ranked List
+
+Now we've fitted every gene, we can get the top 10 using the simple command `topTable()`.
+However, we'll need to specify the model coefficient, which is simply the column of the design matrix.
+
+```{r}
+topTable(fit, coef = "PI16+")
+```
+
+More practically, we can obtain the complete ranked list, and while we're there, we can turn it into a `tibble` and keep just the information we need.
+
+```{r}
+results <- topTable(fit, coef = "PI16+", number = Inf) %>%
+  as_tibble() %>%
+  dplyr::select(
+    starts_with("gene"), logFC, AveExpr, t, P.Value, adj.P.Val
+  )
+```
+
+- The $B$ statistic is very rarely used in modern approaches and can be ignored.
+- If you think the `affy_id` column is worth keeping, feel free
+- The `adj.P.Val` column contains an FDR-adjusted p-value
+
+We can easily see how many DE genes we have to an FDR of any given value (e.g. $\alpha = 0.05$).
+
+```{r}
+sum(results$adj.P.Val < 0.05)
+```
+
+Next session we'll make some volcano plots, MA plots, check our p-values, check our expression values, learn about sample weights and more fun things.
