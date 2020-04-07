@@ -75,38 +75,19 @@ theme_set(theme_bw())
 
 ## Today's Data
 
-The dataset we'll analyse is the same as last week as we're really just working on a continuation of this analysis
+The dataset we'll analyse is the same as last week as we're really just working on a continuation of this analysis.
+A version of this prepared as an `ExpressionSet` is available for direct import into your VM.
 
-```{r, eval=FALSE}
-chipEffects <- url("https://github.com/UofABioinformaticsHub/transcriptomics_applications/raw/master/practicals/data/chipEff.rds") %>%
-  read_rds()
+```{r}
+eset <- url("https://github.com/UofABioinformaticsHub/transcriptomics_applications/raw/master/practicals/data/pi16_2way_eset.rds") %>%
+    read_rds
 ```
-
-```{r, echo=FALSE}
-chipEffects <- here::here("practicals/data/chipEff.rds") %>%
-  read_rds()
-```
-
-Let's also setup the same metadata object
-
-```{r makeSampleData}
-sampleData <- tibble(
-  array_id = colnames(chipEffects)
-) %>%
-  mutate(
-    cell_type = str_extract(array_id, "Th"),
-    PI16 = str_extract(array_id, "[\\+-]"),
-    PI16 = factor(PI16, levels = c("-", "+")),
-    donor = str_extract(array_id, "[0-9]")
-  )
-```
-
 
 
 # Differential Gene Expression
 
-In our last session we used a $T$-test to compare between two groups, and this is effectively what we do  for Differential Gene Expression Analysis.
-As a quick example, if we just grabbed our first gene and passed it to `t.test()`, this is what we'll do.
+In our last session we used a $T$-test to compare between two groups, and this is effectively what we do for Differential Gene Expression Analysis.
+As a quick example, we just grabbed our first gene and passed it to `t.test()`.
 
 ```{r}
 x <- exprs(eset)[1,]
@@ -115,7 +96,7 @@ t.test(x~PI16, data = df)
 ```
 
 However, in the above code, we are restricted to the situation where we have **only two groups**.
-In reality, we often have more than two and we need to fit this using a more complete formula.
+In reality, we often have more than two and we need to fit this using a more complete model formula.
 
 ## The Design Matrix
 
@@ -129,16 +110,16 @@ design
 ```
 
 This parameterisation can appear counter-intuitive to many non-statisticians, so let's explore this a little.
-Our first column allows us to estimate our baseline expression level, in our reference sample group.
-Commonly in a linear model, the baseline is considered to be when our main predictor variable has the value $0$, and we can then fit the slope of the line as the next column.
+Our first column allows us to estimate our baseline expression level, from our reference sample group.
+Commonly in a linear model, the baseline is considered to be when our main predictor variable (e.g. *PI16* status) has the value $0$, and we can then fit the 'slope' of the line as the next column.
 Hence the name `(Intercept)`.
-All we need to consider that this is going to provide the estimate of expression in our reference sample group.
+All we need to consider that the `Intercept` is **going to provide the estimate of expression in our reference sample group**.
 
-When we defined `PI16` as a `factor` in our initial `data.frame`, this is where we defined our reference group.
-The first factor in a categorical variable is always treated as the *intercept* or baseline term in this context.
+When we defined `PI16` as a `factor` in our initial `data.frame`, we actually defined our reference group.
+The first factor in a categorical variable is always treated as the *intercept* or baseline term in this context, with everything else estimated relative to this reference group.
 
-The important thing is that the second column allows us to estimate the difference in expression due to our second condition, here when we have PI16^+^ cells.
-This column is going to provide our direct estimate of logFC.
+The important thing is that the *second column allows us to estimate the difference in expression due to our second condition*.
+Here this is when we have PI16^+^ cells, and it is **this column which is going to provide our direct estimate of logFC.**
 
 Many people wonder why we don't fit an expression estimate for each cell type separately, and then calculate the difference between them.
 This can also be done and would use the following syntax:
@@ -147,9 +128,9 @@ This can also be done and would use the following syntax:
 model.matrix(~0 + PI16, data= pData(eset))
 ```
 
-This would provide estimates of expression for each cell type, and then we would have to define a second contrast matrix to compare between the two estimates.
+However, this would provide estimates of expression for each cell type, and then we would have to define a second contrast matrix to compare between the two estimates.
 To a statistician this seems like extra work, when the same thing can be performed in one step using the first approach.
-However, there are many occasions where this is indeed the best approach.
+However, there are many occasions where this is indeed the best approach, e.g. when we have multiple groups and pair-wise comparisons are the analysis of interest.
 
 ## Fitting A Linear Model
 
@@ -160,18 +141,18 @@ gene1 <- lm(x ~ PI16, data = df)
 tidy(gene1)
 ```
 
-Here we can see that the estimate of expression in our baseline cell type (PI16^-^) is 6.52, whilst the difference in expression for PI16^=^ cells is -0.26.
+Here we can see that the *estimate of expression in our baseline cell type (PI16^-^)* is 6.52, whilst the difference in expression for PI16^=^ cells is -0.26.
 In other words, the estimated logFC due to being a PI16^+^ cell is -0.26.
-The non-significant $p$-value (> 0.05) indicates that we would accept $H_0$ and consider that the true average logFC that we are estimating is indeed zero.
+The non-significant $p$-value (> 0.05) indicates that we would accept $H_0$ and consider that the **true average logFC that we are estimating is indeed zero**.
 
-Let's compare that to our `t.test()`"
+Let's compare that to our `t.test()`.
 
 ```{r}
 t.test(x ~ PI16, data = df) 
 ```
 
-Notice that our sign is reversed, but our estimates and our $T$=statistics is the same.
-The slight difference in the $p$_values is likely due to alternative approaches to calculating the degrees of freedom.
+Notice that our sign is reversed, but our estimates and our $T$=statistics are the same.
+Any slight difference in the $p$_values is likely due to alternative approaches to calculating the degrees of freedom.
 
 ## Fitting the Complete Dataset
 
@@ -186,32 +167,35 @@ fit <- lmFit(eset, design)
 Notice how in one simple line, we fitted all `r nrow(eset)` genes.
 And it took about one second!
 
-If you enter the object name into the Console, you'll get a bit of an information dump, but there are some  important and recognisable things here.
+*If you enter the object name into the Console, you'll get a bit of an information dump, but there are some  important and recognisable things here.*
 
-The first of these is the element `coefficients`.
-The first column is the estimated expression in our baseline (*PI16^-^*) cell type, whilst our second column estimates the logFC for our *PI16^+^* cells.
-
-The next element of interest is called `sigma` and this is our gene-specific estimate of the population standard deviation (also known as `s` in lectures).
-
-Next you may notice an element called `genes`, and because we have setup our `eset` object correctly, this are now included in the output here for convenience.
-Beneath the `genes` element is one called `Amean` and this is the average expression level we can use to make MA plots.
+1. The first of these is the element `coefficients`.
+The first column of coefficients is the estimated expression in our baseline (*PI16^-^*) cell type, whilst our second column estimates the difference for each gene within the *PI16^+^* samples. 
+This is our logFC estimate for *PI16^+^* cells in comparison to *PI16^-^* cells!
+2. The next element of interest is called `sigma` and this is our gene-specific estimate of the population standard deviation (also known as `s` in lectures).
+3. Next you may notice an element called `genes`, and because we have setup our `eset` object correctly, this are now included in the output here for convenience.
+4. Beneath the `genes` element is one called `Amean` and this is the average expression level we can use to make MA plots.
 
 
 ### The Moderated T-Test
 
 As mentioned in the statistics lecture, as part of the fitting process we estimate the population variance for each gene.
 In transcriptomics this is explicitly assumed to be the same across sample groups or cell types, and is provided in the `fit` object as the element `sigma`.
-A near compulsory step in transcriptomics (for microarray data) is to incorporate an additional step in which an Empirical Bayes model is used to moderate these variance estimates.
-This reduces false positives which are due to unrealistically low estimates of variance, and provides additional power to detect genes with a large logFC, but which were ranked too low due to an excessively large variance estimate.
-To include this step, we simply call the function `eBayes()` after we've called `fit()`.
-This can be done in one chain using the `magrittr`.
+A *near compulsory step in transcriptomics* (for microarray data) is to incorporate an additional step in which an Empirical Bayes model is applied to moderate these variance estimates.
+This reduces false positives which are due to *unrealistically low estimates of variance*, and provides additional power to detect genes with a large logFC, but which were ranked too low due to an *excessively large variance estimate*.
+Mathematically, this is well beyond many bioinformaticians, so let's just leave it at the conceptual level for now.
+Interestingly, this process also calculates a new value for degrees of freedom for the corresponding $t$-test which is *larger than before*, as we have borrowed information from all other genes in this calculation.
+
+To include this important step, we simply call the function `eBayes()` after we've called `fit()`.
+This can be done in one process using the `magrittr`.
 
 ```{r}
 fit <- lmFit(eset, design) %>%
   eBayes()
 ```
 
-If we compare these moderated variances, you'll see the effect described above.
+This adds an element to the `fit` object called `s2.post` as it is the *posterior estimate* (or moderated estimate) of the variance, $\sigma^2$.
+If we compare these moderated variances to the original values, you'll see the effect described above.
 
 ```{r plotEBayes, echo=FALSE, fig.show='asis'}
 tibble(
@@ -227,11 +211,12 @@ tibble(
   )
 ```
 
+(Each gene's degrees of freedom is now found by looking `fit$df.residual + fit$df.prior`)
 
 ## Obtaining a Ranked List
 
 Now we've fitted every gene, we can get the top 10 using the simple command `topTable()`.
-However, we'll need to specify the model coefficient, which is simply the column of the design matrix.
+However, we'll need to specify the model coefficient, which is simply the name of the relevant column of the design matrix.
 
 ```{r}
 topTable(fit, coef = "PI16+")
@@ -245,6 +230,7 @@ results <- topTable(fit, coef = "PI16+", number = Inf) %>%
   dplyr::select(
     starts_with("gene"), logFC, AveExpr, t, P.Value, adj.P.Val
   )
+results
 ```
 
 - The $B$ statistic is very rarely used in modern approaches and can be ignored.
@@ -257,4 +243,288 @@ We can easily see how many DE genes we have to an FDR of any given value (e.g. $
 sum(results$adj.P.Val < 0.05)
 ```
 
-Next session we'll make some volcano plots, MA plots, check our p-values, check our expression values, learn about sample weights and more fun things.
+## Checking our results
+
+We've already seen some of these plots as we learned `ggplot2`, but now we'll see some key plots in context.
+
+### Checking for bias
+
+The first thing we need to check is whether there is any bias in estimates of logFC, and the common plot for checking this is the `MA` plot.
+(Remember the minus/add plot).
+Here we'll plot our Average Expression across all samples (A) against the the average difference in expression between samples (M = logFC).
+Whilst we first saw these comparing two samples in two-colour microarrays, here we're looking at the final results.
+
+The easy version is made using `plotMA`
+
+```{r}
+plotMA(fit)
+```
+
+However, this can be hard to customise, so let's go straight back to `ggplot2`.
+This version is a generic version which slightly improves the one from `plotMA()`.
+
+
+```{r}
+results %>%
+    ggplot(aes(AveExpr, logFC)) +
+    geom_point() +
+    geom_smooth(se = FALSE) 
+```
+
+**Can you see any bias?**
+**If so, what might have caused this, and would this dataset trouble you?**
+
+Now we've had a look at a generic plot, my standard approach might be something along these lines
+
+```{r}
+results %>%
+    mutate(DE = adj.P.Val < 0.05) %>%
+    ggplot(aes(AveExpr, logFC)) +
+    geom_point(aes(colour = DE)) +
+    geom_smooth(se = FALSE) +
+    geom_text_repel(
+        aes(label = gene_name, colour = DE),
+        data = . %>% 
+            dplyr::filter(DE & abs(logFC) > 2),
+        show.legend = FALSE
+    ) +
+    scale_colour_manual(values = c("black", "red"))
+```
+
+
+### Checking p-values
+
+Another important check is to look at your p-values.
+We know that under $H_0$ p-values will have a Uniform Distribution between 0 & 1 (i.e. $p \sim \mathcal{U}(0, 1)$).
+Under $H_A$ we generally assume that p-values will be heavily biased towards 0 (i.e. we are unlikely to see data like if $H_0$ was true).
+In our data we have a combination of genes which are DE (i.e. $H_A$ is true) and *not* DE (i.e. $H_0$ is true), so we should have a distribution of p-values that looks like these two things mixed together.
+
+```{r}
+results %>%
+    ggplot(aes(P.Value, stat(density))) +
+    geom_histogram(fill = "grey", colour = "black", bins = 100)
+```
+
+Here you can see all of the p-values near zero which contain those from genes we consider as DE (i.e. we reject $H_0$), whilst the rest of the p-values look like they are randomly distributed between 0 & 1.
+This dataset looks good, but sometimes you do see funny shapes and these can be worth paying attention to.
+
+### Inspecting our results
+
+A common strategy is to inspect a volcano plat both before we present our final results, and as a method of presenting our final results.
+For a volcano plot, we put our estimated logFC on the x-axis, and a measure of significance on the y-axis.
+A common trick is to use our *raw* p-values on the -log~10~ scale, which places low p-values very high ($-\log_{10}(0.001) = -\log_{10} 10^{-3} = 3$).
+(*NB: Don't plot FDR-adjusted p-values unless you have a good reason to.*)
+
+Here's an initial generic plot we can use to make decision about our results.
+A good idea can be to start by colouring our DE genes just to see where they are.
+
+```{r}
+results %>%
+    mutate(DE = adj.P.Val < 0.05) %>%
+    ggplot(aes(logFC, -log10(P.Value))) +
+    geom_point(aes(colour = DE)) +
+    scale_colour_manual(values = c("black", "red"))
+```
+
+Some things to consider when inspecting these results are:
+
+1. Do the 'significant' genes appear to be 'separating from the pack'?
+2. Are there any unusual artefacts?
+3. Do we think our logFC estimates for all DE genes look 'biologically meaningful'?
+
+A common strategy might be to consider a gene as DE using our p-values as an initial filter, but to then apply a cutoff value to logFC.
+This is based on the idea that 'biologically meaningful' changes in expression are individual genes changing noticeably, and these key genes drive, or represent, some key biology.
+Whilst very common and widely used, there are two important things to consider:
+
+1. Are these true values, or estimates of logFC?
+Would an estimate of logFC < 1 mean that the true average logFC is also < 1?
+2. Could biology be driven my many genes moving together in a more subtle way?
+
+**There is no right answer, but these are important points to keep in mind**
+
+Let's try applying a filter, and a very common filter is for our estimated logFC to be beyond the range $\pm 1$.
+This represents a 2-fold change in expression of the mRNA under investigation, whilst in reality, any value could be chosen that seems justifiable.
+
+```{r}
+results %>%
+    mutate(
+        DE = adj.P.Val < 0.05 & abs(logFC) > 1
+    ) %>%
+    ggplot(aes(logFC, -log10(P.Value))) +
+    geom_point(aes(colour = DE)) +
+    geom_vline(xintercept = c(-1, 1), colour = "blue", linetype = 2) +
+    scale_colour_manual(values = c("black", "red"))
+```
+
+**Does this use of a hard cutoff seem appropriate?**
+
+Can you see points which are highly ranked, but just miss out?
+
+This is a problem that everyone is aware of, but just does their best to work with.
+If you're happy with those results, we could make a final plot for our collaborators.
+We're being a bit fancy here, by labelling everything above the value 6 on the y-axis ($-\log_{10} 10^{-6} = 6$), but we've added a second option for DE genes with a reasonably large fold-change.
+Effectively we're labelling points around the outer edge of the plot.
+This is always an aesthetic call, but biologists **love** to see their favourite genes in these plots.
+
+```{r}
+results %>%
+    mutate(
+        DE = adj.P.Val < 0.05 & abs(logFC) > 1
+    ) %>%
+    ggplot(aes(logFC, -log10(P.Value))) +
+    geom_point(aes(colour = DE)) +
+    geom_text_repel(
+        aes(label = gene_name, colour = DE),
+        data = . %>%
+            dplyr::filter(P.Value < 1e-6 | (DE & abs(logFC) > 2)),
+        show.legend = FALSE
+    ) +
+    geom_vline(xintercept = c(-1, 1), colour = "blue", linetype = 2) +
+    scale_colour_manual(values = c("black", "red"))
+```
+
+
+Some further plots we might like to make are boxplots of our favourite genes, or heatmaps of a larger groups of genes.
+We've covered these already, so will move straight on.
+
+## An Alternative Approach to Testing
+
+In our results above, we've applied the classic null hypothesis and with the classic alternate hypothesis, i.e. 
+$H_0: \mu = 0$ against $H_A: \mu \neq 0$.
+Here $\mu$ represents the **true average log fold-change**.
+
+Once we obtained our p-values and estimated our false-discovery rate, we filtered our list of potentially DE genes based on some intelligently chosen value of estimated logFC.
+
+An alternative strategy favoured by some is to define a slightly different null hypothesis.
+Consider this:
+$$
+H_0: -\lambda \leq \mu \leq \lambda \\
+\text{Vs} \\
+H_A: |\mu| > \lambda
+$$
+
+Here we're saying that our true mean logFC ($\mu$) is within a range around zero [$-\lambda, \lambda$] under $H_0$, or it's outside of this range $|\mu| > \lambda$.
+All we need to do is decide on a suitable value for $\lambda$.
+
+This strategy is implemented in the function `treat()` in the `limma` package.
+And we would use this **instead** of `eBayes()`.
+Whilst this function still calculates moderated $t$-statistics, the underlying hypothesis has changed and as such the moderated $t$-statistics will be different.
+The default value utilised by this function is $\lambda = \log_2 1.2 \approx 0.263$, which provides a small range around zero for the null hypothesis.
+Once we have applied this, we no longer need to filter our results based on logFC as we have *effectively removed results where we may have near-zero logFC* but that have made significance for reasons more connected to low variability.
+
+```{r}
+treatFit <- lmFit(eset, design) %>%
+  treat()
+treatResults <- topTreat(treatFit, n = Inf, coef = "PI16+") %>%
+    as_tibble() %>%
+    dplyr::select(
+        starts_with("gene"), logFC, AveExpr, t, P.Value, adj.P.Val
+    )
+```
+
+
+Under this approach, we wouldn't expect any changes to the MA-plot, but we do expect changes to our other two plots.
+
+```{r}
+treatResults %>%
+    ggplot(aes(P.Value, stat(density))) +
+    geom_histogram(fill = "grey", colour = "black", bins = 100)
+```
+
+Notice that our p-value distribution now looks **very** different.
+This fundamental change to the null hypothesis has noticeably impacted this plot, but this does make sense despite the previous claim that under $H_0$ we expect $p \sim \mathcal{U} (0, 1)$.
+Anything with an estimated logFC directly within that range will automatically be given a p-value $\approx1$, and if we remember our initial volcano plot, there are a large number of these.
+Additionally, all the genes where the logFC estimate is just outside the range $\pm \lambda$, will also receive a p-value near 1, and once again there are lot of these.
+Fortunately, we still see our tell-tale spike near zero, so we still have our DE genes.
+
+It should be noted that this type of null hypothesis is not common in other statistical fields, but makes a whole lot of sense in our context.
+
+Let's compare our results:
+
+```{r}
+results %>%
+    dplyr::filter(adj.P.Val < 0.05 & abs(logFC) > 1) %>%
+     nrow()
+treatResults %>%
+    dplyr::filter(adj.P.Val < 0.05) %>%
+    nrow()
+```
+
+It appears we have fewer significant DE genes, so this is clearly a more conservative strategy, but it can be very useful when you have large lists of DE genes and you can't decide where draw a hard cutoff.
+When we make our volcano plot, you may notice a few differences:
+
+1. Some genes we previously filtered out are now included
+2. Some genes we previously included are now filtered out
+3. Our p-values are generally higher (i.e. less significant)
+4. There is a 'scoop' around zero where literally nothing is significant
+
+```{r}
+treatResults %>%
+    mutate(
+        DE = adj.P.Val < 0.05 
+    ) %>%
+    ggplot(aes(logFC, -log10(P.Value))) +
+    geom_point(aes(colour = DE)) +
+    geom_text_repel(
+        aes(label = gene_name, colour = DE),
+        data = . %>%
+            dplyr::filter(P.Value < 1e-6 | (DE & abs(logFC) > 2)),
+        show.legend = FALSE
+    ) +
+    geom_vline(xintercept = c(-1, 1), colour = "blue", linetype = 2) +
+    scale_colour_manual(values = c("black", "red"))
+```
+
+
+## Applying sample weights
+
+Another strategy available under these approaches is to down-weight lower quality samples and fit a weighted regression model.
+This is very dependent on the fact that we are working with Normally Distributed data.
+Sometimes this can be a way of including samples which aren't terrible, but just make you uneasy (that's a formal statistical term).
+It's a pretty simple thing to calculate, and then we can add it to our sample-level metadata.
+
+```{r}
+w <- arrayWeights(eset)
+pData(eset)$weights <- w
+```
+
+Once we've calculated them, we should have look to see if we have any problematic samples or donors.
+Samples which are consistently near the mean (i.e. with small residuals) will be given high weights, whilst those which are consistently more distant from the mean will be given low weights.
+In a perfect experiment, each sample would have a weight of 1, so this can be a good reference value to plot.
+
+```{r}
+pData(eset) %>%
+    ggplot(aes(PI16, w, fill = PI16)) +
+    geom_col() +
+    geom_hline(yintercept = 1, linetype = 2) +
+    facet_wrap(~donor, nrow = 1)
+```
+
+We can rerun all of our previous code (using `eBayes()` or `treat()`) with this simple addition to obtain slightly improved results.
+
+```{r}
+weightedResults <- eset %>%
+    lmFit(design = design, weights = pData(.)$weights) %>%
+    eBayes() %>%
+    topTable(coef = "PI16+", number = Inf) %>%
+    as_tibble() %>%
+    dplyr::select(
+        starts_with("gene"), logFC, AveExpr, t, P.Value, adj.P.Val
+    )
+```
+
+Comparing this to our standard analysis (i.e. without weights) we should only see a slight change
+
+```{r}
+results %>%
+    dplyr::filter(adj.P.Val < 0.05 & abs(logFC) > 1) %>%
+     nrow()
+weightedResults %>%
+    dplyr::filter(adj.P.Val < 0.05 & abs(logFC) > 1) %>%
+     nrow()
+```
+
+If we have time, compare the estimates of logFC and the p-values (on the -log~10~ scale), but this may take a good 10-15 minutes of figuring out the best `dplyr` and `ggplot()` strategies.
+
+# Working With More Complicated Designs
+
