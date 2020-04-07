@@ -39,16 +39,16 @@ pracs <- tribble(
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Genomic Ranges", "practicals/4.2_GenomicRanges.html",
     5, "2020-03-30", "Statistics For Transcriptomics", "Stephen Pederson", "lectures/4_Statistics.pdf", "Basic Statistics in R", "practicals/5.1_Statistics.html",
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Differential Expression", "practicals/5.2_MoreStatistics.html",
-    6, "2020-04-06", "RNA-Seq", "Zhipeng Qu", "", "Alignments and Visualisation", "",
-    NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Using Git with RStudio", "",
+    6, "2020-04-06", "RNA-Seq", "Zhipeng Qu", "lectures/Lecture5_RNASeq_ZQ_2020.pdf", "Using Limma For Differential Expression", "practicals/6.1_Limma.html",
     NA_integer_, "2020-04-13", "**Mid-Semester Break**", "No Lecture", "", "", "",
     NA_integer_, "2020-04-20", "**Mid-Semester Break**", "No Lecture", "", "", "",
-    7, "2020-04-27", "Alignment and Quantification", "Nathan Watson-Haigh", "", "Introduction to `limma` and `edgeR`", "",
+    7, "2020-04-27", "Alignment and Quantification", "Nathan Watson-Haigh", "", "Alignments and Visualisation", "",
     8, "2020-05-04", "Statistics for RNA-Seq", "Stephen Pederson", "", "Introduction to `limma` and `edgeR`", "",
     9, "2020-05-11", "Enrichment Analysis", "Stephen Pederson", "", "Enrichment Strategies", "",
     10, "2020-05-18", "Network Analysis", "Nathan Watson-Haigh", "", "WGCNA", "",
     11, "2020-05-25", "Single Cell RNA-Seq", "Stephen Pederson", "", "WGCNA", "",
     12, "2020-06-01", "Transcriptome Assembly", "Terry Bertozzi", "", "", "",
+    NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Using Git with RStudio", "",
     13, "2020-06-07", "Challenges in RNA-Seq", "Stephen Pederson", "", "", ""
 )
 ```
