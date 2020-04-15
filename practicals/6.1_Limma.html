@@ -1834,7 +1834,7 @@ treatResults %&gt;%
 <li>After that we can restrict our <code>P.Value</code> and <code>adj.P.Val</code> columns to 3 significant digits using <code>formatSignif()</code>.</li>
 </ul>
 <pre class="r"><code>treatResults %&gt;%
-    mutate(DE = adj.P.Val &lt; 0.05 &amp; abs(logFC) &gt; 1) %&gt;%
+    mutate(DE = adj.P.Val &lt; 0.05) %&gt;%
     dplyr::filter(DE) %&gt;%
     dplyr::select(-DE) %&gt;%
     datatable(
