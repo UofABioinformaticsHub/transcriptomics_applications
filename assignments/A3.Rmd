@@ -1,0 +1,125 @@
+---
+title: "Transcriptomics Applications"
+subtitle: "Assignment 2"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE, 
+    warning = FALSE,
+    message = FALSE
+)
+```
+
+```{r}
+library(tidyverse)
+```
+
+# Instructions
+
+## Submission Format [3 marks]
+
+This is assignment is due by 5pm, **Friday 8^th^ May**.
+
+- Submissions must be made as a *zip archive* containing 2 files:
+    1. Your **source R Markdown Document** (with an Rmd suffix)
+    2. A **compiled pdf**, showing all code
+- All file names **within the zip archive** must start with your student number.
+However the name of the zip archive is not important as myUni will likely modify this during submission. [See here for help creating a zip archive](#creating-a-zip-archive)
+    
+*All questions are to be answered on the same R Markdown / PDF, regardless of if they require a plain text answer, or require execution of code.*
+
+**Marks directly correspond to the amount of time and effort we expect for each question, so please answer with this is mind.**
+
+We **strongly advise** working in the folder `~/transcriptomics/assignment2` on your virtual machine.
+Using an R Project for each individual assignment is also strongly advised.
+
+## Creating a zip archive {.tabset}
+
+### On Your VM
+
+If all files required for submission *are contained on your VM*:
+
+1. Select both files using the **Files** pane in R Studio
+2. Click export
+3. They will automatically be placed into a single zip archive. Please name this in whatever informative name you decide is suitable, but it should contain the suffix `.zip`
+
+### Windows
+
+If all files are on your on your *local Windows machine*:
+
+1. Using File Explorer, enter the folder containing both files
+2. Select all files simultaneously by using <kbd>Ctrl</kbd> + Click
+3. Right click on one of the files and select `Send to > Compressed (zipped) folder`
+4. Rename as appropriate, ensuring the archive ends with the suffix `.zip`
+
+### Mac OS
+
+If all the files are on your *local macOS machine`:
+
+1. Locate the items to zip in the Mac Finder (file system)
+2. Right-click on a file, folder, or files you want to zip
+3. Select “Compress Items”
+4. Find the newly created .zip archive in the same directory and name as appropriate
+
+
+# Questions
+
+```{r}
+marks <- tibble(q = 0, marks = 3)
+q <- 1
+```
+
+## Question `r q` [8 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 8)
+    )
+```
+
+Two common strategies for RNA Seq library preparation are the depletion of rRNA molecules or the preferential amplification of poly-adenylated RNA.
+Briefly contrast these two approaches, describing their respective strengths and limitations.
+
+```{r}
+q <- q + 1
+```
+
+## Question `r q` [10 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 10)
+    )
+```
+
+A common alignment and quantification workflow is to align an RNA Seq sample to a reference genome and count reads which align to each gene, as defined in a `gtf` file.
+
+a. Describe two important considerations during the quantification step, and how these may differ for polyA and total RNA libraries?
+b. What advantages and disadvantages does this approach offer in comparison to using pseudo-alignment to a reference transcriptome
+
+
+```{r}
+q <- q + 1
+```
+
+
+
+
+
+
+
+
+
+# Total: `r sum(marks$marks)` marks
+
+```{r}
+write_csv(marks, here::here("assignments", "A3.csv"))
+```
