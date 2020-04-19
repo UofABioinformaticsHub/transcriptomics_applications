@@ -93,9 +93,9 @@ pracs %>%
 
 ```{r}
 ass <- tribble(
-    ~Url, ~Topic, ~`Due Date`,
-    "assignments/A1.html", "Introductory Work", "2020-03-24",
-    "assignments/A2.html", "Gene Expression", "2020-04-09",
+    ~Url, ~Topic, ~`Due Date`, ~Solutions,
+    "assignments/A1.html", "Introductory Work", "2020-03-24", "assignments/A1_Solutions.html",
+    "assignments/A2.html", "Gene Expression", "2020-04-09", ""
 ) %>%
     mutate(
         Assessment = paste("Assessment", seq_len(nrow(.)) )
@@ -108,12 +108,16 @@ ass <- tribble(
 ```{r}
 ass %>%
     mutate(
-        Assessment = paste0("[", Assessment, "](", Url, ")")
+      Solutions = case_when(
+        Solutions == "" ~ "",
+        Solutions != "" ~ paste0("[", Assessment, " Solutions](", Solutions, ")")
+      ),
+      Assessment = paste0("[", Assessment, "](", Url, ")")
     ) %>%
-    dplyr::select(Assessment, Topic, `Due Date`) %>%
-    kable() %>%
-    kable_styling(
-        bootstrap_options = c("striped", "hover", "condensed", "responsive")
+  dplyr::select(Assessment, Topic, `Due Date`, Solutions) %>%
+  kable() %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed", "responsive")
     )   
 ```
 
