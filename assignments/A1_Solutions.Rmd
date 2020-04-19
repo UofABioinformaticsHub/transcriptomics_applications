@@ -1,0 +1,291 @@
+---
+title: "Transcriptomics Applications"
+subtitle: "Assignment 1: Solutions"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: true
+---
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 8px; padding: 12px;}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE, 
+    warning = FALSE,
+    message = FALSE
+)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+# Instructions
+
+## Submission Format [3 marks]
+
+This is assignment is due by 5pm, **Tuesday 24th March**.
+
+- Submissions must be made as a *zip archive* containing 3 files:
+    1. Your **source R Markdown Document** (with an Rmd suffix)
+    2. A **compiled pdf**, showing all code
+    3. The **signed cover sheet** as required by the University **[NB: This is no longer required]**
+- All file names **within the zip archive** must start with your student number.
+However the name of the zip archive is not important as myUni will likely modify this during submission. [See here for help creating a zip archive](#creating-a-zip-archive)
+    
+*All questions are to be answered on the same R Markdown / PDF, regardless of if they require a plain text answer, or require execution of code.*
+
+We **strongly advise** working in the folder `~/transcriptomics/assignment1` on your virtual machine.
+Using an R Project for each individual assignment is also strongly advised.
+
+## Creating a zip archive {.tabset}
+
+### On Your VM
+
+If all files required for submission *are contained on your VM*:
+
+1. Select all three files using the **Files** pane in R Studio
+2. Click export
+3. They will automatically be placed into a single zip archive. Please name this in whatever informative name you decide is suitable, but it should contain the suffix `.zip`
+
+### Windows
+
+If all files are on your on your *local Windows machine*:
+
+1. Using File Explorer, enter the folder containing all 3 files
+2. Select all files simultaneously by using <kbd>Ctrl</kbd> + Click
+3. Right click on one of the files and select `Send to > Compressed (zipped) folder`
+4. Rename as appropriate, ensuring the archive ends with the suffix `.zip`
+
+### Mac OS
+
+If all the files are on your *local macOS machine`:
+
+1. Locate the items to zip in the Mac Finder (file system)
+2. Right-click on a file, folder, or files you want to zip
+3. Select “Compress Items”
+4. Find the newly created .zip archive in the same directory and name as appropriate
+
+# Questions
+
+```{r}
+marks <- tibble(q = 0, marks = 3)
+q <- 1
+```
+
+
+### Question `r q` [8 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 8)
+    )
+```
+
+
+Choose two different RNA types and contrast them with each other.
+Aspects to consider may be method of transcription, cellular location, post-transcriptional processing, biological function or any other aspect which you determine to be important
+
+<div class = "blue">
+As expected from the question, the key points here are:
+
+- Which RNA polymerase is involved?
+- Are they exported from the nucleus?
+- Are they processed, and if so, how are they processed?
+- Do they play specific biological roles?
+- etc
+
+If you have addressed these or similar relevant questions for you chosen RNA types, you will receive all 8 marks
+</div>
+
+```{r}
+q <- q + 1
+```
+
+### Question `r q` [3 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 3)
+    )
+```
+
+
+In R, you will commonly encounter 3 types of 'unexpected' output.
+1) Errors, 2) Warnings and 3) Messages.
+Describe the role of each of these and how to interpret them.
+
+<div class = "blue">
+
+1. Errors indicate that a process has failed and the **code has not run to completion**. You will need to check your data, inputs, function calls etc and involve yourself in debugging
+2. Warnings indicate that something unexpected has happened from the perspective of the process/function authors. If you did not also expect this warning, you will need to check your data, inputs, function calls etc and involve yourself in debugging. Importantly, the **code will have run to completion**
+3. Messages provide information about the process and/or data. No further attention is required unless suggested by the message. Examples of messages may be a notice of pending function deprecation, or a summary of the steps taken during a process.
+
+</div>
+
+
+```{r}
+q <- q + 1
+```
+
+### Question `r q` [8 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 8)
+    )
+```
+
+
+Two possible definitions of a gene are given by the high-profile journal [Nature](https://www.nature.com/scitable/definition/gene-29/) and the US [National Institute of Health](https://ghr.nlm.nih.gov/primer/basics/gene).
+Discuss the limitations of these definitions, giving particular consideration to promoters and protein products which arise from multiple distinct locations within the genome.
+Two interesting discussion on this subject are available in [this paper](https://www.genetics.org/content/205/4/1353) and [this lecture](https://youtu.be/TiaQG0UZPAU).
+Feel free to use these resources, or find your own.
+Provide references where appropriate.
+
+<div class = "blue">
+
+Some of the many issues to address in your discussion include:
+
+- How do we understand a gene in it's historical and modern context?
+- Is it an expressed region? 
+- Does it include regulatory features? 
+- Is it a contiguous region of DNA? 
+- Does linkage play a role?
+
+</div>
+
+```{r}
+q <- q + 1
+```
+
+### Question `r q` [13 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 13)
+    )
+```
+
+
+For this question, you will need a list of file names.
+Each student will be given a unique set so that everyone has their own unique problems to solve.
+*This is specifically to encourage collaboration between students without any risk of plagiarism.*
+
+To obtain your own set of file names, please execute the following lines of code, **using your own student number instead of the example given** (`"a1234567"').
+
+```{r, echo=TRUE}
+source("https://uofabioinformaticshub.github.io/transcriptomics_applications/assignments/A1Funs.R")
+makeSampleNames("a1234567")
+```
+
+
+After you have run these lines of code, you will have two objects in your workspace called `sampleNames` and `librarySizes`.
+These are the two objects which we will work with for the next two questions
+
+a. Include the above code chunk in your submission, with an informative chunk label, and using a label that does not include any white-space. [2 marks]
+b. In a plain text paragraph or sentence, use the function `pander()` from the package `pander` to present the sample names that you have using in-line code of the style `` `r knitr::inline_expr("function(objectName)")` `` [1 mark]
+c. Using the `sampleNames` provided, create a `tibble` containing the metadata for your experiment. This tibble should be named `metaData` and should minimally contain the columns 1) date, 2) sex, 3) group, 4) researcher, 5) reads, and 6) sampleID. You will have to use functions from `stringr` and `dplyr` to perform this task. [7 marks]
+d. Create a table summarising the number of samples per experimental group paying attention to the spread of sample sex within each group. Use `pander()` to present this table in your submission, including an appropriate table caption. [3 marks]
+
+<div class = "blue">
+
+```{r loadPander, echo=TRUE}
+library(pander)
+library(tidyverse)
+```
+
+
+b. Using the example code above and the mock student ID, my `r length(sampleNames)` sample names were printed using the inline code `` `r knitr::inline_expr("pander(sampleNames)")` ``. <br>
+This gave the output `r pander(sampleNames)`.
+
+c. Again using the example sample names, I could see 1) the dates were all from `03_May_2018`, 2) all samples were male, with one specified as a lower case `m`, 3) my experimental groups were `Mut` and `WT`, 4) `Monique` was the associated researcher for all samples, 5) all reads were R1 and 6) all samples IDs were `S1` to `S9`.
+This enabled me to form a `tibble` using the following code
+
+```{r sampleData, echo = TRUE}
+metaData <- tibble(sampleNames) %>%
+  mutate(
+    date = str_extract(sampleNames, "[0-9]+_May_[0-9]+"),
+    sex = str_replace_all(sampleNames, ".+Monique_([Mm]).fastq.gz", "\\1"),
+    sex = str_to_upper(sex),
+    group = str_extract(sampleNames, "(Mut|WT)"),
+    group = factor(group, levels = c("WT", "Mut")),
+    researcher = str_extract(sampleNames, "Mon[a-z]+"),
+    reads = str_extract(sampleNames, "R[12]"),
+    sampleID = str_extract(sampleNames, "S[0-9]+")
+  )
+```
+
+d. I them summarised my sample groups and created a table using the following code:
+
+```{r, echo = TRUE}
+metaData %>%
+  group_by(group, sex) %>%
+  tally() %>%
+  rename_all(str_to_title) %>%
+  pander(
+    justify = "llr",
+    caption = "Breakdown of experimental samples by group and sex of the sampled animal."
+  )
+```
+
+
+</div>
+
+
+```{r}
+q <- q + 1
+```
+
+### Question `r q` [6 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 6)
+    )
+```
+
+Combine your `metaData` object created in Question `r q - 1` with the object `librarySizes` and generate a barplot of the library sizes for all samples.
+Colour your bars by the experimental treatment group, and ensure that all axes and other labels are of a standard suitable for publication.
+
+Do you think that any of your metadata columns may have contributed to the variation in library sizes? Provide a clear explanation. (*Please note that your answer may different to any other student's answer*)
+
+<div class = "blue">
+
+If you left the column name as `sampleNames` in your metadata object, you will need to tell `left_join()` how to manage this.
+
+```{r, echo=TRUE, fig.align='center', fig.cap="*Library Sizes for our dataset, with the mean library size shown as the dashed line*"}
+metaData %>%
+  left_join(librarySizes, by = c("sampleNames" = "sampleName")) %>%
+  ggplot(aes(sampleID, lib.size /1e6 , fill = group)) +
+  geom_col() +
+  geom_hline(yintercept = mean(librarySizes$lib.size) / 1e6, linetype = 2) +
+  facet_grid(~group, scales = "free_x", space = "free_x") +
+  labs(
+    y = "Library Size (millions)",
+    fill = "Genotype"
+  ) +
+  theme_bw()
+```
+
+In this dataset, it appears there is minimal association between treatment group and library size as the samples are approximately equally spread around the mean library size.
+One sample (`S9`) appears to have a noticeably smaller library size and may need to be checked for any contributing factors.
+
+</div>
+
+# Total: `r sum(marks$marks)` marks
+
+```{r}
+write_csv(marks, here::here("assignments", "A1.csv"))
+```
+
