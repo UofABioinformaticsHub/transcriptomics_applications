@@ -283,9 +283,31 @@ One sample (`S9`) appears to have a noticeably smaller library size and may need
 
 </div>
 
-# Total: `r sum(marks$marks)` marks
 
-```{r}
-write_csv(marks, here::here("assignments", "A1.csv"))
+```{r results, results='hide'}
+here::here("assignments", "A1.csv") %>%
+  read_csv() %>%
+  rename(points = marks) %>%
+  pivot_longer(
+    cols = starts_with("a"),
+    names_to = "ID",
+    values_to = "awarded"
+  ) %>%
+  dplyr::filter(!is.na(awarded)) %>%
+  group_by(ID) %>%
+  summarise(
+    Total = sum(awarded),
+    `Scaled (10)` = round(10 * sum(awarded) /sum(points), 2)
+  ) %>%
+  mutate(
+    Grade = cut(
+      `Scaled (10)`, 
+      breaks = c(0, 5, 6.5, 7.5, 8.5, 10), 
+      labels = c("F", "P", "C", "D", "HD")
+      )
+  ) %T>%
+  write_csv(here::here("assignments/A1_results.csv")) %>%
+  arrange(desc(Total)) %>%
+  pander()
 ```
 
