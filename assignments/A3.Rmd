@@ -24,7 +24,7 @@ library(tidyverse)
 
 ## Submission Format [3 marks]
 
-This is assignment is due by 5pm, **Friday 8^th^ May**.
+This is assignment is due by 5pm, **Tuesday 12^th^ May**.
 
 - Submissions must be made as a *zip archive* containing 2 files:
     1. Your **source R Markdown Document** (with an Rmd suffix)
