@@ -42,7 +42,7 @@ pracs <- tribble(
     6, "2020-04-06", "RNA-Seq", "Zhipeng Qu", "lectures/Lecture5_RNASeq_ZQ_2020.pdf", "Using Limma For Differential Expression", "practicals/6.1_Limma.html",
     NA_integer_, "2020-04-13", "**Mid-Semester Break**", "No Lecture", "", "", "",
     NA_integer_, "2020-04-20", "**Mid-Semester Break**", "No Lecture", "", "", "",
-    7, "2020-04-27", "Alignment and Quantification", "Nathan Watson-Haigh", "", "Alignments and Visualisation", "",
+    7, "2020-04-27", "Alignment and Quantification", "Zhipeng Qu", "", "Alignments and Visualisation", "",
     8, "2020-05-04", "Statistics for RNA-Seq", "Stephen Pederson", "", "Introduction to `limma` and `edgeR`", "",
     9, "2020-05-11", "Enrichment Analysis", "Stephen Pederson", "", "Enrichment Strategies", "",
     10, "2020-05-18", "Network Analysis", "Nathan Watson-Haigh", "", "WGCNA", "",
@@ -95,7 +95,8 @@ pracs %>%
 ass <- tribble(
     ~Url, ~Topic, ~`Due Date`, ~Solutions,
     "assignments/A1.html", "Introductory Work", "2020-03-24", "assignments/A1_Solutions.html",
-    "assignments/A2.html", "Gene Expression", "2020-04-09", ""
+    "assignments/A2.html", "Gene Expression", "2020-04-09", "",
+    "assignments/A3.html", "Differential Analysis", "2020-05-12", ""
 ) %>%
     mutate(
         Assessment = paste("Assessment", seq_len(nrow(.)) )

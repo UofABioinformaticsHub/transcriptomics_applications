@@ -1578,9 +1578,33 @@ div.tocify {
 <li>What advantages and disadvantages does this approach offer in comparison to using pseudo-alignment to a reference transcriptome</li>
 </ol>
 </div>
+<div id="question-3-8-marks" class="section level2">
+<h2>Question 3 [8 marks]</h2>
+<p>A transcriptomic experiment was designed to test differences in gene expresson based on loss-of-function mutations in a specific gene (<em>myGene</em>). Three genotypes: <em>Wild-Type</em>, <em>Heterozygous</em> and <em>Homozygous</em> were analysed, and these may also be described as <em>myGene<sup>+/+</sup></em>, <em>myGene<sup>+/-</sup></em> and <em>myGene<sup>-/-</sup></em>. For an experiment with <span class="math inline">\(n = 4\)</span> samples from each genotype, describe two possible approaches detailing advantages of each over the other. Include code for generating a model matrix and a contrast matrix based on the following layout.</p>
+<p>You should start the coding section by copying the following code to generate the appropriate metadata object.</p>
+<pre class="r"><code>genoData &lt;- tibble(
+  sampleID = paste0(&quot;S&quot;, 1:12),
+  replicate = rep(1:4, 3),
+  myGene = rep(c(&quot;+/+&quot;, &quot;+/-&quot;, &quot;-/-&quot;), each = 4),
+  genotype = rep(c(&quot;WT&quot;, &quot;Het&quot;, &quot;Hom&quot;), each = 4)
+)</code></pre>
+<p>(Hint: Consider how to set a categorical variable in R)</p>
 </div>
-<div id="total-21-marks" class="section level1">
-<h1>Total: 21 marks</h1>
+<div id="question-4-18-marks" class="section level2">
+<h2>Question 4 [18 marks]</h2>
+<p>For this question all data was obtained from the public dataset located <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE71868">here</a>, but has bene partially prepared and filtered for you. Data was generated using Illumina Microarrays and as such the assumption of normality is appropriate. Using the <a href="GSE71868_meta.txt">metadata</a>, <a href="GSE71868_genes.tsv">gene annotation</a> and <a href="GSE71868_exprs.tsv">expression values</a> contained in each of these three files:</p>
+<ol style="list-style-type: decimal">
+<li>Form an <code>ExpressionSet</code>, followed by a suitable design matrix</li>
+<li>Perform a differential expression analysis based on your design matrix</li>
+<li>Generate MA and Volcano plots, labelling any genes you think are appropriate</li>
+<li>Produce a table of the top 10 most highly ranked genes from this analysis</li>
+</ol>
+<p>Include captions explaining each figure or table and ensure correctly labelled axes where appropriate.</p>
+<p><strong>For the most highly-ranked upregulated gene (based on the p-value), which sample group is it the most highly-expressed in?</strong></p>
+</div>
+</div>
+<div id="total-47-marks" class="section level1">
+<h1>Total: 47 marks</h1>
 </div>
 
 

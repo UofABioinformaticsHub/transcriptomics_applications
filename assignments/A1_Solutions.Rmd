@@ -159,7 +159,10 @@ Some of the many issues to address in your discussion include:
 - Is it an expressed region? 
 - Does it include regulatory features? 
 - Is it a contiguous region of DNA? 
+- Do different isoforms influence our understanding?
 - Does linkage play a role?
+
+No-one really addressed the concept of heredity in enough detail to get the full points available. What drives heredity? Is it sequence variation? How does this play into the concept of a gene, given regulatory elements exist.
 
 </div>
 
@@ -283,23 +286,44 @@ One sample (`S9`) appears to have a noticeably smaller library size and may need
 
 </div>
 
+# Results
 
-```{r results, results='hide'}
+
+```{r results, results='as.is'}
+late <- c("a1724305", "a1678209")
 here::here("assignments", "A1.csv") %>%
   read_csv() %>%
   rename(points = marks) %>%
   pivot_longer(
     cols = starts_with("a"),
-    names_to = "ID",
+    names_to = "Student ID",
     values_to = "awarded"
   ) %>%
   dplyr::filter(!is.na(awarded)) %>%
-  group_by(ID) %>%
+  group_by(`Student ID`) %>%
   summarise(
-    Total = sum(awarded),
-    `Scaled (10)` = round(10 * sum(awarded) /sum(points), 2)
+    Marks = sum(awarded),
+    `Scaled (10)` = 10 * sum(awarded) /sum(points)
+  ) %>%
+  left_join(
+    here::here("practicals/VMs.csv") %>%
+      read_csv
+  ) %>%
+  dplyr::select(
+    contains("Student"), Marks, `Scaled (10)`
   ) %>%
   mutate(
+    Penalty = case_when(
+      `Student ID` %in% late ~ 0.1*Marks,
+      !`Student ID` %in% late ~ 0
+    ),
+    Total = Marks - Penalty,
+    `Scaled (10)` = case_when(
+      `Student ID` %in% late ~ (1 - 0.1)*`Scaled (10)`,
+      !`Student ID` %in% late ~ `Scaled (10)`
+    ),
+    Total = round(2*Total, 0) / 2,
+    `Scaled (10)` = round(`Scaled (10)`, 2),
     Grade = cut(
       `Scaled (10)`, 
       breaks = c(0, 5, 6.5, 7.5, 8.5, 10), 
@@ -308,6 +332,11 @@ here::here("assignments", "A1.csv") %>%
   ) %T>%
   write_csv(here::here("assignments/A1_results.csv")) %>%
   arrange(desc(Total)) %>%
-  pander()
+  # pander(split.table = Inf) %>%
+  summarise(
+    highest = max(`Scaled (10)`),
+    median = median(`Scaled (10)`)
+  ) %>%
+  pander(caption = "Summary of grades for assessment 1 2020, out of a possible 10 marks")
 ```
 

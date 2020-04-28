@@ -1,0 +1,9 @@
+sample	geo_accession	strain	tissue	cell_type	age
+Middle-aged 1	GSM1847063	C57BL/6	Lungs	CD11c cells	10-13 months
+Middle-aged 2	GSM1847064	C57BL/6	Lungs	CD11c cells	10-13 months
+Middle-aged 3	GSM1847065	C57BL/6	Lungs	CD11c cells	10-13 months
+Middle-aged 4	GSM1847066	C57BL/6	Lungs	CD11c cells	10-13 months
+Young 1	GSM1847067	C57BL/6	Lungs	CD11c cells	6-8 weeks
+Young 2	GSM1847068	C57BL/6	Lungs	CD11c cells	6-8 weeks
+Young 3	GSM1847069	C57BL/6	Lungs	CD11c cells	6-8 weeks
+Young 4	GSM1847070	C57BL/6	Lungs	CD11c cells	6-8 weeks
