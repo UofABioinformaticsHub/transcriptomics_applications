@@ -1,0 +1,647 @@
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 7.1: More Complex Designs"
+date: "29^th^ April 2019"
+output: 
+  html_document: 
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE, 
+    message = FALSE, 
+    warning = FALSE,
+    fig.align = "center",
+    results = "hide",
+    fig.show = "hide"
+)
+```
+
+
+```{r packages}
+library(Biobase)
+library(limma)
+library(magrittr)
+library(tidyverse)
+library(pander)
+theme_set(theme_bw())
+```
+
+
+```{r eset}
+eset <- here::here("practicals/data/pi16_Th_eset.rds") %>%
+  read_rds()
+```
+
+
+# Introduction
+
+## Recap
+
+Before the mid-semester break, we looked at using a model matrix to analyse a transcriptomic dataset.
+The samples were used for this were $T_h$ cells which were either PI16^+^ of PI16^-^, based on the detection of the PI16 protein on the cell surface.
+The paper this came from can be found [here](https://onlinelibrary.wiley.com/doi/abs/10.1002/eji.201948094).
+
+Our metadata for this analysis had the following structure:
+
+```{r, results='asis'}
+pander(pData(eset))
+```
+
+Note that we used the column `PI16` as a *categorical variable* with the reference level (i.e. 1^st^ level) being defined as PI16^-^ cells.
+We then formed a model matrix which set the reference level as the first column (i.e. the Intercept) and *the difference between cell types* defined as the second column.
+
+```{r}
+knitr::opts_chunk$set(
+  echo = TRUE
+)
+```
+
+## The Model Matrix
+
+```{r, results='markup'}
+X <- model.matrix(~PI16, data = pData(eset))
+X
+```
+
+A model matrix is how a statistical model calculates estimates associated with the predictor variable from each column of interest, i.e. the PI16 status.
+There is some linear algebra associated with this, which is technically beyond the scope of this course, but for those who are interested, a vector of coefficients for each gene ($\hat{\beta}$) is obtained using the Least Squares method.
+In the following, our model matrix is $X$, with a vector of expression estimates provided as $y$:
+
+$$
+\hat{\beta} = (X^T X)^{-1} X^T y
+$$
+
+For those who are really interested, we can demonstrate this using one of our DE genes `ENSG00000183813` (*CCR4*).
+To find the inverse of a matrix in R we use the function `solve()`, whilst to transpose it we use `t()`.
+Matrix multiplication is performed using `%*%`
+
+First we can do it manually:
+
+```{r, results='markup'}
+y <- exprs(eset)["ENSG00000183813_at",]
+beta_hat <- solve(t(X) %*% X) %*% t(X) %*% y
+beta_hat[,1]
+```
+
+Now compare to the limma version:
+
+```{r, results='markup'}
+fit <- lmFit(eset, design = X)
+fit$coefficients["ENSG00000183813_at",]
+```
+
+
+This structure provides a way of estimating a single gene's expression level in each cell type, with the expression level in the reference (i.e. PI16^-^) cells estimated from the intercept, whilst **the expression in the second cell type** (i.e. PI16^+^) **is estimated using the sum of both values.**
+The convenience factor here is that we also have the *difference between the two cell types (logFC) as a direct estimate*.
+It's good to know how these design matrices are actually used mathematically too.
+There's a whole lot of 2^nd^ year statistics in that section above, so don't be too fazed if you haven't seen that before.
+Hopefully it helps you understand why we have these design matrices though, and today we'll move beyond a two-way comparison.
+
+As well as introducing design matrices, we looked using `eBayes()` to moderate variances, introduced sample weights and explored an alternative approach to $H_0$ using `treat()`
+
+# Preparation
+
+## R Markdown
+
+For today's session, we'll continue to look at the microarray dataset from last time, however we'll now include the original four cell types, which includes not only $T_h$ cells, but also $T_{\text{reg}}$.
+
+In order to set ourselves up for the day, **please ensure you are in your `~/transcriptomics` folder**, and using an **R Project called `practical_7` within that folder.**
+If you can't find your way, then please ask for help.
+
+Begin an R Markdown and tidy up the YAML header.
+Here's an example YAML header (this is actually the YAML from this instruction page).
+Add your own name in the (currently missing) `author:` field if you'd like, and feel free to change or delete the title/subtitle.
+
+```
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 7.1: More Complex Designs"
+date: "29^th^ April 2019"
+output: 
+  html_document: 
+    toc: yes
+    toc_float: yes
+---
+```
+
+After the header, add the usual `setup` chunk.
+Notice that I've added an extra line this time to ensure all figures are centre-aligned.
+
+```{r public_setup}
+knitr::opts_chunk$set(
+    echo = TRUE, 
+    message = FALSE, 
+    warning = FALSE,
+    fig.align = "center"
+)
+```
+
+```{r hideResults, echo=FALSE}
+knitr::opts_chunk$set(
+  results = "hide",
+  fig.show = "hide"
+)
+```
+
+The libraries we'll need for today are as follows, and we'll discuss all of these as we come across them during the session.
+
+```{r}
+library(Biobase)
+library(limma)
+library(magrittr)
+library(tidyverse)
+library(pander)
+theme_set(theme_bw())
+```
+
+## Today's Data
+
+The two subsets of this data have been pre-prepared as `ExpressionSet` objects and are available for direct import into your VM.
+
+```{r}
+Th <- url("https://github.com/UofABioinformaticsHub/transcriptomics_applications/raw/master/practicals/data/pi16_Th_eset.rds") %>%
+    read_rds
+Tr <- url("https://github.com/UofABioinformaticsHub/transcriptomics_applications/raw/master/practicals/data/pi16_Treg_eset.rds") %>%
+    read_rds
+```
+
+To form our merged dataset, we can just use the function `combine()` which joins two datasets.
+However, we may need to explicitly call the version of this function from `Biobase`.
+
+```{r}
+eset <- Biobase::combine(Th, Tr)
+```
+
+Let's see what we have in our combined metadata
+
+```{r}
+pData(eset)
+```
+
+Now we're going to include a second categorical variable for the column `cell_type`, so let's change that into a factor with $T_h$ as the baseline.
+
+```{r}
+pData(eset)$cell_type <- factor(pData(eset)$cell_type, levels = c("Th", "Treg"))
+```
+
+Finally, let's add a group column where we combined the cell-type with the PI16 status.
+We can be lazy here and just let the function `as.factor()` determine the factors levels alpha-numerically.
+
+```{r}
+pData(eset) <- pData(eset) %>%
+  mutate(
+    group = case_when(
+      PI16 == "+" ~ paste0(cell_type, "_PI16_plus"),
+      PI16 == "-" ~ paste0(cell_type, "_PI16_minus")
+    ),
+    group = as.factor(group)
+  )
+```
+
+Although these won't show clearly up in a generic `data.frame` like we have here, we can use the function `glimpse()` to have a look at those factors, or `str()` for a more detailed look at the the structure.
+
+```{r}
+pData(eset) %>% glimpse()
+pData(eset) %>% str()
+```
+
+
+# Using Contrasts
+
+This complete dataset essentially gives us a square shaped design.
+
+```{r, echo=FALSE, fig.show='asis'}
+pData(eset) %>% 
+  distinct(cell_type, PI16, group) %>%
+  mutate(
+    group = paste0(cell_type, " / PI16", PI16),
+    x = as.integer(PI16),
+    y = as.integer(cell_type)
+  ) %>%
+  ggplot((aes(PI16, cell_type, label = group, colour = cell_type, shape = PI16))) +
+  geom_point(size = 6) +
+  geom_label(nudge_y = 0.1, show.legend = FALSE) +
+  scale_x_discrete(expand = expansion(c(0.6))) +
+  scale_y_discrete(expand = expansion(c(0.6))) +
+  scale_color_brewer(palette = "Set1") +
+  theme_void() +
+  theme(
+    legend.position = c(0.9, 0.5)
+  )
+```
+
+Some key questions we might like to ask of this data are:
+
+1. What is commonly DE between PI16^-^ and PI16^+^ for both T~reg~ & Th?
+2. What is commonly DE between T~reg~ & Th for both PI16^+^ and PI16^-^?
+3. Where do T~reg~ and Th show unique changes between PI16^-^ and PI16^+^?
+
+
+## Genes Tracking with PI16 in Both Cell Types
+
+The first question above seems intuitive and we can see this visually using arrows.
+
+```{r, echo=FALSE, fig.show='asis'}
+pData(eset) %>% 
+  distinct(cell_type, PI16, group) %>%
+  mutate(
+    group = paste0(cell_type, " / PI16", PI16),
+    x = as.integer(PI16),
+    y = as.integer(cell_type)
+  ) %>%
+  ggplot((aes(PI16, cell_type, label = group, colour = cell_type, shape = PI16))) +
+  geom_point(size = 6) +
+  geom_label(nudge_y = 0.1, show.legend = FALSE) +
+  geom_segment(
+    x = 1.2, xend = 1.8,
+    y = 1, yend = 1, 
+    arrow = arrow(length = unit(0.5, "cm")),
+    colour = "black"
+  ) +
+  geom_segment(
+    x = 1.2, xend = 1.8,
+    y = 2, yend = 2, 
+    arrow = arrow(length = unit(0.5, "cm")),
+    colour = "black"
+  ) +
+  scale_x_discrete(expand = expansion(c(0.6))) +
+  scale_y_discrete(expand = expansion(c(0.6))) +
+  scale_color_brewer(palette = "Set1") +
+  theme_void() +
+  theme(
+    legend.position = c(0.9, 0.5)
+  )
+```
+
+How would we find these genes?
+Would we perform two pair-wise comparisons and look for common genes?
+Would we set two intercepts and provide a design matrix?
+
+### Pair-wise Comparisons
+
+Let's try the pair-wise comparisons approach first as that's the easiest to understand.
+To do this, we should fit each cell type's expression level without an intercept, then compare the 'pairs'.
+Removing the Intercept from a model matrix would fit each group separately so at the end of this we would get an estimate of the average expression from each group.
+
+```{r}
+individual_design <- model.matrix(~ 0 + group, data = pData(eset)) %>%
+  set_colnames(str_remove_all(colnames(.), "group"))
+individual_design
+```
+
+In order to perform our pair-wise comparisons, we now use **contrasts** which are defined using the above column names and the function `makeCountrasts()`.
+
+```{r}
+cont_pairwise <- makeContrasts(
+  tr_pi16 = Treg_PI16_plus - Treg_PI16_minus,
+  th_pi16 = Th_PI16_plus - Th_PI16_minus,
+  levels = colnames(individual_design)
+)
+cont_pairwise
+```
+
+We can now add this to our `lmFit()` output and obtain a `topTable` for each contrast.
+
+```{r}
+fit_pairwise <- lmFit(eset, design = individual_design) %>%
+  contrasts.fit(cont_pairwise) %>%
+  eBayes()
+```
+
+Let's just look at the top few genes from each contrast.
+By default, the function `topTable()` will only return 10 genes, so let's take advantage of that feature.
+Note that unlike the `limma` manual, I always specify contrasts using a character, not a number.
+This makes it far easier to read back, which is something we always need to keep in mind for our future selves and our collaborators.
+
+```{r}
+topTable(fit_pairwise, coef = "tr_pi16")
+```
+
+```{r}
+topTable(fit_pairwise, coef = "th_pi16")
+```
+
+It looks like there are quite a few genes in common, so that's encouraging.
+How do we find the common genes?
+This is such a simple concept, but seems to take a bit of code.
+
+First let's collect all of the results into a list with two tables.
+I find it can often be convenient to keep results in a list to save workspace clutter, and also to take advantage of a few tricks.
+I'm also going to add the contrast as a column.
+
+```{r}
+results_pairwise <- list(
+  tr_pi16 = topTable(fit_pairwise, coef = "tr_pi16", number = Inf) %>%
+    mutate(contrast = "tr_pi16"),
+  th_pi16 = topTable(fit_pairwise, coef = "th_pi16", number = Inf) %>%
+    mutate(contrast = "th_pi16")
+)
+```
+
+Let's check how many DE genes we get just using an FDR < 0.05.
+We can use `lapply()` to apply the same function to each element of this list.
+First we'll apply a filter based on our FDR, then well count the DE genes by counting the rows.
+(This is why lists can be super handy)
+
+```{r}
+results_pairwise %>%
+  lapply(dplyr::filter, adj.P.Val < 0.05) %>%
+  lapply(nrow)
+```
+
+So we have twice as many in one comparison than the other.
+This could be biology, or it could be due to one cell type being more variable for a few genes, or it could be technical due to low quality arrays.
+
+Let's explore the data using volcano plots.
+You can do this any way you choose, but here's my shortcut now we have a list.
+
+```{r}
+results_pairwise %>%
+  bind_rows() %>%
+  mutate(DE = adj.P.Val < 0.05) %>%
+  ggplot(aes(logFC, -log10(P.Value), colour = DE)) +
+  geom_point() +
+  facet_wrap(~contrast, nrow = 1) +
+  scale_colour_manual(values = c("black", "red"))
+```
+
+Seems good to me.
+Would a Venn Diagram be useful?
+The package `limma` has a quick one inbuilt if we use their structures.
+First we'll create a Test Results object, then we can pass this to `vennDiagram()`.
+
+```{r}
+tests_pairwise <- decideTests(fit_pairwise)
+summary(tests_pairwise)
+vennDiagram(tests_pairwise)
+```
+
+So there's not that much overlap.
+We can even check the logFC estimates and p-values.
+We're going to really take advantage of or list and some `tidyverse` tricks here.
+Please ask if you're confused.
+
+```{r}
+results_pairwise %>%
+  bind_rows() %>%
+  as_tibble() %>%
+  dplyr::select(
+    gene_id, gene_name, logFC, AveExpr, P.Value, adj.P.Val, contrast
+  ) %>%
+  pivot_wider(
+    id_cols = starts_with("gene"),
+    names_from = contrast,
+    values_from = c(logFC, P.Value, adj.P.Val)
+  ) %>%
+  ggplot(aes(logFC_tr_pi16, logFC_th_pi16)) +
+  geom_point() +
+  geom_abline(slope = 1, colour = "blue") +
+  geom_vline(xintercept = c(-1, 1), linetype = 2, colour = "grey") +
+  geom_hline(yintercept = c(-1, 1), linetype = 2, colour = "grey") 
+```
+
+We should see which genes are DE in each comparison as that will help us explore.
+We'll just add an extra few lines to the above so we can remove the 'never DE' genes.
+
+```{r}
+results_pairwise %>%
+  bind_rows() %>%
+  as_tibble() %>%
+  dplyr::select(
+    gene_id, gene_name, logFC, AveExpr, P.Value, adj.P.Val, contrast
+  ) %>%
+  pivot_wider(
+    id_cols = starts_with("gene"),
+    names_from = contrast,
+    values_from = c(logFC, P.Value, adj.P.Val)
+  ) %>%
+  mutate(
+    DE = case_when(
+      adj.P.Val_tr_pi16 < 0.05 &  adj.P.Val_th_pi16 < 0.05 ~ "Both",
+      adj.P.Val_tr_pi16 >= 0.05 &  adj.P.Val_th_pi16 < 0.05 ~ "Th Only",
+      adj.P.Val_tr_pi16 < 0.05 &  adj.P.Val_th_pi16 >= 0.05 ~ "Tr Only",
+      adj.P.Val_tr_pi16 >= 0.05 &  adj.P.Val_th_pi16 >= 0.05 ~ "None",
+    )
+  ) %>%
+  dplyr::filter(DE != "None") %>%
+  ggplot(aes(logFC_tr_pi16, logFC_th_pi16, colour = DE)) +
+  geom_point() +
+  geom_abline(slope = 1) +
+  geom_vline(xintercept = c(-1, 1), linetype = 2, colour = "grey") +
+  geom_hline(yintercept = c(-1, 1), linetype = 2, colour = "grey") 
+```
+
+There is quite some variability here.
+
+1. Would applying a logFC filter be wise?
+2. Why do some genes show similar logFC in both comparisons, but only appear as DE in one.
+
+
+
+Let's quickly check the p-values before moving on.
+The code is essentially the same, so please cut and paste, making sure to just change the values for the x & y axes.
+
+```{r}
+results_pairwise %>%
+  bind_rows() %>%
+  as_tibble() %>%
+  dplyr::select(
+    gene_id, gene_name, logFC, AveExpr, P.Value, adj.P.Val, contrast
+  ) %>%
+  pivot_wider(
+    id_cols = starts_with("gene"),
+    names_from = contrast,
+    values_from = c(logFC, P.Value, adj.P.Val)
+  ) %>%
+  mutate(
+    DE = case_when(
+      adj.P.Val_tr_pi16 < 0.05 &  adj.P.Val_th_pi16 < 0.05 ~ "Both",
+      adj.P.Val_tr_pi16 >= 0.05 &  adj.P.Val_th_pi16 < 0.05 ~ "Th Only",
+      adj.P.Val_tr_pi16 < 0.05 &  adj.P.Val_th_pi16 >= 0.05 ~ "Tr Only",
+      adj.P.Val_tr_pi16 >= 0.05 &  adj.P.Val_th_pi16 >= 0.05 ~ "None",
+    )
+  ) %>%
+  ggplot(aes(-log10(P.Value_tr_pi16), -log10(P.Value_th_pi16))) +
+  geom_point(aes(colour = DE)) +
+  geom_abline(slope = 1) +
+  geom_smooth(se = FALSE)
+```
+
+It seems from this that the p-values are less significant (i.e closer to 1, which is closer to 0 after log10 transformation) for the comparison in Th.
+Does this mean that PI16+ T~reg~ are biologically more different to PI16- T~reg~, than in Th cells?
+
+#### Outcomes
+
+The above approach is commonly used, but one issue that we face is the use of hard cutoff values for either logFC and our FDR-adjusted p-values.
+A gene may be significant in one comparison, but have a p-value of 0.051 in another.
+Would that make it not differentially expressed in the second comparison?
+
+We could spend ages working on this to find the common genes and understand this.
+We would undoubtedly find many interesting biological results for our collaborators, and they would likely be capturing genuine biology.
+Let's move on though and look at an alternative.
+
+### Fitting a Model Matrix
+
+Instead of pair-wise comparisons, we'll fit a common term for the presence of PI16 on the surface.
+Let's create a new design matrix
+
+```{r}
+pi16_design <- model.matrix(~ 0 + cell_type + PI16, data = pData(eset))
+pi16_design
+```
+
+Notice that in this design, we have effectively set two intercept terms but a column that captures any common PI16 effects.
+This is our column of interest, so when we fit these we don't need a contrast matrix.
+
+```{r}
+fit_pi16 <- lmFit(eset, design = pi16_design) %>%
+  eBayes()
+topTable(fit_pi16, coef = "PI16+")
+```
+
+We have a few familiar looking genes here.
+
+```{r}
+results_pi16 <- topTable(fit_pi16, coef = "PI16+", number = Inf) %>%
+  as_tibble()
+```
+
+Let's see how many are significant just using an FDR of 0.05.
+
+```{R}
+sum(results_pi16$adj.P.Val < 0.05)
+```
+
+1. How does this compare to the previous results?
+2. Would we need to apply a logFC filter.
+3. Are there any expression patterns that we may miss using this approach?
+
+
+## Interaction Terms
+
+```{r, echo=FALSE, fig.show='asis'}
+pData(eset) %>% 
+  distinct(cell_type, PI16, group) %>%
+  mutate(
+    group = paste0(cell_type, " / PI16", PI16),
+    x = as.integer(PI16),
+    y = as.integer(cell_type)
+  ) %>%
+  ggplot((aes(PI16, cell_type, label = group, colour = cell_type, shape = PI16))) +
+  geom_point(size = 6) +
+  geom_label(nudge_y = 0.1, show.legend = FALSE) +
+  geom_segment(
+    x = 1.2, xend = 1.8,
+    y = 1, yend = 1, 
+    arrow = arrow(length = unit(0.5, "cm")),
+    colour = "black"
+  ) +
+  geom_segment(
+    x = 1.2, xend = 1.8,
+    y = 2, yend = 2, 
+    arrow = arrow(length = unit(0.5, "cm")),
+    colour = "black"
+  ) +
+  geom_segment(
+    x = 1, xend = 1,
+    y = 1.2, yend = 1.9, 
+    arrow = arrow(length = unit(0.5, "cm")),
+    colour = "blue"
+  ) +
+  geom_segment(
+    x = 2, xend = 2,
+    y = 1.2, yend = 1.9, 
+    arrow = arrow(length = unit(0.5, "cm")),
+    colour = "blue"
+  ) +
+  scale_x_discrete(expand = expansion(c(0.6))) +
+  scale_y_discrete(expand = expansion(c(0.6))) +
+  scale_color_brewer(palette = "Set1") +
+  theme_void() +
+  theme(
+    legend.position = c(0.9, 0.5)
+  )
+```
+
+
+In the above we've only contemplated the effects of PI16 expression.
+This experiment also contains Tregs & Th, so we'd probably like to know where they're different.
+A clear option would be pair-wise comparisons across the second axis, and this is what was published.
+Let's explore an alternative approach though.
+
+Imagine a gene was expressed at the same level in all groups, except for PI16^+^ T~reg~ where it becomes up-regulated.
+Would either of our above approaches capture this?
+
+Let's explore model matrix which sets the PI16- Th as the baseline (Intercept).
+In the second column we'll fit the effects of being a T~reg~, whilst in the third we'll fit the effects of being PI16^+^.
+Does this capture our hypothetical gene?
+
+
+```{r}
+model.matrix(~cell_type + PI16, data = pData(eset))
+```
+
+What we've really described in the above is the effects of being a PI16- T~reg~ (column) and being a PI16^+^ T~h~.
+To completely specify a model, we could include an interaction term as follows.
+
+```{r}
+model.matrix(~(cell_type + PI16)^2, data = pData(eset))
+```
+
+This specification would provide:
+
+1. logFC estimates for being a PI16^-^ T~reg~ (column 1)
+2. logFC estimates for being a PI16^+^ T~h~ (column 2)
+
+The final column captures the final piece of the jigsaw but doesn't quite have the same interpretation.
+This captures where the effects of being PI16^+^ (col2) and being a T~reg~ (col1) don't explain the expression pattern.
+
+Let's look at a few examples.
+
+### 1. No Significant Interaction term
+
+```{r}
+pData(eset) %>%
+  distinct(group) %>%
+  mutate(AveExpr = c(1, 2, 2, 3)) %>%
+  ggplot(aes(group, AveExpr, fill = group)) +
+  geom_col()
+```
+
+In the above, we would first fit the effect of being a PI16+ Th (logFC $\approx 1$) by comparing column 1 & 2.
+Next we would fit the effects of being a PI16- T~reg~, which is also a logFC of $\approx 1$.
+Therefore we would expect the expression in our PI16^+^ T~reg~ to be 3 (1 + 1 + 1).
+This is what we see, so the interaction term will be near zero & no significant term will result.
+
+The effect of PI16 is to increase expression of the gene in both T~reg~ & T~h~.
+Similarly, in the same PI16 group, the gene is consistently increased in T~reg~ compared to T~h~.
+
+### 2. A Significant Interaction term
+
+```{r}
+pData(eset) %>%
+  distinct(group) %>%
+  mutate(AveExpr = c(1, 1, 1, 3)) %>%
+  ggplot(aes(group, AveExpr, fill = group)) +
+  geom_col()
+```
+
+For this example, there is no difference between a) PI16^+^ & PI16^-^ T~h~; nor b) PI16^-^ T~h~ & T~reg~.
+However, in PI16^+^ T~reg~, the gene goes up, so we would see a significant interaction term.
+
+### 3. A Challenge
+
+```{r}
+pData(eset) %>%
+  distinct(group) %>%
+  mutate(AveExpr = c(1, 2, 2, 2)) %>%
+  ggplot(aes(group, AveExpr, fill = group)) +
+  geom_col()
+```
+
+Would we see a significant interaction term here?
+How would we interpret this?
+
