@@ -603,7 +603,7 @@ Let's look at a few examples.
 
 ### 1. No Significant Interaction term
 
-```{r}
+```{r, echo=FALSE, fig.show='asis'}
 pData(eset) %>%
   distinct(group) %>%
   mutate(AveExpr = c(1, 2, 2, 3)) %>%
@@ -621,7 +621,7 @@ Similarly, in the same PI16 group, the gene is consistently increased in T~reg~ 
 
 ### 2. A Significant Interaction term
 
-```{r}
+```{r, echo=FALSE, fig.show='asis'}
 pData(eset) %>%
   distinct(group) %>%
   mutate(AveExpr = c(1, 1, 1, 3)) %>%
@@ -634,7 +634,7 @@ However, in PI16^+^ T~reg~, the gene goes up, so we would see a significant inte
 
 ### 3. A Challenge
 
-```{r}
+```{r, echo=FALSE, fig.show='asis'}
 pData(eset) %>%
   distinct(group) %>%
   mutate(AveExpr = c(1, 2, 2, 2)) %>%
