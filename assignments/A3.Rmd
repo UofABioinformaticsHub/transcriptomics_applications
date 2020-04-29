@@ -153,7 +153,7 @@ marks <- marks %>%
 
 For this question all data was obtained from the public dataset located [here](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE71868), but has bene partially prepared and filtered for you.
 Data was generated using Illumina Microarrays and as such the assumption of normality is appropriate.
-Using the [metadata](GSE71868_meta.txt), [gene annotation](GSE71868_genes.tsv) and [expression values](GSE71868_exprs.tsv) contained in each of these three files:
+Using the [metadata](data/GSE71868_meta.txt), [gene annotation](data/GSE71868_genes.tsv) and [expression values](data/GSE71868_exprs.tsv) contained in each of these three files:
 
 1. Form an `ExpressionSet`, followed by a suitable design matrix
 2. Perform a differential expression analysis based on your design matrix 
