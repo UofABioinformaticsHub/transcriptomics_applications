@@ -1,0 +1,573 @@
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 7.2: More Complex Designs (Part 2)"
+date: "1^st^ May 2019"
+output: 
+  html_document: 
+    toc: yes
+    toc_float: yes
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE, 
+    message = FALSE, 
+    warning = FALSE,
+    fig.align = "center",
+    results = "hide",
+    fig.show = "hide"
+)
+```
+
+
+
+# Introduction
+
+## Recap
+
+In our previous session, we started to explore a 4-way layout and looked at some options for analysing this dataset.
+Today we'll continue looking through this dataset and we'll allow considerable time for exploring the data on our own and making our own decisions on how to characterise biological patterns.
+
+If you'd like to start a new markdown, that may be wise.
+You can stay in the same R Project as our previous session.
+We'll use the same dataset so won't need any extra files besides the ones we download.
+
+## Setup
+
+Set-up your YAML header as you like.
+Here's my example
+
+```
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 7.2: More Complex Designs (Part 2)"
+author: Some Genius
+date: "1^st^ May 2019"
+output: 
+  html_document: 
+    toc: yes
+    toc_float: yes
+---
+```
+
+And your setup chunk
+
+
+    ```{r setup}`r ""`
+    knitr::opts_chunk$set(
+        echo = TRUE, 
+        message = FALSE, 
+        warning = FALSE,
+        fig.align = "center"
+    )
+    ````r ""`
+
+Here are the packages we'll need, so add these to your packages chunk.
+I've also included my `theme_set(theme_bw())` command here, which sets my preferred theme for `ggplot2`.
+
+
+```{r packages}
+library(Biobase)
+library(limma)
+library(magrittr)
+library(tidyverse)
+library(UpSetR)
+library(pheatmap)
+library(scales)
+library(ggfortify)
+library(pander)
+theme_set(theme_bw())
+```
+
+Finally, the data we'll need is created as an `ExpressionSet` a similar way, but let's simplify it this time.
+First we'll define the base path, then add the individual files in the object `urls`.
+
+```{r urls}
+urls <- paste0(
+    "https://github.com/UofABioinformaticsHub/transcriptomics_applications/raw/master/practicals/data/",
+    c("pi16_Th_eset.rds", "pi16_Treg_eset.rds")
+)
+```
+
+For each web address (i.e. URL), we need to pass this to the R function `url()` so R knows to treat this as a remote connection.
+From there we can just read the files in as if they're local files on your hard drive.
+We won't need them as individual files today, so let's just place the straight into the object.
+
+```{r eset}
+eset <- Biobase::combine(
+    urls[[1]] %>% url %>% read_rds(),
+    urls[[2]] %>% url %>% read_rds()
+)
+```
+
+**Handy hint: A good trick can be to name each chunk with the name of an object you create in the chunk**
+
+```{r}
+pData(eset)$cell_type <- as.factor(pData(eset)$cell_type)
+pData(eset) <- pData(eset) %>%
+  mutate(
+    group = case_when(
+      PI16 == "+" ~ paste0(cell_type, "_PI16_plus"),
+      PI16 == "-" ~ paste0(cell_type, "_PI16_minus")
+    ),
+    group = as.factor(group)
+  )
+colnames(eset) <- pData(eset)$array_id
+```
+
+*Note: that last line was required as the `mutate()` removed rownames from `pData`, which removed columnames from `eset`.*
+*`dplyr` is brilliant, but every now & then it's quite frustrating.*
+
+
+```{r, echo=FALSE, fig.show='asis'}
+pData(eset) %>% 
+  distinct(cell_type, PI16, group) %>%
+  mutate(
+    group = paste0(cell_type, " / PI16", PI16),
+    x = as.integer(PI16),
+    y = as.integer(cell_type)
+  ) %>%
+  ggplot((aes(PI16, cell_type, label = group, colour = cell_type, shape = PI16))) +
+  geom_point(size = 6) +
+  geom_label(nudge_y = 0.1, show.legend = FALSE) +
+  scale_x_discrete(expand = expansion(c(0.6))) +
+  scale_y_discrete(expand = expansion(c(0.6))) +
+  scale_color_brewer(palette = "Set1") +
+  theme_void() +
+  theme(
+    legend.position = c(0.9, 0.5)
+  )
+```
+
+# Design Matrices
+
+Last time we spent some time on design (or model) matrices and realised that they are used in linear algebra to calculate estimates of the values we require for our results.
+Let's just quickly recap to make sure we're happy with the process.
+
+```{r}
+pData(eset)
+```
+
+
+```{r}
+y <- exprs(eset)[1, ]
+X_noint <- model.matrix(~0 + cell_type + PI16, data = pData(eset))
+```
+
+```{r}
+myFit <- function(X, y){
+    est <- solve(t(X) %*% X) %*% t(X) %*% y
+    est[,1]
+}
+```
+
+```{r}
+coefs_noint <- myFit(X_noint, y)
+estimates <- pData(eset) %>%
+    distinct(cell_type, PI16, group) %>%
+    mutate(
+        x = as.integer(cell_type) - 0.1,
+        xend = as.integer(cell_type) + 0.1,
+        y_noint = c(
+            coefs_noint["cell_typeTh"],
+            coefs_noint["cell_typeTh"] + coefs_noint["PI16+"],
+            coefs_noint["cell_typeTreg"],
+            coefs_noint["cell_typeTreg"] + coefs_noint["PI16+"]
+        ),
+    )
+```
+
+```{r}
+pData(eset) %>%
+    cbind(y) %>%
+    ggplot(aes(cell_type, y, colour = PI16)) +
+    geom_jitter(width = 0.1) +
+    geom_segment(
+        aes(x = x, xend = xend, y = y_noint, yend = y_noint, colour = PI16),
+        data = estimates 
+    ) +
+    scale_colour_manual(values = c("blue", "red"))
+```
+
+```{r}
+X_int <- model.matrix(~(cell_type + PI16)^2, data = pData(eset))
+```
+
+
+```{r}
+coefs_int <- myFit(X_int, y)
+estimates$y_int <- c(
+    coefs_int[1],
+    coefs_int[1] + coefs_int["PI16+"],
+    coefs_int[1] + coefs_int["cell_typeTreg"],
+    sum(coefs_int)
+)
+```
+
+```{r}
+pData(eset) %>%
+    cbind(y) %>%
+    ggplot(aes(cell_type, y, colour = PI16)) +
+    geom_jitter(width = 0.1) +
+    geom_segment(
+        aes(x = x, xend = xend, y = y_noint, yend = y_noint, colour = PI16),
+        data = estimates 
+    ) +
+    geom_segment(
+        aes(x = x, xend = xend, y = y_int, yend = y_int, colour = PI16),
+        data = estimates ,
+        linetype = 2
+    ) +
+    scale_colour_manual(values = c("blue", "red"))
+```
+
+
+# Check our Data Structure
+
+```{r}
+plotDensities(eset)
+```
+
+
+```{r}
+pca <- exprs(eset) %>%
+    t() %>%
+    prcomp()
+pca %>%
+    autoplot(
+        data = pData(eset),
+        colour = "group",
+        size = 4
+    ) +
+    stat_ellipse(
+        aes(colour = group),
+        fill = NA,
+        geom = "polygon",
+        show.legend = FALSE
+    ) +
+    scale_colour_brewer(palette = "Paired")
+```
+
+
+# Fit the entire dataset using an interaction term
+
+
+```{r}
+fit_int <- lmFit(eset, X_int) %>%
+    eBayes()
+```
+
+Check the topTables
+
+```{r}
+for (nm in colnames(X_int)[2:4]) {
+    print(topTable(fit_int, coef = nm))
+}
+```
+
+Collate the results
+
+```{r}
+results_int <- colnames(X_int)[2:4] %>%
+    lapply(function(x){
+        topTable(fit_int, coef = x, number = Inf) %>%
+            dplyr::select(starts_with("gene"), logFC, AveExpr, contains("P.Val")) %>%
+            mutate(coef = x) %>%
+            as_tibble()
+    }) %>%
+    set_names(
+        colnames(X_int)[2:4]
+    )
+```
+
+```{r}
+results_int %>%
+    lapply(dplyr::filter, adj.P.Val < 0.05) %>%
+    lapply(nrow)
+```
+
+```{r}
+results_int %>%
+    lapply(dplyr::filter, adj.P.Val < 0.05) %>%
+    lapply(extract2, "gene_id") %>%
+    fromList() %>%
+    upset()
+```
+
+### Genes significant everywhere
+
+```{r}
+results_int %>%
+    bind_rows() %>%
+    dplyr::filter(adj.P.Val < 0.05) %>%
+    group_by(gene_id, gene_name) %>%
+    tally() %>%
+    dplyr::filter(n == 3)
+```
+
+```{r}
+results_int %>%
+    bind_rows() %>%
+    dplyr::filter(adj.P.Val < 0.05) %>%
+    group_by(gene_id, gene_name) %>%
+    tally() %>%
+    dplyr::filter(n == 3) %>%
+    ungroup() %>%
+    cbind(
+        exprs(eset)[paste0(.$gene_id, "_at"),] %>%
+            matrix(ncol = ncol(eset)) %>%
+            set_colnames(colnames(eset)) 
+    ) %>%
+    pivot_longer(
+        starts_with("SB"),
+        names_to = "array_id",
+        values_to = "exprs"
+    ) %>%
+    left_join(
+        pData(eset)
+    ) %>%
+    ggplot(aes(group, exprs, fill = group)) +
+    geom_boxplot()
+```
+
+
+### Treg Genes with an Interaction Term
+
+```{r}
+results_int %>%
+    bind_rows() %>%
+    dplyr::filter(adj.P.Val < 0.05) %>%
+    group_by(gene_id) %>%
+    mutate(n = n()) %>%
+    dplyr::filter(n == 2 & !"PI16+" %in% coef) %>%
+    ungroup() %>%
+    distinct(gene_id, gene_name)
+```
+
+
+```{r}
+results_int %>%
+    bind_rows() %>%
+    dplyr::filter(adj.P.Val < 0.05) %>%
+    group_by(gene_id) %>%
+    mutate(n = n()) %>%
+    dplyr::filter(n == 2 & !"PI16+" %in% coef) %>%
+    ungroup() %>%
+    distinct(gene_id, gene_name) %>%
+    cbind(
+        exprs(eset)[paste0(.$gene_id, "_at"),]
+    ) %>%
+    pivot_longer(
+        starts_with("SB"),
+        names_to = "array_id",
+        values_to = "exprs"
+    ) %>%
+    left_join(
+        pData(eset)
+    ) %>%
+    ggplot(aes(group, exprs, fill = group)) +
+    geom_boxplot() +
+    facet_wrap(~gene_name)
+```
+
+
+
+### Treg Genes with no Interaction Term
+
+```{r}
+results_int %>%
+    bind_rows() %>%
+    dplyr::filter(adj.P.Val < 0.05) %>%
+    group_by(gene_id) %>%
+    mutate(n = n()) %>%
+    ungroup() %>%
+    dplyr::filter(
+        n == 1 & coef == "cell_typeTreg"
+    )
+```
+
+
+```{r}
+results_int %>%
+    bind_rows() %>%
+    dplyr::filter(adj.P.Val < 0.05) %>%
+    group_by(gene_id) %>%
+    mutate(n = n()) %>%
+    ungroup() %>%
+    dplyr::filter(
+        n == 1 & coef == "cell_typeTreg"
+    ) %>%
+    cbind(
+        exprs(eset)[paste0(.$gene_id, "_at"),]
+    ) %>%
+    set_rownames(.$gene_name) %>%
+    dplyr::select(starts_with("SB")) %>%
+    pheatmap(
+        color = viridis_pal(option = "magma")(100),
+        cutree_cols = 2,
+        cutree_rows = 2
+    )
+```
+
+# Using Pariwise Comparisons
+
+
+```{r, echo=FALSE, fig.show='asis'}
+pData(eset) %>% 
+  distinct(cell_type, PI16, group) %>%
+  mutate(
+    group = paste0(cell_type, " / PI16", PI16),
+    x = as.integer(PI16),
+    y = as.integer(cell_type)
+  ) %>%
+  ggplot((aes(PI16, cell_type, label = group, colour = cell_type, shape = PI16))) +
+  geom_point(size = 6) +
+  geom_label(nudge_y = 0.1, show.legend = FALSE) +
+  geom_segment(
+    x = 1.2, xend = 1.8,
+    y = 1, yend = 1, 
+    arrow = arrow(length = unit(0.5, "cm"), ends = "both"),
+    colour = "black"
+  ) +
+  geom_segment(
+    x = 1.2, xend = 1.8,
+    y = 2, yend = 2, 
+    arrow = arrow(length = unit(0.5, "cm"), ends = "both"),
+    colour = "black"
+  ) +
+  geom_segment(
+    x = 1, xend = 1,
+    y = 1.2, yend = 1.9, 
+    arrow = arrow(length = unit(0.5, "cm"), ends = "both"),
+    colour = "black"
+  ) +
+  geom_segment(
+    x = 2, xend = 2,
+    y = 1.2, yend = 1.9, 
+    arrow = arrow(length = unit(0.5, "cm"), ends = "both"),
+    colour = "black"
+  ) +
+  geom_text(
+    aes(x = x, y = y, label = label),
+    data = tibble(
+     x = c(1.5, 1.5, 0.9, 1.9),
+     y = c(1.05, 2.05, 1.5, 1.5),
+     label = c(
+       "Th_Plus_vs_Minus",
+       "Tr_Plus_vs_Minus",
+       "Minus_Tr_vs_Th",
+       "Plus_Tr_vs_Th"
+     )
+    ),
+    inherit.aes = FALSE
+  ) +
+  scale_x_discrete(expand = expansion(c(0.6))) +
+  scale_y_discrete(expand = expansion(c(0.6))) +
+  scale_color_brewer(palette = "Set1") +
+  theme_void() +
+  theme(
+    legend.position = c(0.9, 0.5)
+  )
+```
+
+
+```{r}
+X_pairs <- model.matrix(~ 0 + group, data = pData(eset)) %>%
+    set_colnames(
+        str_remove(colnames(.), "group")
+    )
+cont_pairs <- makeContrasts(
+    Tr_Plus_vs_Minus = Treg_PI16_plus - Treg_PI16_minus,
+    Th_Plus_vs_Minus = Th_PI16_plus - Th_PI16_minus,
+    Plus_Tr_vs_Th = Treg_PI16_plus - Th_PI16_plus,
+    Minus_Tr_vs_Th = Treg_PI16_minus - Th_PI16_minus,
+    levels = colnames(X_pairs)
+)
+```
+
+```{r}
+fit_pairs <- lmFit(eset, design = X_pairs) %>%
+    contrasts.fit(cont_pairs) %>%
+    eBayes()
+```
+
+```{r}
+results_pairs <- colnames(cont_pairs) %>%
+    lapply(function(x){
+        topTable(fit_pairs, coef = x, number = Inf) %>%
+            as_tibble() %>%
+            dplyr::select(starts_with("gene"), logFC, AveExpr, contains("P.Val")) %>%
+            mutate(comparison = x) 
+    }
+    ) %>%
+    set_names(
+        colnames(cont_pairs)
+    )
+```
+
+
+```{r}
+results_pairs %>%
+    lapply(dplyr::filter, adj.P.Val < 0.05) %>%
+    lapply(nrow)
+```
+
+
+```{r}
+results_pairs %>%
+    lapply(dplyr::filter, adj.P.Val < 0.05 & abs(logFC) > 1) %>%
+    lapply(extract2, "gene_name") %>%
+    fromList() %>%
+    upset()
+```
+
+
+```{r}
+results_pairs %>%
+  bind_rows() %>%
+  mutate(DE = adj.P.Val < 0.05) %>%
+  ggplot(aes(logFC, -log10(P.Value), colour = DE)) +
+  geom_point() +
+  geom_vline(
+    xintercept = c(-1, 1),
+    linetype = 2,
+    colour = "grey"
+  ) +
+  geom_text(
+    aes(x, y, label = label),
+    data = . %>%
+      group_by(comparison) %>%
+      summarise(n = sum(DE)) %>%
+      mutate(
+        x = -3, y = 0,
+        label = paste0("n = ", n)
+      ),
+    inherit.aes = FALSE
+  ) +
+  facet_wrap(~comparison) +
+  scale_colour_manual(values = c("black", "red"))
+```
+
+```{r}
+allDE <- results_pairs %>%
+  bind_rows() %>%
+  dplyr::filter(adj.P.Val < 0.05 & abs(logFC) > 1) %>%
+  extract2("gene_id") %>%
+  unique()
+length(allDE)
+```
+
+```{r}
+results_pairs %>%
+    lapply(
+      dplyr::filter, adj.P.Val < 0.1 & gene_id %in% allDE
+    ) %>%
+    lapply(extract2, "gene_name") %>%
+    fromList() %>%
+    upset()
+```
+
+```{r}
+
+```
+
