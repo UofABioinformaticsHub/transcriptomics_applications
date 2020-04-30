@@ -76,6 +76,7 @@ library(pheatmap)
 library(scales)
 library(ggfortify)
 library(pander)
+library(cowplot)
 theme_set(theme_bw())
 ```
 
@@ -115,7 +116,7 @@ pData(eset) <- pData(eset) %>%
 colnames(eset) <- pData(eset)$array_id
 ```
 
-*Note: that last line was required as the `mutate()` removed rownames from `pData`, which removed columnames from `eset`.*
+*Note: that last line was required as the `mutate()` removed rownames from `pData`, which removed column names from `eset`.*
 *`dplyr` is brilliant, but every now & then it's quite frustrating.*
 
 
@@ -139,117 +140,96 @@ pData(eset) %>%
   )
 ```
 
-# Design Matrices
 
-Last time we spent some time on design (or model) matrices and realised that they are used in linear algebra to calculate estimates of the values we require for our results.
-Let's just quickly recap to make sure we're happy with the process.
+# Analysis
 
-```{r}
-pData(eset)
-```
+## Check our Data 
 
-
-```{r}
-y <- exprs(eset)[1, ]
-X_noint <- model.matrix(~0 + cell_type + PI16, data = pData(eset))
-```
-
-```{r}
-myFit <- function(X, y){
-    est <- solve(t(X) %*% X) %*% t(X) %*% y
-    est[,1]
-}
-```
-
-```{r}
-coefs_noint <- myFit(X_noint, y)
-estimates <- pData(eset) %>%
-    distinct(cell_type, PI16, group) %>%
-    mutate(
-        x = as.integer(cell_type) - 0.1,
-        xend = as.integer(cell_type) + 0.1,
-        y_noint = c(
-            coefs_noint["cell_typeTh"],
-            coefs_noint["cell_typeTh"] + coefs_noint["PI16+"],
-            coefs_noint["cell_typeTreg"],
-            coefs_noint["cell_typeTreg"] + coefs_noint["PI16+"]
-        ),
-    )
-```
-
-```{r}
-pData(eset) %>%
-    cbind(y) %>%
-    ggplot(aes(cell_type, y, colour = PI16)) +
-    geom_jitter(width = 0.1) +
-    geom_segment(
-        aes(x = x, xend = xend, y = y_noint, yend = y_noint, colour = PI16),
-        data = estimates 
-    ) +
-    scale_colour_manual(values = c("blue", "red"))
-```
-
-```{r}
-X_int <- model.matrix(~(cell_type + PI16)^2, data = pData(eset))
-```
-
-
-```{r}
-coefs_int <- myFit(X_int, y)
-estimates$y_int <- c(
-    coefs_int[1],
-    coefs_int[1] + coefs_int["PI16+"],
-    coefs_int[1] + coefs_int["cell_typeTreg"],
-    sum(coefs_int)
-)
-```
-
-```{r}
-pData(eset) %>%
-    cbind(y) %>%
-    ggplot(aes(cell_type, y, colour = PI16)) +
-    geom_jitter(width = 0.1) +
-    geom_segment(
-        aes(x = x, xend = xend, y = y_noint, yend = y_noint, colour = PI16),
-        data = estimates 
-    ) +
-    geom_segment(
-        aes(x = x, xend = xend, y = y_int, yend = y_int, colour = PI16),
-        data = estimates ,
-        linetype = 2
-    ) +
-    scale_colour_manual(values = c("blue", "red"))
-```
-
-
-# Check our Data Structure
+The first step of any analysis is to check the data.
+For microarrays (and RNA-Seq) the first step should be checking out distributions relative to each other.
+This will help us spot if any samples have any unexpected issues.
 
 ```{r}
 plotDensities(eset)
 ```
 
 
+This dataset looks pretty good, so let's run a very quick PCA so see how similar our samples are to each other.
+The function `autoplot()` from `ggfortify` is very handy here.
+Once we have our PCA, we just need to add the metadata describing each sample, set the point aesthetics (`colour` and `size`).
+From there we can modify like a normal `ggplot2` object.
+
 ```{r}
 pca <- exprs(eset) %>%
-    t() %>%
-    prcomp()
+  t() %>%
+  prcomp()
 pca %>%
-    autoplot(
-        data = pData(eset),
-        colour = "group",
-        size = 4
-    ) +
-    stat_ellipse(
-        aes(colour = group),
-        fill = NA,
-        geom = "polygon",
-        show.legend = FALSE
-    ) +
-    scale_colour_brewer(palette = "Paired")
+  autoplot(
+    data = pData(eset),
+    colour = "group",
+    size = 4
+  ) +
+  stat_ellipse(
+    aes(colour = group),
+    fill = NA,
+    geom = "polygon",
+    show.legend = FALSE
+  ) +
+  scale_colour_brewer(palette = "Paired")
 ```
 
 
-# Fit the entire dataset using an interaction term
+## Using an Interaction Term
+
+Remember that an estimate of the expression level in each cell grouping is additive based on the model coefficients.
+For a significant 'interaction' term, this means we have a response which is not as expected by adding the two coefficients on their own.
+This type of model has it's origins in engineering applications when you might test the strength of a material in temperature and pressure.
+Any unexpected result which is not additive indicates the two predictor variables have some kind of interaction, hence the name.
+
+Last time we discussed interaction terms by looking at a few examples.
+Have a look at the following expression patterns, and see which ones you think would give a significant interaction term.
+
+```{r, echo=FALSE, fig.show='asis', fig.width=10, fig.height=7}
+a <- pData(eset) %>%
+  distinct(group) %>%
+  mutate(AveExpr = c(1, 2, 2, 3)) %>%
+  ggplot(aes(group, AveExpr, fill = group)) +
+  geom_col() +
+  ylim(0, 3)
+b <- pData(eset) %>%
+  distinct(group) %>%
+  mutate(AveExpr = c(1, 1, 1, 3)) %>%
+  ggplot(aes(group, AveExpr, fill = group)) +
+  geom_col() +
+  ylim(0, 3)
+c <- pData(eset) %>%
+  distinct(group) %>%
+  mutate(AveExpr = c(1, 2, 2, 2)) %>%
+  ggplot(aes(group, AveExpr, fill = group)) +
+  geom_col() +
+  ylim(0, 3)
+d <- pData(eset) %>%
+  distinct(group) %>%
+  mutate(AveExpr = c(1, 2, 2, 1)) %>%
+  ggplot(aes(group, AveExpr, fill = group)) +
+  geom_col() +
+  ylim(0, 3)
+plot_grid(
+  a + theme(legend.position = "none"),
+  b + theme(legend.position = "none"),
+  c + theme(legend.position = "none"),
+  d + theme(legend.position = "none"),
+  labels = LETTERS[1:4],
+  nrow = 2
+)
+```
+
+Let's define our model matrix with an interaction term and fit the model using `lmFit()`
+
+```{r}
+X_int <- model.matrix(~ (cell_type + PI16)^2, data = pData(eset))
+X_int
+```
 
 
 ```{r}
@@ -257,7 +237,11 @@ fit_int <- lmFit(eset, X_int) %>%
     eBayes()
 ```
 
-Check the topTables
+Check the topTables (very crudely).
+Notice we're ignoring the Intercept term, as that just represents the baseline expression level in PI16^-^ Th cells.
+Clearly, this is not a comparison.
+
+Instead of doing the other coefficients one at a time, let's just take the column names of our model matrix and pass them to topTable using a dummy variable `nm`.
 
 ```{r}
 for (nm in colnames(X_int)[2:4]) {
@@ -265,26 +249,42 @@ for (nm in colnames(X_int)[2:4]) {
 }
 ```
 
-Collate the results
+We can use this trick with `lapply()` to collate our results.
+Here, we're writing a function *on-the-fly* which takes a single argument `x`.
+The column names from `X_int` will be passed to this function one at a time and inside the function, they will be referred to as `x`.
+You can see them in the call to `topTable()`.
+Notice that we're also including them as a column called `coef`, after we've removed uninteresting columns using `dplyr::select()`.
 
 ```{r}
 results_int <- colnames(X_int)[2:4] %>%
-    lapply(function(x){
-        topTable(fit_int, coef = x, number = Inf) %>%
-            dplyr::select(starts_with("gene"), logFC, AveExpr, contains("P.Val")) %>%
-            mutate(coef = x) %>%
-            as_tibble()
-    }) %>%
-    set_names(
-        colnames(X_int)[2:4]
-    )
+  lapply(function(x){
+    topTable(fit_int, coef = x, number = Inf) %>%
+      dplyr::select(starts_with("gene"), logFC, AveExpr, contains("P.Val")) %>%
+      mutate(coef = x) %>%
+      as_tibble()
+  }) %>%
+  set_names(
+    colnames(X_int)[2:4]
+  )
 ```
+
+Let's check our results to see how many DE genes we had.
 
 ```{r}
 results_int %>%
     lapply(dplyr::filter, adj.P.Val < 0.05) %>%
     lapply(nrow)
 ```
+
+
+There are quite a few genes with significant interaction terms.
+Will any of them also have a significant term (i.e. any detectable logFC) for either the effect of being a Treg, or being PI16^+^?
+
+We could use a 3-way Venn Diagram to find this out, but a more recently proposed plotting style is known as an UpSet plot.
+These allow for Venn Diagram-like information to be communicated where there are enough groups to make a Venn Diagram look messy.
+
+The simplest way to generate these plots is to provide a list of groups with the common labels (i.e. gene ids), and the function `fromList()` will structure the data ready for the plotting function.
+
 
 ```{r}
 results_int %>%
@@ -294,44 +294,80 @@ results_int %>%
     upset()
 ```
 
-### Genes significant everywhere
+Once you get the hang of these they're very easy to interpret.
+
+- Here we have 692 genes which only show a PI16+ effect, and these would be considered as common across both cell types
+- Next we have 151 genes with only a significant interaction term (i.e. no differential expression anywhere else)
+- Next is 35 genes unique to being a Treg, and with interaction term.
+- The next set of 95 genes show differential expression that tracks with PI16, and there is something unexpected happening in the PI16+ Tregs, but we don't know what. We'd have to look at each of them
+- Hopefully the rest make sense...
+
+
+### Genes Significant Everywhere
+
+The final set at the end of the above plot indicates the gene which has both a PI16 and Treg effect, but something different is happening somewhere.
+We might like to find out.
+As this gene will be DE in all three sets of results, we can just join our data and find which gene is significant for all 3 coefficients.
 
 ```{r}
 results_int %>%
-    bind_rows() %>%
-    dplyr::filter(adj.P.Val < 0.05) %>%
-    group_by(gene_id, gene_name) %>%
-    tally() %>%
-    dplyr::filter(n == 3)
+  bind_rows() %>%
+  dplyr::filter(adj.P.Val < 0.05) %>%
+  group_by(gene_id, gene_name) %>%
+  tally() %>%
+  dplyr::filter(n == 3)
 ```
+
+Now we know how to find this gene, let's make a boxplot to check it's expression.
 
 ```{r}
 results_int %>%
-    bind_rows() %>%
-    dplyr::filter(adj.P.Val < 0.05) %>%
-    group_by(gene_id, gene_name) %>%
-    tally() %>%
-    dplyr::filter(n == 3) %>%
-    ungroup() %>%
-    cbind(
-        exprs(eset)[paste0(.$gene_id, "_at"),] %>%
-            matrix(ncol = ncol(eset)) %>%
-            set_colnames(colnames(eset)) 
-    ) %>%
-    pivot_longer(
-        starts_with("SB"),
-        names_to = "array_id",
-        values_to = "exprs"
-    ) %>%
-    left_join(
-        pData(eset)
-    ) %>%
-    ggplot(aes(group, exprs, fill = group)) +
-    geom_boxplot()
+  bind_rows() %>%
+  dplyr::filter(adj.P.Val < 0.05) %>%
+  group_by(gene_id, gene_name) %>%
+  tally() %>%
+  dplyr::filter(n == 3) %>%
+  ungroup() %>%
+  cbind(
+    exprs(eset)[paste0(.$gene_id, "_at"),] %>%
+      matrix(ncol = ncol(eset)) %>%
+      set_colnames(colnames(eset)) 
+  ) %>%
+  pivot_longer(
+    starts_with("SB"),
+    names_to = "array_id",
+    values_to = "exprs"
+  ) %>%
+  left_join(
+    pData(eset)
+  ) %>%
+  ggplot(aes(group, exprs, fill = group)) +
+  geom_boxplot() +
+  scale_fill_brewer(palette = "Paired")
 ```
 
+
+So even though the gene is expressed at about the same level in both PI16+ cell types, because there is increased expression in the PI16^-^ Treg cells, this has lead to an interaction term being significant.
+**How would you describe this differential expression pattern in words?**
 
 ### Treg Genes with an Interaction Term
+
+Another group of genes which might be worth exploring might be genes with a Treg effect, but with a significant interaction term.
+
+
+```{r, echo=FALSE, fig.show='asis'}
+results_int %>%
+    lapply(dplyr::filter, adj.P.Val < 0.05) %>%
+    lapply(extract2, "gene_id") %>%
+    fromList() %>%
+    upset(
+      main.bar.color = c(rep("grey23", 5), "red", "grey23")
+    )
+```
+
+First we'll just get the gene IDs to make sure we've grabbed what we expect.
+Notice that we're using `filter()` whilst grouped, which will remove all genes from a grouping that match the exclusion criteria.
+
 
 ```{r}
 results_int %>%
@@ -345,34 +381,52 @@ results_int %>%
 ```
 
 
+As there's only 4, a box plot might be a good move again.
+
 ```{r}
 results_int %>%
-    bind_rows() %>%
-    dplyr::filter(adj.P.Val < 0.05) %>%
-    group_by(gene_id) %>%
-    mutate(n = n()) %>%
-    dplyr::filter(n == 2 & !"PI16+" %in% coef) %>%
-    ungroup() %>%
-    distinct(gene_id, gene_name) %>%
-    cbind(
-        exprs(eset)[paste0(.$gene_id, "_at"),]
-    ) %>%
-    pivot_longer(
-        starts_with("SB"),
-        names_to = "array_id",
-        values_to = "exprs"
-    ) %>%
-    left_join(
-        pData(eset)
-    ) %>%
-    ggplot(aes(group, exprs, fill = group)) +
-    geom_boxplot() +
-    facet_wrap(~gene_name)
+  bind_rows() %>%
+  dplyr::filter(adj.P.Val < 0.05) %>%
+  group_by(gene_id) %>%
+  mutate(n = n()) %>%
+  dplyr::filter(n == 2 & !"PI16+" %in% coef) %>%
+  ungroup() %>%
+  distinct(gene_id, gene_name) %>%
+  cbind(
+    exprs(eset)[paste0(.$gene_id, "_at"),]
+  ) %>%
+  pivot_longer(
+    starts_with("SB"),
+    names_to = "array_id",
+    values_to = "exprs"
+  ) %>%
+  left_join(
+    pData(eset)
+  ) %>%
+  ggplot(aes(group, exprs, fill = group)) +
+  geom_boxplot() +
+  facet_wrap(~gene_name) +
+  scale_fill_brewer(palette = "Paired")
 ```
 
 
 
 ### Treg Genes with no Interaction Term
+
+Genes with a Treg effect, but with no PI16 effects or interaction might be another group to explore.
+As this is a larger group, perhaps a heatmap might be best for exploration.
+
+```{r, echo=FALSE, fig.show='asis'}
+results_int %>%
+    lapply(dplyr::filter, adj.P.Val < 0.05) %>%
+    lapply(extract2, "gene_id") %>%
+    fromList() %>%
+    upset(
+      main.bar.color = c(rep("grey23", 2), "red", rep("grey23", 4))
+    )
+```
+
+First we'll check that we know how to grab the gene IDs.
 
 ```{r}
 results_int %>%
@@ -386,6 +440,7 @@ results_int %>%
     )
 ```
 
+Now we know that we can get the heatmap going.
 
 ```{r}
 results_int %>%
@@ -409,7 +464,25 @@ results_int %>%
     )
 ```
 
-# Using Pariwise Comparisons
+Does this look how you might have expected?
+
+### Pick one more group
+
+**If we're doing well with time, choose one of these groups your self and try to extract the genes from that group as a heatmap.**
+
+## Concerns With This Method
+
+Overall, this method is statistically robust and a good strategy in these types of designs.
+How we interpret the interaction term can be difficult to define, and it actually captures multiple gene expression patterns.
+This can make it difficult to describe differential expression patterns.
+
+In the above approach we didn't use a contrast matrix.
+Could we have done so?
+
+An alternative approach may be to simply define expression estimates and perform a series of pair-wise comparisons.
+
+
+# Using Pair-wise Comparisons
 
 
 ```{r, echo=FALSE, fig.show='asis'}
@@ -470,41 +543,49 @@ pData(eset) %>%
   )
 ```
 
+Our gene expression estimates will not change using this method, or if we manually performed all of the sums required under a model with an interaction term.
+A key point about this model is that pair-wise comparisons become much simpler to extract from our design matrix in order to form our contrasts.
+Let's setup a simple design matrix with the contrasts as described above.
 
 ```{r}
 X_pairs <- model.matrix(~ 0 + group, data = pData(eset)) %>%
-    set_colnames(
-        str_remove(colnames(.), "group")
-    )
+  set_colnames(
+    str_remove(colnames(.), "group")
+  )
 cont_pairs <- makeContrasts(
-    Tr_Plus_vs_Minus = Treg_PI16_plus - Treg_PI16_minus,
-    Th_Plus_vs_Minus = Th_PI16_plus - Th_PI16_minus,
-    Plus_Tr_vs_Th = Treg_PI16_plus - Th_PI16_plus,
-    Minus_Tr_vs_Th = Treg_PI16_minus - Th_PI16_minus,
-    levels = colnames(X_pairs)
+  Tr_Plus_vs_Minus = Treg_PI16_plus - Treg_PI16_minus,
+  Th_Plus_vs_Minus = Th_PI16_plus - Th_PI16_minus,
+  Plus_Tr_vs_Th = Treg_PI16_plus - Th_PI16_plus,
+  Minus_Tr_vs_Th = Treg_PI16_minus - Th_PI16_minus,
+  levels = colnames(X_pairs)
 )
 ```
 
+Now we can fit the dataset as expected.
+
 ```{r}
 fit_pairs <- lmFit(eset, design = X_pairs) %>%
-    contrasts.fit(cont_pairs) %>%
-    eBayes()
+  contrasts.fit(cont_pairs) %>%
+  eBayes()
 ```
+
+Let's form another list of results as beforehand, except this time we'll have four pair-wise comparisons.
 
 ```{r}
 results_pairs <- colnames(cont_pairs) %>%
-    lapply(function(x){
-        topTable(fit_pairs, coef = x, number = Inf) %>%
-            as_tibble() %>%
-            dplyr::select(starts_with("gene"), logFC, AveExpr, contains("P.Val")) %>%
-            mutate(comparison = x) 
-    }
-    ) %>%
-    set_names(
-        colnames(cont_pairs)
-    )
+  lapply(function(x){
+    topTable(fit_pairs, coef = x, number = Inf) %>%
+      as_tibble() %>%
+      dplyr::select(starts_with("gene"), logFC, AveExpr, contains("P.Val")) %>%
+      mutate(comparison = x) 
+  }
+  ) %>%
+  set_names(
+    colnames(cont_pairs)
+  )
 ```
 
+Check how many De genes we have again.
 
 ```{r}
 results_pairs %>%
@@ -512,15 +593,27 @@ results_pairs %>%
     lapply(nrow)
 ```
 
+This is clearly very different to the previous approach.
+However, if you look closely the two baseline groups have the same numbers as before.
+(If we'd defined this contrast matrix from our interaction design matrix, we would've got these numbers as well.)
+
+Let's try summarise this using an UpSet plot again.
+To try and keep gene number manageable, we'll apply a logFC filter.
+Notice how this is easy to interpret here, but is far more difficult to interpret for an interaction term.
 
 ```{r}
 results_pairs %>%
-    lapply(dplyr::filter, adj.P.Val < 0.05 & abs(logFC) > 1) %>%
+    lapply(dplyr::filter, adj.P.Val < 0.05) %>%
     lapply(extract2, "gene_name") %>%
     fromList() %>%
     upset()
 ```
 
+**Can anyone see a significant issue with these results?**
+
+(Hint: Can a gene be truly DE in only one comparison?)
+
+Let's check our volcano plots, colouring points with an FDR-adjusted p-value < 0.05, and adding our tram-lines at logFC = $\pm1$.
 
 ```{r}
 results_pairs %>%
@@ -548,6 +641,21 @@ results_pairs %>%
   scale_colour_manual(values = c("black", "red"))
 ```
 
+
+**Can we think of a reason why we have these less plausible results in the above UpSet plot?**
+
+
+## Strategies for Gene Selection
+
+In order to obtain the most significant genes (i.e. the low hanging fruit), we can perform an analysis in two steps.
+
+1. We select a list of DE genes using a logFC filter and a FDR-adjust p-value < 0.05
+2. In order to correctly characterise the behaviour of these genes, we remove the logFC filter from other comparisons
+    + We may even change the FDR filter
+    
+This is connected to the idea of hard-cutoffs we mentioned the other day.
+
+
 ```{r}
 allDE <- results_pairs %>%
   bind_rows() %>%
@@ -556,6 +664,7 @@ allDE <- results_pairs %>%
   unique()
 length(allDE)
 ```
+
 
 ```{r}
 results_pairs %>%
@@ -567,7 +676,32 @@ results_pairs %>%
     upset()
 ```
 
-```{r}
+Notice that now we have far fewer genes with expression patterns that are less plausible.
+I personally would just ignore these genes and focus on the others.
 
-```
+## Tasks
+
+For the remainder of the session, select a few groups and create heatmaps/boxplots to learn more about the expression patterns.
+Two groups of interest may be:
+
+1. Genes consistently tracking with PI16, but with no Treg effect
+2. Genes consistently tracking with Tregs, but with no PI16 effect
+3. Genes which are different across every pair-wise comparison
+
+Once you've done those, try a couple more.
+
+## Advanced challenge
+
+Can you think of a way to include direction in these lists, instead of just significance?
+**NB: This is a very hard challenge.** 
+Don't be surprised if you don't get it, but I will be thrilled if someone does.
+
+# Conclusion
+
+This type of analysis is very common, where you seek to carefully characterise the behaviour of genes across multiple conditions.
+From here we would move to finding biological pathways that seem to be enriched in these groups.
+
+With these analyses, there is no right or wrong answer, just (within reason) alternative strategies.
+Sometimes models using interaction terms are the 'best solution' to the problem, other times pair-wise comparisons may be a simple option.
+
 
