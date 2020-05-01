@@ -118,7 +118,7 @@ Discuss their strengths and limitations, paying particular attention to how each
 
 <div class = "blue">
 
-SOme possible discussion points are
+Some possible discussion points are
 
 - Northern blot:
     - Limited sequences are able to be probed for
@@ -380,6 +380,54 @@ q <- q + 1
 
 # Total: `r sum(marks$marks)` marks
 
-```{r}
-write_csv(marks, here::here("assignments", "A2.csv"))
+
+```{r results, results='as.is'}
+late <- c("a17455555", "a1724305")
+here::here("assignments", "A2.csv") %>%
+  read_csv() %>%
+  rename(points = marks) %>%
+  pivot_longer(
+    cols = starts_with("a"),
+    names_to = "Student ID",
+    values_to = "awarded"
+  ) %>%
+  dplyr::filter(!is.na(awarded)) %>%
+  group_by(`Student ID`) %>%
+  summarise(
+    Marks = sum(awarded),
+    `Scaled (10)` = 10 * sum(awarded) /sum(points)
+  ) %>%
+  left_join(
+    here::here("practicals/VMs.csv") %>%
+      read_csv
+  ) %>%
+  dplyr::select(
+    contains("Student"), Marks, `Scaled (10)`
+  ) %>%
+  mutate(
+    Penalty = case_when(
+      `Student ID` %in% late ~ 0.1*Marks,
+      !`Student ID` %in% late ~ 0
+    ),
+    Total = Marks - Penalty,
+    `Scaled (10)` = case_when(
+      `Student ID` %in% late ~ (1 - 0.1)*`Scaled (10)`,
+      !`Student ID` %in% late ~ `Scaled (10)`
+    ),
+    Total = round(2*Total, 0) / 2,
+    `Scaled (10)` = round(`Scaled (10)`, 2),
+    Grade = cut(
+      `Scaled (10)`, 
+      breaks = c(0, 5, 6.5, 7.5, 8.5, 10), 
+      labels = c("F", "P", "C", "D", "HD")
+      )
+  ) %T>%
+  write_csv(here::here("assignments/A2_results.csv")) %>%
+  arrange(desc(Total)) %>%
+  # pander::pander(split.table = Inf)# %>%
+  summarise(
+    highest = max(`Scaled (10)`),
+    median = median(`Scaled (10)`)
+  ) %>%
+  pander::pander(caption = "Summary of grades for assessment 2 2020, out of a possible 10 marks")
 ```
