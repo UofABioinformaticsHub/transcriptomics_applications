@@ -382,7 +382,7 @@ q <- q + 1
 
 
 ```{r results, results='as.is'}
-late <- c("a17455555", "a1724305")
+late <- c("a1724305")
 here::here("assignments", "A2.csv") %>%
   read_csv() %>%
   rename(points = marks) %>%
