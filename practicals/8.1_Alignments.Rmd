@@ -53,7 +53,7 @@ In the **terminal** please execute the following code.
 (It's OK to cut and paste during setup.)
 
 ```
-cd ~/transcripomics
+cd ~/transcriptomics
 wget https://github.com/UofABioinformaticsHub/ngsSkeleton/archive/master.zip
 unzip master.zip
 rm master.zip
