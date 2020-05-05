@@ -53,7 +53,7 @@ In the **terminal** please execute the following code.
 (It's OK to cut and paste during setup.)
 
 ```
-cd ~/transcripomics
+cd ~/transcriptomics
 wget https://github.com/UofABioinformaticsHub/ngsSkeleton/archive/master.zip
 unzip master.zip
 rm master.zip
@@ -65,7 +65,7 @@ For many of you <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+`V` may also be an option, howe
 
 **What did we just do?**
 
-1. `cd ~/transcripomics` made sure you are executing the code form the correct folder
+1. `cd ~/transcriptomics` made sure you are executing the code form the correct folder
 2. `wget https://github.com/UofABioinformaticsHub/ngsSkeleton/archive/master.zip` downloaded a zip file from the Bioinformatics Hub github repository
 3. `unzip master.zip` extracted the zip file we just downloaded
 4. `rm master.zip` removed the original file as we don't need it any more
