@@ -175,7 +175,7 @@ q <- q + 1
 ```{r}
 marks <- marks %>%
     bind_rows(
-        tibble(q = q, marks = 3)
+        tibble(q = q, marks = 2)
     )
 ```
 
@@ -291,7 +291,7 @@ q <- q + 1
 ```{r}
 marks <- marks %>%
     bind_rows(
-        tibble(q = q, marks = 10)
+        tibble(q = q, marks = 8)
     )
 ```
 
@@ -395,7 +395,7 @@ here::here("assignments", "A2.csv") %>%
   group_by(`Student ID`) %>%
   summarise(
     Marks = sum(awarded),
-    `Scaled (10)` = 10 * sum(awarded) /sum(points)
+    `Scaled (10)` = 10 * Marks / 37, #sum(points)
   ) %>%
   left_join(
     here::here("practicals/VMs.csv") %>%
@@ -415,11 +415,12 @@ here::here("assignments", "A2.csv") %>%
       !`Student ID` %in% late ~ `Scaled (10)`
     ),
     Total = round(2*Total, 0) / 2,
-    `Scaled (10)` = round(`Scaled (10)`, 2),
+    `Scaled (10)` = round(`Scaled (10)`, 1),
     Grade = cut(
       `Scaled (10)`, 
       breaks = c(0, 5, 6.5, 7.5, 8.5, 10), 
-      labels = c("F", "P", "C", "D", "HD")
+      labels = c("F", "P", "C", "D", "HD"),
+      include.lowest = TRUE
       )
   ) %T>%
   write_csv(here::here("assignments/A2_results.csv")) %>%

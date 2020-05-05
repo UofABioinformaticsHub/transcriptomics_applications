@@ -1,0 +1,503 @@
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 8.1: RNA-Seq Alignments"
+date: "6^th^ May 2019"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE, 
+    message = FALSE, 
+    warning = FALSE,
+    fig.align = "center",
+    results = "hide",
+    fig.show = "hide"
+)
+```
+
+# Introduction
+
+Today we'll be working with sequencing data and will work through a common RNA-Seq workflow.
+Much of today will be performed in `bash`, however, we'll still use RStudio as our primary method of VM access.
+If you're familiar with `ssh` and would prefer to connect using that strategy, please feel free.
+All material is written assuming that you are using the RStudio interface.
+
+The data we'll work with today is taken from mouse and we're comparing gene expression patterns from Cerebellar Cortex (CBC) and Skeletal Muscle (SKM).
+Each tissue type has $n = 4$ samples.
+All samples are taken from a [publicly available dataset](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE49379) on the GEO repository.
+The full dataset has been reduced to make sure we can get through all the steps we need in the session.
+
+# Setup
+
+The data has already been placed on your VM and is located in the folder `~/data/transcriptomics/wk8`.
+Whilst it might seem sensible to copy these files across to a new folder, today we'll use a shortcut known as a symbolic link which will point to the original files, and mostly behave as if they are the files, but will save on disk usage.
+Unfortunately as we are working on the VMs this is an important consideration.
+
+**Please ensure you follow the setup instructions without deviating even slightly.**
+All file paths must be created exactly as they are written in the text following below.
+**If you change even a single character, you will have enormous trouble for the entire session.**
+
+
+## Setup a Directory Structure
+
+Getting your folders organised and standardised is extremely helpful when conducting any bioinformatics analysis.
+Many bioinformaticians start off thinking they'll be fine & not caring, but all learn very quickly how important keeping you data and code organised is.
+An example of how some people like to keep their data organised is available for you to download and use on the Bioinformatics Hub github.
+
+In the **terminal** please execute the following code.
+(It's OK to cut and paste during setup.)
+
+```
+cd ~/transcripomics
+wget https://github.com/UofABioinformaticsHub/ngsSkeleton/archive/master.zip
+unzip master.zip
+rm master.zip
+mv ngsSkeleton-master week_8
+```
+
+Pasting into the terminal can be a bit variable using the VMs this way, so you may prefer to use the right-click strategy to make sure that works.
+For many of you <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+`V` may also be an option, however we know that some University computers have additional shortcuts which can make these things challenging.
+
+**What did we just do?**
+
+1. `cd ~/transcripomics` made sure you are executing the code form the correct folder
+2. `wget https://github.com/UofABioinformaticsHub/ngsSkeleton/archive/master.zip` downloaded a zip file from the Bioinformatics Hub github repository
+3. `unzip master.zip` extracted the zip file we just downloaded
+4. `rm master.zip` removed the original file as we don't need it any more
+5. `mv ngsSkeleton-master week_8`: When we extracted the zip file it was called `ngsSkeleton-master` and now we've renamed it as `week_8`
+
+Once you have performed these steps, **create an R Project inside the folder** `~/transcriptomics/week_8`.
+We can do this by following the following steps
+
+1. `File > New Project`
+2. Select `Existing Directory`
+3. Select <kbd>Browse...</kbd> and navigate to our newly created `~/transcriptomics/week_8`
+4. Click <kbd>Choose</kbd>
+5. Click <kbd>Create Project</kbd>
+
+Once you are in the R Project, head to the `Terminal` and enter `cd ~/transcriptomics/week_8` to make sure you are in the correct directory
+
+## Understanding Our Structure
+
+Every project has different requirements, but what we've created here is a good starting point for many NGS analyses.
+In an RNA-Seq workflow, the common steps are:
+
+1. Trim and clean the data
+2. Align the data to a reference
+3. Count the reads for each gene
+
+Let's explore our structure to understand what we've just got you to create.
+The complete directory tree is given below & you'll be able to see the first level in you `Files` Pane.
+
+```
+.
+├── 0_rawData
+│   ├── FastQC
+│   │   └── README.md
+│   └── fastq
+│       └── README.md
+├── 1_trimmedData
+│   ├── FastQC
+│   │   └── README.md
+│   ├── fastq
+│   │   └── README.md
+│   └── log
+│       └── README.md
+├── 2_alignedData
+│   ├── FastQC
+│   │   └── README.md
+│   ├── bam
+│   │   └── README.md
+│   └── log
+│       └── README.md
+├── R
+│   └── README.md
+├── README.md
+├── bash
+│   └── README.md
+├── slurm
+│   └── README.md
+└── week_8.Rproj
+```
+
+- `0_rawData`
+    - This is where we can put our original, untouched files. 
+    - Raw reads can go in the folder `fastq`, whilst our `FastQC` reports can go in the appropriately named folder. Note the clever use of upper and lower case letters to make <kbd>Tab</kbd> auto-complete easier
+    - You can ignore the README. It's just there to provide a very brief summary of the folder. Documenting anything related to this folder on a document like this can actually be very helpful. It doesn't have any useful information at the moment though
+- `1_trimmedData`
+    - Clearly, this is where we can place out trimmed (& filtered) data
+    - The same `fastq/FastQC` directories are here again
+    - An additional folder called `log` is here. This can be used for placing the output, log or any other files generated during the trimming process.
+    Sometimes you can refer to these later to diagnose issues
+- `2_alignedData`
+    - The folder `bam` is where we place our alignments
+    - We can place any `FastQC` reports in the appropriate folder. Despite it's name, the tool `FastQC` also works on `bam` files
+    - Again, any alignment statistics or log files can be placed in the folder `log` for future reference
+- `R`
+    - This may be a useful place to put your R code. Generally we use R for downstream analysis at the end of the data processing steps
+- `bash`
+    - Here is where we can place any scripts to do with data processing that have been executed in `bash`
+- `slurm`
+    - The queuing system for managing submitted jobs on the University of Adelaide's HPC is known as slurm. When you write a script, it will almost always fail the first time, because we invariably put at least one typo somewhere. This is where your error and output files can be placed, although as this is specific to the phoenix HPC, we won't need this folder for our project.
+    
+## Obtain the Raw Data Files 
+
+As we mentioned earlier, today's data is located in the folder `~/data/transcriptomics/wk8`.
+Instead of copying this across, let's be a bit cheeky and try to save some space.
+In the Terminal paste the following
+
+```
+cd 0_rawData/fastq/
+```
+
+Once you're sure that line has worked and you are in the correct folder, add the following command
+
+```
+ln -s ~/data/transcriptomics/wk8/*fastq.gz ./
+ll
+```
+
+This will create a symbolic link in our current folder to the original files in their original location.
+Symbolic links will behave as if they are the original files (mostly) and you can see in the long-listing format of the directory contents (`ll`) where the link is pointing.
+Note that instead of being 50Mb, each link is literally 61 bytes.
+
+To check that the links are working, let's just look at the first few lines of one of the files
+
+```
+zcat SRR945377.skm.fastq.gz | head
+```
+
+Now we have everything setup, we can make our way through the workflow.
+
+**If you have any questions about the above, now is a good time to ask them**
+
+## Setting Up the Reference Genome
+
+For today's practical we'll choose to align to a genomic reference using STAR and will count reads aligned to each gene.
+However, before we can run any alignments, we need a genome to align our data to.
+As mentioned, this dataset is from mouse.
+On `phoenix`, there is a pre-indexed reference which we can all use, but we'll have to create our own today.
+
+**This section was written before the indexing was run on a test VM.**
+**It will not complete on the VM, so please read the following and pretend you have run it.**
+**Information about how to obtain a pre-indexed reference is at the end of the section.**
+
+The data we have has been subset so that only reads for Chromosome 1 are present, so we'll need to just grab a copy of Chromosome 1 and index that.
+For RNA-Seq analysis, a common source of a reference is Ensembl, so let's head to the [latest release](ftp://ftp.ensembl.org/pub/release-100/fasta/mus_musculus/dna/).
+Here you can see all of the (compressed) fasta files that we can choose from.
+
+The one we'll choose today is right near the top & is called `Mus_musculus.GRCm38.dna.chromosome.1.fa.gz`.
+Let's create a new directory for this file
+
+```
+# Do not run
+mkdir genome
+```
+
+Now that we have a place to put the file, we can download it, and extract it ready for indexing.
+(Unfortunately STAR needs extracted references so we can't use the gzipped file)
+
+```
+# Do not run
+wget ftp://ftp.ensembl.org/pub/release-100/fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.chromosome.1.fa.gz -O genome/Mus_musculus.GRCm38.dna.chromosome.1.fa.gz
+gunzip genome/Mus_musculus.GRCm38.dna.chromosome.1.fa.gz
+```
+
+As you may have learned from Genomics Applications, we need to index the genome before we can align to it.
+During alignment, an aligner doesn't actually look at the fasta file, but the index is what is actually used, and enables the super fast searching using the Burrows-Wheeler index that you will have learned about in that course.
+The indexing step will take about 5 minutes or so, so it is a little time consuming.
+This is also why we have many common reference genomes available on phoenix for people to use.
+
+```
+# Do not run
+STAR \
+  --runMode genomeGenerate \
+  --runThreadN 8 \
+  --genomeDir genome \
+  --genomeSAindexNbases 12 \
+  --genomeFastaFiles \
+  genome/Mus_musculus.GRCm38.dna.chromosome.1.fa
+```
+
+### Getting the Pre-built Index
+
+To obtain a pre-built index, we need to move the index from the `~/data/transcriptomics/wk8` folder, and the file is in that folder on your VM as `genome.tar.gz`.
+
+```
+cp ~/data/transcriptomics/wk8/genome.tar.gz ~/transcriptomics/week_8
+cd ~/transcriptomics/week_8
+tar -xzvf genome.tar.gz
+```
+
+This will create the folder `genome` in your existing directory structure, so please check that everything is OK and you have the files.
+The command as below should return the following md5sums
+
+```
+md5sum genome/SA*
+```
+
+Should return:
+
+```
+484ddb3e9f959d4e406a3e3e5f057a6a  genome/SA
+46c821342f5618ed0087d194b59eda5a  genome/SAindex
+```
+
+# Running The workflow
+
+Now that we've configured our directory structure, placed our raw data in an appropriate place and indexed the genome, we're pretty much ready to go.
+
+## Checking the Library Qualities
+
+As you've learned in the Genomics Applications practicals, checking the quality of our libraries is our fundamental first step.
+This is where we can make decisions about downstream processing (i.e. trimming) and we may be able to flag other issues.
+To start with, we'll run the FastQC tool from the command line, although in the 'real world' we would script everything.
+
+First up we need to activate the correct `conda` environment, which will make all of the tools we need available to us
+
+```
+conda activate transcriptomics
+```
+
+This will probably move you to your home directory, so let's move back then run `FastQC`
+
+```
+cd ~/transcriptomics/week_8
+fastqc -t 2 -o 0_rawData/FastQC 0_rawData/fastq/*gz
+```
+
+We can now inspect the reports one at a time, as is common to do, so using the `Files` pane, navigate to the `FastQC` directory & open one of the html files. 
+It will ask if you'd like to open this in your Web Browser, so please choose that option.
+
+As it can be hard to figure out which sample is good or bad just by checking these individual reports, the Bioconductor package `ngsReports` can be quite useful for looking at multiple samples.
+Go to your R console and enter:
+
+
+```{r, eval=FALSE}
+ngsReports::writeHtmlReport("0_rawData/FastQC")
+```
+
+This will write a summarised report of all samples and place it in the same folder as the individual reports.
+You'll see both the `ngsReports_Fastqc.Rmd` file and `ngsReports_Fastqc.html` files in the folder, so open the html file in your web browser.
+
+**Can you see any potential issues with this dataset?**
+
+## Trimming the Samples
+
+Now that we've inspected the quality of our samples, the next step would be to remove any residual adapters (which looked near absent from this dataset) and remove any low quality reads.
+The tool we'll use for this today is `AdapterRemoval`.
+Unfortunately, we forgot to install it on your VM, so you'll need to run the following command to install it
+
+```
+conda install -c bioconda adapterremoval
+```
+
+Before we move to a script, let's just trim one file and see what we get
+
+```
+mkdir 1_trimmedData/discarded
+AdapterRemoval \
+    --file1 0_rawData/fastq/SRR945375.skm.fastq.gz \
+    --output1 1_trimmedData/fastq/SRR945375.skm.fastq.gz \
+    --discarded 1_trimmedData/discarded/SRR945375.skm.discarded.gz \
+    --minlength 50 \
+    --threads 2 \
+    --trimns \
+    --trimqualities \
+    --minquality 20 \
+    --gzip \
+    --settings 1_trimmedData/log/SRR945375.skm.fastq.gz.settings
+```
+
+The help page for this tool is very extensive with lots of options, so please have a look.
+
+```
+AdapterRemoval --help 
+```
+
+**Make sure you understand what each of these parameters is doing**
+
+**Are there any other parameters we should have set?**
+
+**What did the final line do?**
+
+### Checking our Trimmed Sample
+
+Let's keep going with just the one sample, then we'll look at writing a complete script.
+
+```
+fastqc -t 2 -o 1_trimmedData/FastQC 1_trimmedData/fastq/*gz
+```
+
+**Does this look like there was an improvement in the sample after trimming?**
+
+## Aligning to the Reference Genome
+
+Now that we're happy about our raw data file, we can align it to the reference genome.
+Today we'll use `STAR` as our aligner, which is a splice-aware aligner in very common use.
+It's considered by many to be the gold-standard for RNA-Seq.
+The code we'll run for our solitary trimmed fastq file is as below.
+
+```
+STAR \
+  --runThreadN 2 \
+  --genomeDir genome \
+  --readFilesIn 1_trimmedData/fastq/SRR945375.skm.fastq.gz \
+  --readFilesCommand gunzip -c \
+  --outFileNamePrefix 2_alignedData/bam/SRR945375.skm. \
+  --outSAMtype BAM SortedByCoordinate
+```
+
+Again, we should check the help before we do anything, except the best help page is the `STAR` manual available from the [STAR website](https://github.com/alexdobin/STAR/raw/master/doc/STARmanual.pdf)
+
+Now that we have a bam file, which STAR has sorted for us already, we need to index it should we choose to search through it.
+Following that, we'll count reads for each gene on Chromosome 1
+
+```
+samtools index 2_alignedData/bam/SRR945375.skm*
+```
+
+## Counting Reads
+
+Now that we have our alignments, we need to count which ones align to a gene.
+The first step though, is that we'll need a description of each gene, it's corresponding transcripts, the corresponding exons and where they are located on the reference.
+This type of file is commonly known as a `gtf` file and we can obtain one [from Ensembl](ftp://ftp.ensembl.org/pub/release-100/gtf/mus_musculus/).
+A sensible place for this would be in the same directory as the reference, so let's place it there.
+
+```
+wget ftp://ftp.ensembl.org/pub/release-100/gtf/mus_musculus/Mus_musculus.GRCm38.100.chr.gtf.gz -O genome/Mus_musculus.GRCm38.100.chr.gtf.gz
+```
+
+Unfortunately, this is for all chromosomes, so let's have a look, then we'll make a new one just for chromosome 1.
+
+```
+zcat genome/Mus_musculus.GRCm38.100.chr.gtf.gz | head
+```
+
+The first 5 lines in this file contain all of the metadata concerning which version of the file this is and the reference genome used.
+After that are a series of tab-delimited rows that are probably wrapped around inside the terminal.
+Wherever you see the number `1` at the start of a line, that's where the new row starts.
+(This value is actually the chromosome, so a bit further down the file, you'll see `2` at the start of each line)
+
+On each row the fields define:
+
+1. The chromosome/scaffold
+2. The source of the feature
+3. The type of feature
+4. The start of the feature
+5. The end of the feature
+6. (Some empty field we're not using)
+7. The strand of the feature
+8. (Some other empty field we're not using)
+9. All of the metadata about that feature. Notice that each metadata field has a name, followed by a *space*, followed by the field value and finishing with a semi-colon (;). So as you can see, a GTF is both tab-delimited and semi-colon delimited.
+
+Notice that we have genes, transcripts, exons and other features.
+A summary of these features can easily be obtained with the following code (cut & paste if you want)
+
+```
+zcat genome/Mus_musculus.GRCm38.100.chr.gtf.gz | cut -s -f3 | sort | uniq -c
+```
+
+As we only need the features for chromosome 1, let's subset this file
+
+```
+# Copy the file header to ensure a correct format
+zcat genome/Mus_musculus.GRCm38.100.chr.gtf.gz | egrep "^#!" > genome/Mus_musculus.GRCm38.100.chr1.gtf
+# Now grab all the information from chromosome 1. All of these lines start with '1'
+zcat genome/Mus_musculus.GRCm38.100.chr.gtf.gz | egrep "^1\s" >> genome/Mus_musculus.GRCm38.100.chr1.gtf
+# Remove the original to save confusion
+rm genome/Mus_musculus.GRCm38.100.chr.gtf.gz
+```
+
+Counting reads is not quite as simple as it sounds.
+As we know, a gene usually consists of exons and multiple transcripts.
+
+1. Would we count every read that aligns within the range of the entire gene?
+2. Would we restrict reads to those that match pre-defined transcripts (using splice junctions)?
+3. Would we restrict counting to reads which sit entirely within exons? What about a 1 base overlap? How would that occur biologically?
+
+There is no hard and fast rule, but a common strategy is to only count reads that align exactly within an exon.
+Clearly this will exclude reads which come from an unprocessed transcript with any part of an intron.
+This decision is usually up to the bioinformatician.
+
+We actually don't have a directory for counts in our default directory structure, so let's make one that we can write the output to.
+
+```
+mkdir 2_alignedData/counts
+```
+
+The tool we'll use for counting is known as `featureCounts` and is part of the larger `Subread` package which even contains an aligner.
+Once again, we should check the help page to make sure we know what we're doing.
+
+```
+featureCounts --help
+```
+
+Now you have that open, a possible command might be
+
+```
+featureCounts -Q 10 \
+  -s 2 \
+  --fracOverlap 1 \
+  -T 2 \
+  -a genome/Mus_musculus.GRCm38.100.chr1.gtf \
+  -o 2_alignedData/counts/SRR945375.skm.out \
+  2_alignedData/bam/SRR945375.skm.*  
+```
+
+**What do the two parameters `-Q 10` and `--fracOverlap 1` mean?**
+
+Once you have this file, just have a look and you'll see that we have a count of the reads which aligned within each gene, and that matched our set criteria.
+
+
+# Writing A Script
+
+The above essentially completes the entire workflow, but only for a single file.
+The steps which we performed were.
+
+1. FastQC on the raw data
+2. Trimming using `AdapterRemoval`
+3. FastQC on the trimmed data
+3. Aligning to the reference genome
+4. Indexing the bam files
+5. Counting the reads which aligned to each gene
+
+Although we did setup our gtf file as part of this, that doesn't form a fundamental part of the workflow.
+
+Clearly, we need to define this workflow as an single script, or a set of scripts able to be called either individually, or by a higher-level 'master' script
+This is our next task and building this together is how we'll proceed.
+As a starting point, we can use this template to start us off.
+
+
+```
+#! /bin/bash
+
+# RNA Seq Pipeline produced in the Week 8 Transcriptomics Applications Course
+# University of Adelaide, May 2020
+
+# Define our directories
+PROJROOT=/home/student/transcriptomics/week_8
+RAW=${PROJROOT}/0_rawData
+TRIMMED=${PROJROOT}/1_trimmedData
+ALIGNED=${PROJROOT}/2_alignedData
+REF=${PROJROOT}/genome
+
+# 0 - FastQC on the raw data
+
+# 1a - Trimming
+
+# 1b - FastQC on trimmed data
+
+# 2a - Aligning and indexing
+
+# 2b - Counting Reads
+
+```
+
+Our task will be to recreate the above steps so that we perform the process on the entire set of reads
+
