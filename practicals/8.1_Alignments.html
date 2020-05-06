@@ -1726,9 +1726,10 @@ AdapterRemoval \
   --readFilesCommand gunzip -c \
   --outFileNamePrefix 2_alignedData/bam/SRR945375.skm. \
   --outSAMtype BAM SortedByCoordinate</code></pre>
-<p>Again, we should check the help before we do anything, except the best help page is the <code>STAR</code> manual available from the <a href="https://github.com/alexdobin/STAR/raw/master/doc/STARmanual.pdf">STAR website</a></p>
+<p>Again, we should check the help before we do anything, except the best help page is the <code>STAR</code> manual available from the <a href="https://github.com/alexdobin/STAR/raw/master/doc/STARmanual.pdf">STAR website</a>.</p>
 <p>Now that we have a bam file, which STAR has sorted for us already, we need to index it should we choose to search through it. Following that, we’ll count reads for each gene on Chromosome 1</p>
-<pre><code>samtools index 2_alignedData/bam/SRR945375.skm*</code></pre>
+<pre><code>samtools index 2_alignedData/bam/*bam</code></pre>
+<p>STAR will also have created a series of log files which we can move to the <code>log</code> directory, using <code>cp</code>.</p>
 </div>
 <div id="counting-reads" class="section level2">
 <h2>Counting Reads</h2>

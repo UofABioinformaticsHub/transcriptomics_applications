@@ -353,14 +353,16 @@ STAR \
   --outSAMtype BAM SortedByCoordinate
 ```
 
-Again, we should check the help before we do anything, except the best help page is the `STAR` manual available from the [STAR website](https://github.com/alexdobin/STAR/raw/master/doc/STARmanual.pdf)
+Again, we should check the help before we do anything, except the best help page is the `STAR` manual available from the [STAR website](https://github.com/alexdobin/STAR/raw/master/doc/STARmanual.pdf).
 
 Now that we have a bam file, which STAR has sorted for us already, we need to index it should we choose to search through it.
 Following that, we'll count reads for each gene on Chromosome 1
 
 ```
-samtools index 2_alignedData/bam/SRR945375.skm*
+samtools index 2_alignedData/bam/*bam
 ```
+
+STAR will also have created a series of log files which we can move to the `log` directory, using `cp`.
 
 ## Counting Reads
 
