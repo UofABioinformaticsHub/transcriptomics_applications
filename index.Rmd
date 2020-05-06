@@ -128,7 +128,7 @@ ass %>%
 ## Major Project
 
 For the postgraduate students, an additional Major Project is included as part of your curriculum.
-The details of this project are available [here](assignments/MajorProject.md)
+The details of this project are available [here](assignments/MajorProject.html)
 
 ## Assessment Checklist
 
