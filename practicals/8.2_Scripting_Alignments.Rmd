@@ -1,0 +1,151 @@
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 8.2: RNA-Seq Alignments"
+date: "8^th^ May 2019"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE, 
+    message = FALSE, 
+    warning = FALSE,
+    fig.align = "center",
+    results = "hide",
+    fig.show = "hide"
+)
+```
+
+# Introduction
+
+Today we'll continue working with the data from the last session, but will begin by writing a script for the processing of the entire dataset.
+As you may recall, the basic workflow is
+
+1. FastQC on the raw data
+2. Trimming using `AdapterRemoval`
+3. FastQC on the trimmed data
+3. Aligning to the reference genome
+4. Indexing the bam files
+5. Counting the reads which aligned to each gene
+
+The main task we'll begin the session with is to develop a script together.
+
+# Writing A Bash Script
+
+A good starting point for the script is as follows
+
+```
+#! /bin/bash
+
+# RNA Seq Pipeline produced in the Week 8 Transcriptomics Applications Practical
+# University of Adelaide, May 2020
+
+# Define our directories
+PROJROOT=/home/student/transcriptomics/week_8
+RAW=${PROJROOT}/0_rawData
+TRIMMED=${PROJROOT}/1_trimmedData
+ALIGNED=${PROJROOT}/2_alignedData
+REF=${PROJROOT}/genome
+
+# Define any global parameters
+THREADS=2
+
+# 0 - FastQC on the raw data
+
+# 1a - Trimming
+
+# 1b - FastQC on trimmed data
+
+# 2a - Aligning and indexing
+
+# 2b - Counting Reads
+
+```
+
+Open a new file in RStudio, but **instead of an RMarkdown file, choose a Text File**.
+Save this as `rnaseq-pipeline.sh` in your `bash` directory.
+
+## Our Directories
+
+As you can see in the above, the first step was to define all of our key directories as variables.
+We'll use these paths over and over again in the script, so having them defined as variables can save some typing and protect us from typos.
+There is really no rule, but *some people like to have variable names in all upper-case* so it's extremely clear what is a variable and what is not.
+We do strongly recommend this practice.
+
+A good starting point might be to check that all of our directories exist.
+If we find that they don't, we would have two realistic choices:
+
+1. Spit an error and exit the script, or
+2. Provide a message and create the directories as part of the script.
+
+**Does anyone have any suggestions or preferences?**
+
+The `bash` syntax for checking a directory exists is 
+
+```
+if [ -d "$DIRECTORY" ]; then
+  # Control will enter here if $DIRECTORY exists.
+fi
+```
+
+In between the opening `if` and closing `fi` statements will be our instructions for what to do.
+An alternative approach might be to invert the check and test for a directory **not** existing.
+Let's go with that for our script, and we can start with checking the file path we have defined as the variable `PROJROOT`.
+Also notice that we have defined this as an absolute path, so it won't matter where we run the script from.
+
+To check this directory exists, we could add the following to our script
+
+```
+if [ ! -d "${PROJROOT}" ]; then
+  echo -e "Could not find the project root directory\n${PROJROOT}" >&2
+  exit 1
+fi
+echo -e "Found the project root directory\n${PROJROOT}"
+```
+
+Note the addition of the exclamation mark in the logical test.
+If the requested directory **doesn't exist**, this will execute the code between the opening and closing statements.
+The first line is our error message (sent to `stderr` using `>&2`), whilst the second exits the script immediately.
+This step is clearly not compulsory, but can protect us against any errors we make.
+Whilst many of us write numerous scripts without them, let's add this to our script a couple of lines below where we've defined all of our path variables.
+
+Save the file and run **in the Terminal** by typing `bash bash/rnaseq-pipeline.sh`.
+If we're all in good shape, we would have seen our message confirming that we've found the root directory.
+
+**Was including a message on success a wise thing to do?**
+
+**Now repeat the above process for all file paths we have defined as variables**
+
+## Running FastQC
+
+This is one of the easiest steps in the pipeline to automate so will just shoot straight through this one.
+Sometimes it's even worth running this prior to executing any piplines as it may inform your choice of tools and approaches that you might need to take.
+We might simply add the following line to your script after the comment `# 0 - FastQC on the raw data`
+
+```
+fastqc -t ${THREADS} -o ${RAW}/FastQC ${RAW}/fastq/*gz
+```
+
+However, as we're going to build the script up slowly, this will execute every time we run it, and we're going to run a our script several times.
+Considering this is on the raw data, this data is never going to change and so we only want to run this exactly once.
+We could build a file checking step so that this only executes under certain conditions
+
+```
+# Check for existing FastQC files and only run this step if required
+RAWFQC=$(${RAW}/FastQC -name *zip | head -n1)
+if [ ! -z "${RAWFQC}" ]; then
+  fastqc -t ${THREADS} -o ${RAW}/FastQC ${RAW}/fastq/*gz
+  else
+  echo -e "FastQC output in ${RAW}/FastQC detected from a previous run and will not be rerun"
+fi
+```
+
+Instead of the version that runs every time, let's use this one.
+Note that for the later steps, we may possibly have changed something during trimming and we should regenerate those files everytime we trim the data.
+
+
+
