@@ -28,7 +28,7 @@ Some of the important issues we'd like to see addressed are:
 
 There may be many other issues, but from our experience these in particular can easily be forgotten or overlooked.
 
-### Submiission Format
+### Submission Format
 
 We expect all details to be submitted as a compiled html or pdf, along with the source Rmd file.
 **The report is due at 5pm, 19th June 2020.**
