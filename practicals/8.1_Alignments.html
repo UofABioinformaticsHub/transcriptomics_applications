@@ -1683,6 +1683,7 @@ tar -xzvf genome.tar.gz</code></pre>
 fastqc -t 2 -o 0_rawData/FastQC 0_rawData/fastq/*gz</code></pre>
 <p>We can now inspect the reports one at a time, as is common to do, so using the <code>Files</code> pane, navigate to the <code>FastQC</code> directory &amp; open one of the html files. It will ask if you’d like to open this in your Web Browser, so please choose that option.</p>
 <p>As it can be hard to figure out which sample is good or bad just by checking these individual reports, the Bioconductor package <code>ngsReports</code> can be quite useful for looking at multiple samples. Go to your R console and enter:</p>
+<pre class="r"><code>ngsReports::writeHtmlReport(&quot;0_rawData/FastQC&quot;)</code></pre>
 <p>This will write a summarised report of all samples and place it in the same folder as the individual reports. You’ll see both the <code>ngsReports_Fastqc.Rmd</code> file and <code>ngsReports_Fastqc.html</code> files in the folder, so open the html file in your web browser.</p>
 <p><strong>Can you see any potential issues with this dataset?</strong></p>
 </div>

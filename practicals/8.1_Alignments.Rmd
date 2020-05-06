@@ -278,7 +278,7 @@ As it can be hard to figure out which sample is good or bad just by checking the
 Go to your R console and enter:
 
 
-```{r, eval=FALSE}
+```{r, eval=FALSE, echo=TRUE}
 ngsReports::writeHtmlReport("0_rawData/FastQC")
 ```
 
