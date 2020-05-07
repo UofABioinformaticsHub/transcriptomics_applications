@@ -45,7 +45,7 @@ pracs <- tribble(
     7, "2020-04-27", "Alignment and Quantification", "Zhipeng Qu", "", "More Complex Designs", "practicals/7.1_More_Complex_Designs.html",
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "More Complex Designs (2)", "practicals/7.2_More_Complex_Designs2.html",
     8, "2020-05-04", "Statistics for RNA-Seq", "Stephen Pederson", "lectures/7_Stats_For_RNASeq.pdf", "Alignments and Visualisation", "practicals/8.1_Alignments.html",
-    NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Alignments and Visualisation", "",
+    NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Alignments and Visualisation", "practicals/8.2_Scripting_Alignments.html",
     9, "2020-05-11", "Enrichment Analysis", "Stephen Pederson", "", "Differential Expression Using edgeR", "",
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Enrichment Strategies", "",
     10, "2020-05-18", "Network Analysis", "TBC", "", "WGCNA", "",

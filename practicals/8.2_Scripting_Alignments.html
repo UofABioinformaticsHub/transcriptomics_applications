@@ -1527,6 +1527,18 @@ div.tocify {
 <li>Counting the reads which aligned to each gene</li>
 </ol>
 <p>The main task we’ll begin the session with is to develop a script together.</p>
+<p>Before we start, I’d like us to clear out all of the files from Wednesday, so please run the following series of commands. They will clear out everything we created after our initial FastQC run</p>
+<pre><code>cd ~/transcriptomics/week_8
+rm 1_trimmedData/fastq/*gz
+rm 1_trimmedData/FastQC/*html
+rm 1_trimmedData/FastQC/*zip
+rm -rf 1_trimmedData/discarded
+rm 1_trimmedData/log/*settings
+rm 2_alignedData/bam/*ba*
+rm 2_alignedData/counts/*
+rm 2_alignedData/log/*out*</code></pre>
+<p>We also need to setup our <code>conda</code> environment so we can access all of the tools we need for today</p>
+<pre><code>conda activate transcriptomics</code></pre>
 </div>
 <div id="writing-a-bash-script" class="section level1">
 <h1>Writing A Bash Script</h1>
@@ -1538,10 +1550,13 @@ div.tocify {
 
 # Define our directories
 PROJROOT=/home/student/transcriptomics/week_8
-RAW=${PROJROOT}/0_rawData
-TRIMMED=${PROJROOT}/1_trimmedData
-ALIGNED=${PROJROOT}/2_alignedData
-REF=${PROJROOT}/genome
+RAW=&quot;${PROJROOT}&quot;/0_rawData
+TRIMMED=&quot;${PROJROOT}&quot;/1_trimmedData
+ALIGNED=&quot;${PROJROOT}&quot;/2_alignedData
+REF=&quot;${PROJROOT}&quot;/genome
+
+# Define any key files required for the process
+GTF=&quot;${REF}&quot;/Mus_musculus.GRCm38.100.chr1.gtf
 
 # Define any global parameters
 THREADS=2
@@ -1556,7 +1571,7 @@ THREADS=2
 
 # 2b - Counting Reads
 </code></pre>
-<p>Open a new file in RStudio, but <strong>instead of an RMarkdown file, choose a Text File</strong>. Save this as <code>rnaseq-pipeline.sh</code> in your <code>bash</code> directory.</p>
+<p>Open a new file in RStudio, but <strong>instead of an RMarkdown file, choose a Text File</strong>. Save this as <code>rnaseq-pipeline.sh</code> in your <code>bash</code> directory. Copy the above template into this file and save. You’ll notice that RStudio colours and highlights the code in keeping with <code>bash</code> syntax as well.</p>
 <div id="our-directories" class="section level2">
 <h2>Our Directories</h2>
 <p>As you can see in the above, the first step was to define all of our key directories as variables. We’ll use these paths over and over again in the script, so having them defined as variables can save some typing and protect us from typos. There is really no rule, but <em>some people like to have variable names in all upper-case</em> so it’s extremely clear what is a variable and what is not. We do strongly recommend this practice.</p>
@@ -1567,14 +1582,16 @@ THREADS=2
 </ol>
 <p><strong>Does anyone have any suggestions or preferences?</strong></p>
 <p>The <code>bash</code> syntax for checking a directory exists is</p>
-<pre><code>if [ -d &quot;$DIRECTORY&quot; ]; then
-  # Control will enter here if $DIRECTORY exists.
+<pre><code>if [ -d &quot;$DIRECTORY&quot; ]
+  then
+    # Control will enter here if $DIRECTORY exists.
 fi</code></pre>
 <p>In between the opening <code>if</code> and closing <code>fi</code> statements will be our instructions for what to do. An alternative approach might be to invert the check and test for a directory <strong>not</strong> existing. Let’s go with that for our script, and we can start with checking the file path we have defined as the variable <code>PROJROOT</code>. Also notice that we have defined this as an absolute path, so it won’t matter where we run the script from.</p>
 <p>To check this directory exists, we could add the following to our script</p>
-<pre><code>if [ ! -d &quot;${PROJROOT}&quot; ]; then
-  echo -e &quot;Could not find the project root directory\n${PROJROOT}&quot; &gt;&amp;2
-  exit 1
+<pre><code>if [ ! -d &quot;${PROJROOT}&quot; ]
+  then
+    echo -e &quot;Could not find the project root directory\n${PROJROOT}&quot; &gt;&amp;2
+    exit 1
 fi
 echo -e &quot;Found the project root directory\n${PROJROOT}&quot;</code></pre>
 <p>Note the addition of the exclamation mark in the logical test. If the requested directory <strong>doesn’t exist</strong>, this will execute the code between the opening and closing statements. The first line is our error message (sent to <code>stderr</code> using <code>&gt;&amp;2</code>), whilst the second exits the script immediately. This step is clearly not compulsory, but can protect us against any errors we make. Whilst many of us write numerous scripts without them, let’s add this to our script a couple of lines below where we’ve defined all of our path variables.</p>
@@ -1584,17 +1601,284 @@ echo -e &quot;Found the project root directory\n${PROJROOT}&quot;</code></pre>
 </div>
 <div id="running-fastqc" class="section level2">
 <h2>Running FastQC</h2>
-<p>This is one of the easiest steps in the pipeline to automate so will just shoot straight through this one. Sometimes it’s even worth running this prior to executing any piplines as it may inform your choice of tools and approaches that you might need to take. We might simply add the following line to your script after the comment <code># 0 - FastQC on the raw data</code></p>
-<pre><code>fastqc -t ${THREADS} -o ${RAW}/FastQC ${RAW}/fastq/*gz</code></pre>
-<p>However, as we’re going to build the script up slowly, this will execute every time we run it, and we’re going to run a our script several times. Considering this is on the raw data, this data is never going to change and so we only want to run this exactly once. We could build a file checking step so that this only executes under certain conditions</p>
+<p>This is one of the easiest steps in the pipeline to automate so will just shoot straight through this one. Sometimes it’s even worth running this prior to executing any pipelines as it may inform your choice of tools and approaches that you might need to take. We might simply add the following line to your script after the comment <code># 0 - FastQC on the raw data</code></p>
+<pre><code>fastqc -t ${THREADS} -o &quot;${RAW}&quot;/FastQC &quot;${RAW}&quot;/fastq/*gz</code></pre>
+<p>However, as we’re going to build the script up slowly, this will execute every time we run it, and we’re going to run a our script several times. Considering this is on the raw data, this data is never going to change and so we only want to run this exactly once. We could build a file checking step so that this only executes under certain conditions. Inside the logical test <code>[ ]</code> when we use the <code>-z</code> argument, we’re testing to see <em>if a variable is empty or not</em>.</p>
 <pre><code># Check for existing FastQC files and only run this step if required
-RAWFQC=$(${RAW}/FastQC -name *zip | head -n1)
-if [ ! -z &quot;${RAWFQC}&quot; ]; then
-  fastqc -t ${THREADS} -o ${RAW}/FastQC ${RAW}/fastq/*gz
+RAWFQC=$(&quot;${RAW}&quot;/FastQC -name *zip | head -n1)
+if [ -z &quot;${RAWFQC}&quot; ]
+  then
+    fastqc -t ${THREADS} -o &quot;${RAW}&quot;/FastQC &quot;${RAW}&quot;/fastq/*gz
   else
-  echo -e &quot;FastQC output in ${RAW}/FastQC detected from a previous run and will not be rerun&quot;
+    echo -e &quot;FastQC output in ${RAW}/FastQC detected from a previous run and will not be rerun\n&quot;
 fi</code></pre>
-<p>Instead of the version that runs every time, let’s use this one. Note that for the later steps, we may possibly have changed something during trimming and we should regenerate those files everytime we trim the data.</p>
+<p>Instead of the version that runs every time, let’s use this one. <em>Note that for the later steps, we may possibly have changed something during trimming and we should regenerate those files every time we trim the data.</em></p>
+</div>
+<div id="trimming-our-data" class="section level2">
+<h2>Trimming Our Data</h2>
+<p>When we ran the workflow on a single file the command we ran was as follows</p>
+<pre><code>mkdir 1_trimmedData/discarded
+AdapterRemoval \
+    --file1 0_rawData/fastq/SRR945375.skm.fastq.gz \
+    --output1 1_trimmedData/fastq/SRR945375.skm.fastq.gz \
+    --discarded 1_trimmedData/discarded/SRR945375.skm.discarded.gz \
+    --minlength 50 \
+    --threads 2 \
+    --trimns \
+    --trimqualities \
+    --minquality 20 \
+    --gzip \
+    --settings 1_trimmedData/log/SRR945375.skm.fastq.gz.settings</code></pre>
+<p>The first thing we did in this chunk was to create a directory (<code>mkdir 1_trimmedData/discarded</code>). <strong>Perhaps we could place a checking and directory creation step here?</strong></p>
+<p>Once we’ve decided on our directory checking strategy, we can turn our attention to the main game, which is trimming all files in the dataset. There are <strong>4</strong> places in the above call to <code>AdapterRemoval</code>, so we need to find a way to change all of these values for every file. The way we’ll approach this is to write a loop that steps through each file in the list, using a temporary variable to hold the name of the current file we’re working with. In the following we’ll create the variable <code>FQ</code> which will successively hold the value of one of the files</p>
+<pre><code>for FQ in &quot;${RAW}/fastq/*gz&quot;
+  do
+    # Confirm we have found the files
+    echo -e &quot;Found ${FQ}&quot;
+  done</code></pre>
+<p>Now that we know we’ve found the correct file we need to figure out how to modify this to pass to each of the appropriate arguments needed by <code>AdapterRemoval</code>. One possible way would be to remove the directory path from the file name and just work with the base file name. Let’s start like that.</p>
+<pre><code>for FQ in &quot;${RAW}&quot;/fastq/*gz
+  do
+    # Confirm we have found the files
+    echo -e &quot;Found ${FQ}&quot;
+    
+    # Extract the basename
+    FQBASE=$(basename &quot;${FQ}&quot;)
+    
+    # Now call adapter removal
+    echo -e &quot;
+    AdapterRemoval \
+      --file1 ${FQ} \
+      --output1 ${TRIMMED}/fastq/${FQBASE} \
+      --discarded 1_trimmedData/discarded/SRR945375.skm.discarded.gz \
+      --minlength 50 \
+      --threads 2 \
+      --trimns \
+      --trimqualities \
+      --minquality 20 \
+      --gzip \
+      --settings 1_trimmedData/log/SRR945375.skm.fastq.gz.settings
+    &quot;
+    
+  done</code></pre>
+<p>Notice in the above I have wrapped the call in an <code>echo</code> statement. This will just print the command without executing it, and this is my usual strategy for making sure I’m seeing everything I expect, <strong>before</strong> I execute a command. I’ve also passed the current fastq file to the argument <code>--file1</code> and specified the output file name for <code>--output1</code>. Run the script and check your output for these two arguments.</p>
+<p>We haven’t modified the <code>--discarded</code> or <code>--settings</code> parameters yet, so let’s do those next. The trick we’ll use here is to use the percent symbol (<code>%</code>) like a pair of scissors that cuts the end of file name off (<code>%fastq.gz</code>) and we’ve then replaced the end of the file name with <code>discarded.fastq.gz</code>. We’ve repeated that technique for the output log file as well.</p>
+<pre><code>for FQ in &quot;${RAW}&quot;/fastq/*gz
+  do
+    # Confirm we have found the files
+    echo -e &quot;Found ${FQ}&quot;
+    
+    # Extract the basename
+    FQBASE=$(basename &quot;${FQ}&quot;)
+    
+    # Now call adapter removal
+    echo -e &quot;
+    AdapterRemoval \
+      --file1 ${FQ} \
+      --output1 ${TRIMMED}/fastq/${FQBASE} \
+      --discarded ${TRIMMED}/discarded/${FQBASE%fastq.gz}discarded.fastq.gz \
+      --minlength 50 \
+      --threads 2 \
+      --trimns \
+      --trimqualities \
+      --minquality 20 \
+      --gzip \
+      --settings ${TRIMMED}/log/${FQBASE%fastq.gz}settings
+    &quot;
+    
+  done</code></pre>
+<p>Before we remove that <code>echo</code> command, let’s add the call to <code>FastQC</code> and we’re done with the trimming steps. Look at this line carefully to see what’s going on. It might not be what you expect.</p>
+<pre><code>TRIMDONE=$(find &quot;${TRIMMED}&quot;/fastq -name *fastq.gz | head -n1)
+if [ -z &quot;${TRIMDONE}&quot; ]
+  then
+    echo -e &quot;No trimmed files found. Exiting script&quot; 
+    exit 2
+  else
+    echo -e &quot;Trimming appears complete. Running FastQC&quot;
+    fastqc -t ${THREADS} -o &quot;${TRIMMED}&quot;/FastQC &quot;${TRIMMED}&quot;/fastq/*gz
+fi</code></pre>
+</div>
+<div id="aligning-trimmed-data" class="section level2">
+<h2>Aligning Trimmed Data</h2>
+<p>Our next step would be to align the complete set of files. Essentially this requires the same process as above using a loop to modify the arguments to our alignment tool. Once again we’ll use <code>STAR</code> and let’s skip the <code>echo</code> statement this time as we are really just reusing the code from our previous loop.</p>
+<pre><code>for FQ in &quot;${TRIMMED}&quot;/fastq/*gz
+  do
+    # Confirm we have found the files
+    echo -e &quot;Found ${FQ}&quot;
+
+    # Extract the basename and define the file prefix
+    FQBASE=$(basename &quot;${FQ}&quot;)
+    PRE=&quot;${ALIGNED}&quot;/bam/&quot;${FQBASE%fastq.gz}&quot;
+
+    # Now call STAR
+    STAR \
+      --runThreadN 2 \
+      --genomeDir &quot;${REF}&quot; \
+      --readFilesIn &quot;${FQ}&quot; \
+      --readFilesCommand gunzip -c \
+      --outFileNamePrefix &quot;${PRE}&quot; \
+      --outSAMtype BAM SortedByCoordinate
+
+  done
+
+# Move the STAR log files
+mv &quot;${ALIGNED}&quot;/bam/*out &quot;${ALIGNED}&quot;/log/
+mv &quot;${ALIGNED}&quot;/bam/*tab &quot;${ALIGNED}&quot;/log/
+  
+## Index all alignments
+for BAM in ${ALIGNED}/bam/*.bam
+do
+  samtools index ${BAM}
+done</code></pre>
+<p>Notice that we’ve had to index each bam file separately. Unfortunately <code>samtools index</code> doesn’t support file globbing and can only work on one file at a time. Looping is the only really possibility here, but fortunately the process is fast.</p>
+</div>
+<div id="counting-reads" class="section level2">
+<h2>Counting Reads</h2>
+<p>This is the final step of the workflow and is a very simple step. First we need to ensure we have a GTF ready to go, then we simply pass a list of files to <code>featureCounts</code>. After checking the results from Wednesday, I discovered this was an unstranded library so the argument <code>-s</code> has now been changed to <code>-s 0</code>.</p>
+<p><strong>We also need to ensure the directory <code>2_alignedData/counts</code> exists</strong>. See if you can figure this one out by yourself.</p>
+<pre><code>if [ ! -f &quot;{GTF}&quot; ]
+  then
+    echo -e &quot;Couldn't find ${GTF}&quot;
+    exit 3
+fi
+
+# Run featureCounts
+featureCounts -Q 10 \
+  -s 0 \
+  -T ${THREADS} \
+  -p \
+  --fracOverlap 1 \
+  -a &quot;${GTF}&quot; \
+  -o &quot;${ALIGNED}&quot;/counts/counts.out &quot;${ALIGNED}&quot;/bam/*bam</code></pre>
+</div>
+<div id="discussion-points" class="section level2">
+<h2>Discussion Points</h2>
+<p>Whilst this may seem exhaustive, we left out many steps, particularly in regard to checking directories exist. Some of the checks may also have been better performed at the top of the script. For example, what if we’d got all the way to the end and realised the GTF didn’t exist for the final step?</p>
+<p>The approach taken here was to write a script that handled the entire dataset as a whole. An alternative approach may have been to write a script which did the entire processing for a single file, but allowing for a file name to be passed as an argument to that script. This individual-file focussed script could then be fired off multiple times from a master script which just finds the initial file names and starts a new script for each file.</p>
+<p><strong>When do you think this second approach might be preferable?</strong></p>
+</div>
+</div>
+<div id="checking-our-workflow" class="section level1">
+<h1>Checking our workflow</h1>
+<p>This entire process ran without us checking the quality of any of the results. We have assumed that all steps were effective and parameter choices were suitable. How can we be sure? We should really check each step. We’ve already explored combining multiple FastQC reports, but the R package <code>ngsReports</code> can also parse log files from the tools we’ve run today.</p>
+<p>Let’s start a new RMarkdown and place it in our <code>R</code> directory, calling it <code>QC.Rmd</code> Edit the YAML header so that you know we’re doing a QC of our pipeline, then set the first chunk to have our usual <code>message = FALSE</code> and <code>marning = FALSE</code> global settings.</p>
+<p>After this first chunk add the packages chunk.</p>
+<pre class="r"><code>library(tidyverse)
+library(ngsReports)</code></pre>
+<div id="checking-the-trimming" class="section level2">
+<h2>Checking the Trimming</h2>
+<pre class="r"><code>trimmingLogs &lt;- here::here(&quot;1_trimmedData/log&quot;) %&gt;%
+  list.files(pattern = &quot;settings&quot;, full.names = TRUE) %&gt;%
+  importNgsLogs(which = &quot;statistics&quot;)
+colnames(trimmingLogs)</code></pre>
+<p>We’ve now imported all of those <code>.settings</code> files created by <code>AdapterRemoval</code>. Some key quality measure we might like to check are:</p>
+<ul>
+<li>the numbers of retained and discarded reads</li>
+<li>the average length of the retained reads</li>
+</ul>
+<p>As we can see, we have a <code>tibble</code> object, so we can just perform out usual <code>dplyr</code> and <code>tidy</code> strategies to make up some handy looking plots. Let’s stack the retained and discarded reads on top of each other in a barplot.</p>
+<pre class="r"><code>trimmingLogs %&gt;%
+  dplyr::select(Filename, contains(&quot;discarded&quot;), `Number of retained reads`) %&gt;%
+  pivot_longer(
+    cols = ends_with(&quot;reads&quot;),
+    names_to = &quot;Type&quot;,
+    values_to = &quot;Total&quot;
+  ) %&gt;%
+  mutate(
+    Filename = str_remove(Filename, &quot;.settings&quot;),
+    Tissue = str_extract(Filename, &quot;(skm|cbc)&quot;),
+    Type = str_extract(Type, &quot;(discarded|retained)&quot;)
+  ) %&gt;%
+  ggplot(aes(Filename, Total, fill = Type)) +
+  geom_col() +
+  facet_wrap(~Tissue, scales = &quot;free_x&quot;)</code></pre>
+<p>It looks like the trimming was pretty satisfactory and we’ve retained most of our reads. The trimming looks like it was relatively even across the samples and tissues too, so this all looks good.</p>
+<p>Next we can check the percentage of reads retained, and the length of retained reads while we’re at it</p>
+<pre class="r"><code>trimmingLogs %&gt;%
+  mutate(
+    `Percent retained` = percent(
+      `Number of retained reads` / `Total number of reads`,
+      accuracy = 0.1
+    )
+  ) %&gt;%
+  dplyr::select(Filename, `Percent retained`) %&gt;%
+  mutate(
+    Filename = str_remove(Filename, &quot;.settings&quot;)
+  ) %&gt;%
+pander(caption = &quot;Percentage of retained reads for each sample&quot;)</code></pre>
+<p>Again, there were no dramas in this dataset</p>
+</div>
+<div id="checking-the-alignments" class="section level2">
+<h2>Checking the Alignments</h2>
+<pre class="r"><code>alnLogs &lt;- here::here(&quot;2_alignedData/log&quot;) %&gt;%
+  list.files(pattern = &quot;final.out&quot;, full.names = TRUE) %&gt;%
+  importNgsLogs()
+colnames(alnLogs)</code></pre>
+<pre class="r"><code>alnLogs %&gt;%
+  dplyr::select(
+    Filename, 
+    Number_Of_Input_Reads, 
+    Uniquely_Mapped_Reads_Number, 
+    Number_Of_Reads_Mapped_To_Multiple_Loci
+  ) %&gt;%
+  rename_all(
+    str_remove, pattern = &quot;(Number_Of_|_Reads_Number)&quot;
+  ) %&gt;%
+  mutate(
+    Unmapped = Input_Reads - Uniquely_Mapped - Reads_Mapped_To_Multiple_Loci
+  ) %&gt;%
+  dplyr::select(-Input_Reads) %&gt;%
+  pivot_longer(
+    cols = contains(&quot;mapped&quot;),
+    names_to = &quot;Type&quot;,
+    values_to = &quot;Reads&quot;
+  ) %&gt;%
+  mutate(
+    Filename = str_remove(Filename, &quot;.Log.final.out&quot;),
+    Tissue = str_extract(Filename, &quot;(skm|cbc)&quot;)
+  ) %&gt;%
+  ggplot(aes(Filename, Reads, fill = Type)) +
+  geom_col() +
+  facet_wrap(~Tissue, scales = &quot;free_x&quot;) +
+  scale_y_continuous(label = comma)</code></pre>
+</div>
+<div id="check-the-counts" class="section level2">
+<h2>Check the Counts</h2>
+<pre class="r"><code>fcLogs &lt;- here::here(&quot;2_alignedData/counts/counts.out.summary&quot;) %&gt;%
+  read_tsv() %&gt;%
+  rename_all(base::basename)</code></pre>
+<pre class="r"><code>fcLogs %&gt;%
+  pivot_longer(
+    cols = starts_with(&quot;SRR&quot;),
+    names_to = &quot;Filename&quot;,
+    values_to = &quot;Reads&quot;
+  ) %&gt;%
+  dplyr::filter(Reads &gt; 0) %&gt;%
+  mutate(
+    Filename = str_remove_all(Filename, &quot;.Aligned.+&quot;),
+    Tissue = str_extract(Filename, &quot;(skm|cbc)&quot;)
+  ) %&gt;%
+  ggplot(aes(Filename, Reads, fill = Status)) +
+  geom_col() +
+  facet_wrap(~Tissue, scales = &quot;free_x&quot;)</code></pre>
+<pre class="r"><code>fcLogs %&gt;%
+  pivot_longer(
+    cols = starts_with(&quot;SRR&quot;),
+    names_to = &quot;Filename&quot;,
+    values_to = &quot;Reads&quot;
+  ) %&gt;%
+  dplyr::filter(Reads &gt; 0) %&gt;%
+  mutate(
+    Filename = str_remove_all(Filename, &quot;.Aligned.+&quot;),
+    Tissue = str_extract(Filename, &quot;(skm|cbc)&quot;)
+  ) %&gt;%
+  group_by(Filename) %&gt;%
+  mutate(
+    Percent = Reads / sum(Reads)
+  ) %&gt;%
+  ggplot(aes(Filename, Percent, fill = Status)) +
+  geom_col() +
+  facet_wrap(~Tissue, scales = &quot;free_x&quot;)</code></pre>
 </div>
 </div>
 
