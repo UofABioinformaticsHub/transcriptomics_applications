@@ -1736,7 +1736,7 @@ done</code></pre>
 <h2>Counting Reads</h2>
 <p>This is the final step of the workflow and is a very simple step. First we need to ensure we have a GTF ready to go, then we simply pass a list of files to <code>featureCounts</code>. After checking the results from Wednesday, I discovered this was an unstranded library so the argument <code>-s</code> has now been changed to <code>-s 0</code>.</p>
 <p><strong>We also need to ensure the directory <code>2_alignedData/counts</code> exists</strong>. See if you can figure this one out by yourself.</p>
-<pre><code>if [ ! -f &quot;{GTF}&quot; ]
+<pre><code>if [ ! -f &quot;${GTF}&quot; ]
   then
     echo -e &quot;Couldn't find ${GTF}&quot;
     exit 3

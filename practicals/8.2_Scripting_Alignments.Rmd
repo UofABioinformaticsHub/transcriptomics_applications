@@ -349,7 +349,7 @@ After checking the results from Wednesday, I discovered this was an unstranded l
 See if you can figure this one out by yourself.
 
 ```
-if [ ! -f "{GTF}" ]
+if [ ! -f "${GTF}" ]
   then
     echo -e "Couldn't find ${GTF}"
     exit 3
