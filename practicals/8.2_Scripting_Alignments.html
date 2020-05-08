@@ -1605,7 +1605,7 @@ echo -e &quot;Found the project root directory\n${PROJROOT}&quot;</code></pre>
 <pre><code>fastqc -t ${THREADS} -o &quot;${RAW}&quot;/FastQC &quot;${RAW}&quot;/fastq/*gz</code></pre>
 <p>However, as we’re going to build the script up slowly, this will execute every time we run it, and we’re going to run a our script several times. Considering this is on the raw data, this data is never going to change and so we only want to run this exactly once. We could build a file checking step so that this only executes under certain conditions. Inside the logical test <code>[ ]</code> when we use the <code>-z</code> argument, we’re testing to see <em>if a variable is empty or not</em>.</p>
 <pre><code># Check for existing FastQC files and only run this step if required
-RAWFQC=$(&quot;${RAW}&quot;/FastQC -name *zip | head -n1)
+RAWFQC=$(find &quot;${RAW}&quot;/FastQC -name *zip | head -n1)
 if [ -z &quot;${RAWFQC}&quot; ]
   then
     fastqc -t ${THREADS} -o &quot;${RAW}&quot;/FastQC &quot;${RAW}&quot;/fastq/*gz

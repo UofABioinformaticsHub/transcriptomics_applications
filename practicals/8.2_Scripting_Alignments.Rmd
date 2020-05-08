@@ -166,7 +166,7 @@ Inside the logical test `[ ]` when we use the `-z` argument, we're testing to se
 
 ```
 # Check for existing FastQC files and only run this step if required
-RAWFQC=$("${RAW}"/FastQC -name *zip | head -n1)
+RAWFQC=$(find "${RAW}"/FastQC -name *zip | head -n1)
 if [ -z "${RAWFQC}" ]
   then
     fastqc -t ${THREADS} -o "${RAW}"/FastQC "${RAW}"/fastq/*gz
