@@ -1631,7 +1631,7 @@ AdapterRemoval \
     --settings 1_trimmedData/log/SRR945375.skm.fastq.gz.settings</code></pre>
 <p>The first thing we did in this chunk was to create a directory (<code>mkdir 1_trimmedData/discarded</code>). <strong>Perhaps we could place a checking and directory creation step here?</strong></p>
 <p>Once we’ve decided on our directory checking strategy, we can turn our attention to the main game, which is trimming all files in the dataset. There are <strong>4</strong> places in the above call to <code>AdapterRemoval</code>, so we need to find a way to change all of these values for every file. The way we’ll approach this is to write a loop that steps through each file in the list, using a temporary variable to hold the name of the current file we’re working with. In the following we’ll create the variable <code>FQ</code> which will successively hold the value of one of the files</p>
-<pre><code>for FQ in &quot;${RAW}/fastq/*gz&quot;
+<pre><code>for FQ in &quot;${RAW}&quot;/fastq/*gz
   do
     # Confirm we have found the files
     echo -e &quot;Found ${FQ}&quot;

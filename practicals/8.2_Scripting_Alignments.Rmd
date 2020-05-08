@@ -206,7 +206,7 @@ The way we'll approach this is to write a loop that steps through each file in t
 In the following we'll create the variable `FQ` which will successively hold the value of one of the files
 
 ```
-for FQ in "${RAW}/fastq/*gz"
+for FQ in "${RAW}"/fastq/*gz
   do
     # Confirm we have found the files
     echo -e "Found ${FQ}"
