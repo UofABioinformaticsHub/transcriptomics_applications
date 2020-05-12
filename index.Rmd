@@ -102,7 +102,8 @@ ass <- tribble(
     ~Url, ~Topic, ~`Due Date`, ~Solutions,
     "assignments/A1.html", "Introductory Work", "2020-03-24", "assignments/A1_Solutions.html",
     "assignments/A2.html", "Gene Expression", "2020-04-09", "assignments/A2_Solutions.html",
-    "assignments/A3.html", "Differential Analysis", "2020-05-12", ""
+    "assignments/A3.html", "Differential Analysis", "2020-05-12", "",
+    "assignments/A4.html", "Enrichment Analysis", "2020-05-26", ""
 ) %>%
     mutate(
         Assessment = paste("Assessment", seq_len(nrow(.)) )

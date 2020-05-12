@@ -138,29 +138,24 @@ d. Interpret the results including a description of $H_0$ and your final conclus
 q <- q + 1
 ```
 
-## Question `r q` [13 marks]
+## Question `r q` [15 marks]
 
 ```{r}
 marks <- marks %>%
     bind_rows(
-        tibble(q = q, marks = 13)
+        tibble(q = q, marks = 15)
     )
 ```
 
 For this question you will need the dataset provided for you [here](data/topTable.csv), which is a comparison of splenic and pancreatic Tregs from *Mus musculus*.
 
 a. Load this data into R as an object called `topTable`.
-b. Decide on which genes to consider as differentially expressed (DE). You may choose any suitable criteria such as an FDR, or an FDR in combination with filtering based on `logFC` or simply choose the top `n`-ranked genes by p-value. Explain your reasoning
+b. Decide on which genes to consider as differentially expressed (DE). You may choose any suitable criteria such as an FDR, or an FDR in combination with filtering based on `logFC` or simply choose the top `n`-ranked genes by p-value. Explain your reasoning.
 c. Assess your DE genes for GC and Length bias as outlined in the `goseq` package. If any discernible pattern is present choose one of these as the bias you are choosing to offset and explain why.
 d. Conduct an enrichment analysis using `goseq()` choosing one of the collections available in the `msigdbr` package. Justify any filtering of gene-sets that you undertake, or why you have chosen not to. A list of possible collections is provided on the help page for `msigdbr`. Please note that is using the categories C2, C3 or C5 **you will be expected to choose only one of the subcategories.** A full list with complete descriptions is available [here](https://www.gsea-msigdb.org/gsea/msigdb/collections.jsp)
-e. Present your results as a table of the most highly-ranked genesets, and if possible provide the top `n`-ranked genes within each geneset as a separate column.
+e. Present your results as a table of the most highly-ranked genesets, and if possible provide the top `n`-ranked genes within each geneset as a separate column. Summarise your results very briefly in plain text.
 
 If working with others in a group, please ensure that you choose different gene-set collections for your submission.
-
-```{r}
-library(msigdbr)
-```
-
 
 
 # Total: `r sum(marks$marks)` marks
