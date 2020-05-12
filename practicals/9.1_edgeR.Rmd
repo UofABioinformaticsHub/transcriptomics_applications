@@ -1,0 +1,743 @@
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 9.1: Using edgeR to Analyse RNA-Seq"
+date: "13^th^ May 2019"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+---
+
+# Introduction
+
+## Outline
+
+Today we'll:
+
+- Learn how to load RNA-Seq count data into R and setup a `DGEList` object
+- QC and pre-processing steps
+- Analyse using a few different approaches
+
+This will form the 'bread-and-butter' of most RNA-Seq analyses that you get a chance to perform.
+All of the above steps utilise the infrastructure provided in the `edgeR` package, along with a few related functions from the `tidyverse` and `limma`.
+
+## R Markdown Setup
+
+As per usual, we'll work mainly in R Markdown today, so create a new R Project in your `~/transcriptomics` folder called `week_9` or something else appropriate.
+Call today's R Markdown whatever you'd like, but I've called mine `9.1_edgeR.Rmd`.
+My YAML is
+
+```
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 9.1: Using edgeR to Analyse RNA-Seq"
+date: "13^th^ May 2019"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+---
+```
+
+My setup chunk is
+
+```{r setup, echo=TRUE}
+knitr::opts_chunk$set(
+    echo = TRUE, 
+    message = FALSE, 
+    warning = FALSE,
+    fig.align = "center",
+    results = "hide",
+    fig.show = "hide"
+)
+```
+
+The packages we'll need are
+
+```{r loadPackages}
+library(edgeR)
+library(rtracklayer)
+library(tidyverse)
+library(magrittr)
+library(scales)
+library(ggfortify)
+library(ggrepel)
+theme_set(theme_bw())
+```
+
+Notice that `edgeR` will load `limma` for you as it depends on some of the functions provided in that package.
+This is known as a dependency and is pretty common amongst R packages and other common `bash` tools.
+Similarly, `ensembldb` will load `GenomicRanges` and a few others.
+
+## Today's Data
+
+Today, we'll only deal with the count data as directly output by `featureCounts`.
+The counts file is available [here](data/counts.out) so please right-click on that link to get the file path.
+Then, move to your terminal in RStudio and use `wget` to download the file into your current R Project.
+Make sure it's called `counts.out` and is in the parent directory of your R Project.
+
+# Data Setup
+
+## File Inspection
+
+The file we have to work with today is derived from a mouse experiment comparing splenic and pancreatic Tregs.
+Before we even load it into R, let's have a quick look using `bash`, so jump back into your terminal.
+We'll check out the first few rows just using ` head` command as below that we'll just have a new row for each gene and these will all look the same.
+
+```
+head counts.out
+```
+
+This file is exactly the format produced by `featureCounts` and a few people seem to have trouble importing these.
+The first row is the command that was executed to create the file.
+Notice that it starts with a comment symbol (`#`).
+The second line is our column names, and these correspond to the complete file path to where the bam file was located on storage 
+whilst counting.
+
+The counts themselves start in the third line and we have the following columns:
+
+1. the gene ID is the first column, followed by 
+2. the chromosome, 
+3. the start and 
+4. end points of each exon, 
+5. the strand of each exon, 
+6. the length of the gene
+
+This is all followed by the actual counts for each sample/gene from column 7 onwards.
+Importantly, this is a *tab-delimited file*
+
+## Data Import
+
+### The Counts
+
+Whilst a few functions in other packages exist for loading these files, I think it's easy enough to do using the `tidyverse`.
+The steps I'd usually take during import are to remove columns 2-6, and to remove all file paths from the column names.
+Id also be tempted to remove the `_combinedAligned.sortedByCoord.out.bam` from the end of each column too.
+This is all pretty straight forward (hopefully) using our old friends `dplyr::select()`, `rename_at()` and `rename_all()`, in conjunction with `str_remove_all()` and the function `basename()`.
+Please speak up if any of these lines confuse you.
+
+```{r}
+counts <- read_tsv("counts.out", comment = "#") %>%
+  dplyr::select(Geneid, ends_with("bam"))%>%
+  rename_at(vars(ends_with("bam")), basename) %>%
+  rename_all(str_remove_all, pattern = "_combinedAligned.sortedByCoord.out.bam")
+```
+
+This would give us our friendly `tibble` format, however in reality we'll need a matrix with sample names as the column names and gene ids as the row names.
+We can just add a few lines to that import and we'll have this object ready to go.
+The three commands are:
+
+1. `as.data.frame()` which means we can now add rownames
+2. `column_to_rownames("Geneid")` which moves the `Geneid` column to the rownames
+3. `as.matrix()` which converts this to a matrix
+
+```{r}
+counts <- read_tsv("counts.out", comment = "#") %>%
+  dplyr::select(Geneid, ends_with("bam"))%>%
+  rename_at(vars(ends_with("bam")), basename) %>%
+  rename_all(str_remove_all, pattern = "_combinedAligned.sortedByCoord.out.bam") %>%
+  as.data.frame() %>%
+  column_to_rownames("Geneid") %>%
+  as.matrix()
+```
+
+Be aware that now we have a matrix, if we type it's name, we'll get an information dump of '000s of rows, so use `head(counts())` to check the contents.
+
+
+### Sample Metadata
+
+The next step would clearly be to define our sample metadata, based on our sample names.
+This is where we'd have to communicate with our collaborators to find out what the crazy abbreviations all mean, and for this dataset the three values are the FACS cell sorting run (S1-S3), the tissue (`spl/p`) and the mouse processed within each sorting run.
+Because the mouse number is within each sort (`m1-m5`), I've removed this column to avoid any confusion.
+
+```{r}
+sampleData <- tibble(sample = colnames(counts)) %>%
+  separate(sample, into = c("sort", "tissue", "mouse"), remove = FALSE) %>%
+  mutate(
+    tissue = case_when(
+      tissue == "spl" ~ "spleen",
+      tissue == "p" ~ "pancreas"
+    ),
+    tissue = as.factor(tissue),
+    mouseID = paste(sort, mouse, sep = "_")
+  ) %>%
+  dplyr::select(sample, sort, tissue, mouseID)
+```
+
+### Gene Metadata
+
+The next step would be to build the metadata for each gene so we can place all of these together in an object, similar to our `ExpressionSet` from earlier practicals.
+This basic structure is very common in transcriptomics.
+
+These counts were obtained using a GTF sourced from the Gencode repository, so please just enter the following code in your terminal.
+We don't need to extract it or anything as we can just load it directly
+
+```
+wget ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M23/gencode.vM23.primary_assembly.annotation.gtf.gz
+```
+
+We can now just import this as a GRanges object using the `import.gff` function from the package `rtracklayer`
+
+```{r}
+genesGR <- import.gff(
+  "gencode.vM23.primary_assembly.annotation.gtf.gz",
+  genome = "GRCm38",
+  feature.type = "gene"
+  )
+```
+
+There's a few pointless columns in there, so let's just keep what we need.
+It also looks like the `gene_id` column has a version number on it, so let's also remove that.
+
+```{r}
+mcols(genesGR) <- mcols(genesGR)[c("source", "gene_id", "gene_name", "gene_type")]
+mcols(genesGR)$gene_id <- mcols(genesGR)$gene_id %>%
+  str_remove_all("\\.[0-9]+$")
+```
+
+We can directly include this as a `GRanges` object, but let's turn it into a `data.frame`.
+These do become slightly easier to deal with in the downstream parts of the workflow, but it's personal choice really.
+
+```{r}
+geneData <- genesGR %>%
+  as.data.frame() %>%
+  mutate(
+    location = paste0(seqnames, ":", start, "-", end, ":", strand)
+  ) %>%
+  dplyr::select(
+    gene_id, gene_name, location, gene_type
+  ) %>%
+  set_rownames(.$gene_id)
+```
+
+### Create a DGEList
+
+The basic structure used in RNA-seq analysis is an R object class known as a `DGEList`, which stands for *Digital Gene Expression List* and there are three important elements:
+
+1. The counts
+2. The sample metadata
+3. The gene metadata (optional)
+
+We now have all of these components, but as you may have noticed some of the genes have zero counts for every sample.
+We should remove this at this point to save time & memory.
+
+```{r}
+nonZero <- rownames(counts)[rowSums(counts) > 0]
+length(nonZero)
+```
+
+So we have at least one count for `r length(nonZero)` of the `r length(genesGR)` genes annotated in this GTF.
+Now we can form our `DGEList`
+
+```{r}
+dgeList <- DGEList(
+  counts = counts[nonZero,],
+  samples = sampleData,
+  genes = geneData[nonZero,]
+)
+dgeList
+```
+
+This is very similar to our `ExpressionSet`, but seems a bit simpler to most people.
+We'll make it try our best to make it more complicated though.
+
+# Pre-Processing
+
+There are a few basic steps we need to follow to conduct analysis of this data, and these are basically:
+
+1. Removal of genes considered to be 'undetectable'
+2. Normalisation
+3. Estimation of Dispersions
+4. QC using PCA (or MDS)
+
+## Removal of Undetectable Genes
+
+### Checking Library Sizes
+
+Before we even go any further, we should check out library sizes to see if there anything unusual or unexpected.
+This is pretty simple using `ggplot`
+
+```{r}
+dgeList$samples %>%
+  ggplot(aes(sample, lib.size, fill = tissue)) +
+  geom_col() +
+  geom_hline(
+    aes(yintercept = lib.size),
+    data = . %>% summarise_at(vars(lib.size), mean),
+    linetype = 2
+  ) +
+  facet_wrap(~tissue, scales = "free_x") +
+  scale_y_continuous(labels = comma)
+```
+
+Here it looks like our pancreatic libraries are a little smaller, so we should take note of this in case anything strange appears later.
+Normalisation should take care of this though as the TMM model is specifically built to account for this kind of pattern.
+
+### Checking Count Distributions
+
+Now that we're happy with out library sizes, we should plot our distributions of counts.
+A common and useful metric for this is *log Counts/Million* (logCPM) which is dead easy to get from our `DGEList` object.
+
+```{r}
+dgeList %>%
+  cpm(log = TRUE) %>%
+  plotDensities(legend = "topright")
+```
+
+This is made using the base plotting functions as it's just so easy.
+Putting this into `ggplot` would involve using `pivot_longer()` then `left_join()` and some fancy footwork in `ggplot` so most people don't both as it's just a quick plot we use to inspect our data.
+We can set some informative colours though.
+
+```{r}
+tissueCols <- c(pancreas = "red", spleen = "green")[as.character(dgeList$samples$tissue)]
+dgeList %>%
+  cpm(log = TRUE) %>%
+  plotDensities(legend = "topright", col = tissueCols)
+```
+
+Although this doesn't give us an idea which sample is which, we can clearly see if there is an issue tracking with a tissue type.
+The big peak you can see on the left is the set of genes we would *consider to be undetectable* as they have logCPM < 0, which means less than one count per million.
+The smaller peak to the right is our detectable genes and we'll try to keep those, whilst discarding the undetectable ones.
+
+A common strategy is to use a filtering threshold of > 1 CPM in all samples from one treatment group.
+To approximate this, we could just say that we need 6 samples to satisfy this criteria.
+It's also worth noting that this equates to at least `r floor(min(dgeList$samples$lib.size/1e6))` counts in at least half the samples, based on the smallest library, and this seems to make intuitive sense.
+
+To do this filtering, we check the CPM values for each gene in each sample, returning a `logical` matrix.
+Then we can add up the values for each gene (row) and any rows with a tally $\geq$ 6 would be retained.
+
+```{r}
+genes2keep <- dgeList %>%
+  cpm() %>%
+  is_greater_than(1) %>%
+  rowSums() %>%
+  is_weakly_greater_than(6)
+```
+
+```{r}
+table(genes2keep)
+```
+
+So applying that simple strategy we would discard `r comma(sum(!genes2keep))` genes and retain `r comma(sum(genes2keep))`.
+Before we even apply the filter, we can now check our distribution to see if we've tidied up the initial data.
+
+```{r}
+dgeList[genes2keep,] %>%
+  cpm(log = TRUE) %>%
+  plotDensities(legend = "topright", col = tissueCols)
+```
+
+Now we can see that the large peak at the left is gone, although there are still a few genes which appear to be marginally detectable.
+We can assume that these may be DE as the must have $>16$ counts in at least half of our samples.
+
+Some people like to create a new `DGEList` which then becomes the object we work on, and we'll do that here for simplicity.
+
+```{r}
+dgeFilt <- dgeList[genes2keep,]
+dim(dgeFilt)
+dgeFilt
+```
+
+Notice that the `$genes` element has also been subset correctly retaining the structure of the complete object.
+
+## Normalisation
+
+The next step would be normalisation and here we'll use the TMM approach, which creates a scaling factor as an offset to be supplied to Negative Binomial models, as we mentioned in the lectures.
+The function `calcNormFactors()` does this for us, and this returns the `DGEList` that we supply, but with the column `norm.factors` now correctly entered in the `$samples` element.
+
+```{r}
+dgeFilt <- calcNormFactors(dgeFilt)
+dgeFilt$samples
+```
+
+If we decided to choose `CQN` we'd need to source the gene length and GC content to supply to the function `cqn()` and this would return our original `DGEList` with an entirely new element providing offsets for each gene **within** each sample.
+As that's a bit more complicated, we'll stick with the TMM approach for today.
+
+## Estimation of Dispersions
+
+As we'll be fitting our data using the Negative Binomial Model today, we'll need to estimate the dispersion parameter, and although gene-wise and overall dispersions can be estimated separately, the simplest way is to just use the function `estimateDisp()`.
+This again will return the supplied `DGEList`, but with a few more elements containing the dispersions and the average expression of each gene.
+The trended dispersions are the moderated dispersions that are shrunk towards the mean.
+
+```{r}
+dgeFilt <- estimateDisp(dgeFilt)
+dgeFilt
+```
+
+## QC
+
+The next step in the process is usually to check our samples using PCA or MDS.
+Today, we'll just use PCA, based on the logCPM values.
+This can differ significantly after removal of undetectable genes, so although we're performing it here today, can go anywhere after the initial filtering step.
+
+```{r}
+pca <- dgeFilt %>%
+  cpm(log = TRUE) %>%
+  t() %>%
+  prcomp()
+```
+
+```{r}
+pca %>%
+  autoplot(data = dgeFilt$samples, colour = "tissue") +
+  geom_text_repel(aes(label = mouseID, colour = tissue), show.legend = FALSE)
+```
+
+**Can you see any features here that concern you?**
+
+# Analysis
+
+In the lectures, we discussed a few approaches
+
+1. Using the Exact Test
+2. Fitting a Generalised Linear Model and a Likelihood Ratio Test
+3. Using the Quasi-Likelihood Test
+4. Transforming the data using `voom` and analysing with `limma`
+
+We'll try to get all four done today, all though they will be very similar.
+
+## The Design Matrix
+
+As we only have two conditions in this dataset, it's pretty clear that the design matrix will be pretty simple.
+
+```{r}
+X <- model.matrix(~tissue, data = dgeFilt$samples) %>%
+  set_colnames(str_remove_all(colnames(.), "tissue"))
+X
+```
+
+In the above, we have been a bit fancy by removing the word 'tissue'.
+Whilst not strictly necessary, it does make the matrix look nicer.
+
+## The Exact Test
+
+When using `exactTest()` we don't actually need a design matrix.
+Instead, this function checks the `groups` column of the `$samples` element.
+As we haven't set this yet, let's do it now.
+
+```{r}
+dgeFilt$samples$group <- as.integer(dgeFilt$samples$tissue)
+```
+
+The code is now pretty simple and may look familiar.
+The main difference between this and our previous topTables is that we `topTags()` as our function.
+Note too that this is a strictly 2-way comparison.
+We can only compare group1 against group 2
+
+```{r}
+resET <- dgeFilt %>%
+  exactTest() %>%
+  topTags(n = Inf)
+head(resET)
+```
+
+It looks like we do have some DE genes here, so let's check how many.
+Despite it's appearance, the object `resET` isn't strictly a `data.frame`, but the results live within an element called `$table`
+
+```{r}
+sum(resET$table$FDR < 0.05)
+```
+
+If we do a few quick diagnostic plots we can check whether we like this approach.
+The main plots we might like to check are the p-value distribution, the MA plot, a volcano plot and a few genes that look interesting.
+
+```{r}
+hist(resET$table$PValue, breaks = 100, main = "PValues from the Exact Test")
+```
+
+```{r}
+resET$table %>%
+  mutate(DE = FDR < 0.05) %>%
+  ggplot(aes(logCPM, logFC)) +
+  geom_point(aes(colour = DE)) +
+  geom_hline(yintercept = c(-1, 1)) +
+  geom_smooth(se = FALSE, colour = "blue") +
+  scale_colour_manual(values = c("grey30", "red")) +
+  ggtitle("MA Plot: Exact Test")
+```
+
+
+```{r}
+resET$table %>%
+  mutate(DE = FDR < 0.05) %>%
+  ggplot(aes(logFC, -log10(PValue), colour = DE)) +
+  geom_point() +
+  geom_vline(xintercept = c(-1, 1)) +
+  scale_colour_manual(values = c("grey30", "red")) +
+  ggtitle("Volcano Plot: Exact Test")
+```
+
+```{r}
+resET$table %>%
+  dplyr::slice(1:9) %>%
+  dplyr::select(gene_id, gene_name) %>%
+  cbind(
+    cpm(dgeFilt, log = TRUE)[.$gene_id,]
+  ) %>% 
+  as_tibble() %>%
+  pivot_longer(
+    cols = starts_with("S"),
+    names_to = "sample",
+    values_to = "logCPM"
+  ) %>%
+  left_join(dgeFilt$samples) %>%
+  ggplot(aes(tissue, logCPM, fill = tissue)) +
+  geom_boxplot() +
+  facet_wrap(~gene_name)  +
+  ggtitle("Top 9 Genes: Exact Test")
+```
+
+## Using GLM with a Likelihood Ratio Test
+
+Now that we've seen the Exact Test in action, we can move to the more sophisticated generalised linear model approach.
+This time we can use our design matrix
+
+```{r}
+resGLM <- dgeFilt %>%
+  glmFit(design = X) %>%
+  glmLRT(coef = "spleen") %>%
+  topTags(n = Inf)
+```
+
+We can now perform the same diagnostics, so please just paste the above code changing the initial object to be `resGLM$table` instead of `resET$table`.
+
+```{r}
+hist(resGLM$table$PValue, breaks = 100, main = "PValues from the Likelihood Ratio Test")
+```
+
+```{r}
+resGLM$table %>%
+  mutate(DE = FDR < 0.05) %>%
+  ggplot(aes(logCPM, logFC, colour = DE)) +
+  geom_point(aes(colour = DE)) +
+  geom_hline(yintercept = c(-1, 1)) +
+  geom_smooth(se = FALSE, colour = "blue") +
+  scale_colour_manual(values = c("grey30", "red"))  +
+  ggtitle("MA Plot: LR Test")
+```
+
+
+```{r}
+resGLM$table %>%
+  mutate(DE = FDR < 0.05) %>%
+  ggplot(aes(logFC, -log10(PValue), colour = DE)) +
+  geom_point() +
+  geom_vline(xintercept = c(-1, 1)) +
+  scale_colour_manual(values = c("grey30", "red")) +
+  ggtitle("Volcano Plot: LR Test")
+```
+
+```{r}
+resGLM$table %>%
+  dplyr::slice(1:9) %>%
+  dplyr::select(gene_id, gene_name) %>%
+  cbind(
+    cpm(dgeFilt, log = TRUE)[.$gene_id,]
+  ) %>% 
+  as_tibble() %>%
+  pivot_longer(
+    cols = starts_with("S"),
+    names_to = "sample",
+    values_to = "logCPM"
+  ) %>%
+  left_join(dgeFilt$samples) %>%
+  ggplot(aes(tissue, logCPM, fill = tissue)) +
+  geom_boxplot() +
+  facet_wrap(~gene_name)  +
+  ggtitle("Top 9 Genes: LR Test")
+```
+
+
+It may come as no surprise that the estimates of expression and logFC and logCPM don't change between methods.
+The only real difference is in the statistical testing applied.
+Perhaps the best exploration to perform would be to compare the p-values.
+
+```{r}
+resET$table %>%
+  dplyr::select(gene_id, p_ET = PValue) %>%
+  left_join(
+    resGLM$table %>%
+      dplyr::select(gene_id, p_GLM = PValue)
+  ) %>%
+  as_tibble() %>%
+  mutate_at(vars(starts_with("p")), function(x){-log10(x)}) %>%
+  ggplot(aes(p_ET, p_GLM))+
+  geom_point() +
+  geom_abline(slope = 1, colour = "blue")
+```
+
+**Are you able to interpret this plot?**
+
+### Using Treat
+
+An advantage of this method is that the `treat` methods we discovered earlier can also be applied to GLM fits, using the function `glmTreat()`.
+
+```{r}
+resGLM_treat <- dgeFilt %>%
+  glmFit(design = X) %>%
+  glmTreat() %>%
+  topTags()
+```
+
+```{r}
+sum(resGLM$table$FDR < 0.05)
+sum(resGLM_treat$table$FDR < 0.05)
+```
+
+This is a noticeably more conservative approach!
+
+## Using the Quasi Likelihood GLM
+
+As an alternative, the Quasi-Likelihood approach is the one now advocated for by the maintainers of `edgeR`.
+This is a newer approach and as such, you see this lees in tutorials and example workflows.
+The basic concept is essentially identical to the above though.
+
+```{r}
+resQLF <- dgeFilt %>%
+  glmQLFit(design = X) %>%
+  glmQLFTest(coef = "spleen") %>%
+  topTags(n = Inf)
+```
+
+Once again. the estimates of logFC and logCPM won't vary between the models so let's compare the p-values.
+
+```{r}
+resQLF$table %>%
+  dplyr::select(gene_id, p_QLF = PValue) %>%
+  left_join(
+    resGLM$table %>%
+      dplyr::select(gene_id, p_GLM = PValue)
+  ) %>%
+  as_tibble() %>%
+  mutate_at(vars(starts_with("p")), function(x){-log10(x)}) %>%
+  ggplot(aes(p_QLF, p_GLM))+
+  geom_point() +
+  geom_abline(slope = 1, colour = "blue")
+```
+
+There look like a few points which are similar under both models, whilst clearly the other diverge.
+These might be worth exploring.
+
+```{r}
+resQLF$table %>%
+  dplyr::select(gene_id, gene_name, p_QLF = PValue) %>%
+  left_join(
+    resGLM$table %>%
+      dplyr::select(gene_id, p_GLM = PValue)
+  ) %>%
+  as_tibble() %>%
+  mutate_at(vars(starts_with("p")), function(x){-log10(x)}) %>%
+  dplyr::filter(p_GLM > 4, p_QLF < 7) %>%
+  cbind(
+    cpm(dgeFilt, log = TRUE)[.$gene_id,]
+  ) %>% 
+  as_tibble() %>%
+  pivot_longer(
+    cols = starts_with("S"),
+    names_to = "sample",
+    values_to = "logCPM"
+  ) %>%
+  left_join(dgeFilt$samples) %>%
+  ggplot(aes(tissue, logCPM, fill = tissue)) +
+  geom_boxplot() +
+  facet_wrap(~gene_name)  +
+  ggtitle("Unusual Genes From the QLF and GLM test")
+
+```
+
+## Using Limma/Voom
+
+As opposed to the above methods, the `voom` transformation allows for the assumption of normality by applying observation-level weights which better manage the mean-variance relationship.
+A clear advantage of this is that we can easily apply sample-level weights and any other statistical approaches which rely on these assumptions.
+Instead of applying the Likelihood Ratio test, we once again return to moderated t-statistics.
+
+There are two functions which enable analysis under this approach, 1) `voom()` and, 2) `voomWithQualityWeights()`.
+Let's go straight to the fancy version where we can down-weight lower quality samples.
+A common, and conservative approach for this is to assume that all samples are form the same sample group, which leads to more conservative weights. 
+In the case of low replication, *this is strongly advised.*
+
+
+```{r}
+v <- dgeFilt %>%
+  voomWithQualityWeights(design = matrix(1, nrow = ncol(.)))
+```
+
+This now produces quite a different data structure, where the `$samples` element has been renamed as `$targets` with an additional column containing sample weights.
+Note that these have been incorporated into the observation-level weights and are only provided here to be informative.
+
+It can be handy to plot these and visualise the dataset using PCA.
+
+```{r}
+v$targets %>%
+  ggplot(aes(sample, sample.weights, fill = tissue)) +
+  geom_col() +
+  facet_wrap(~tissue, scales = "free_x") +
+  geom_hline(yintercept = 1, linetype = 2)
+```
+
+So it appears that a few of the pancreatic samples are of lower quality.
+Let's check that using PCA, and in our voom object, the element `$E` contains the values we are able to use for visualisation and are normalised logCPM values.
+
+```{r}
+v$E %>%
+  t() %>%
+  prcomp() %>%
+  autoplot(data = v$targets, colour = "tissue", size = "sample.weights") +
+  geom_text_repel(aes(label = sample, colour = tissue), show.legend = FALSE)
+```
+
+Here you can see the samples which are more heavily weighted and estimates will be more biased towards these samples.
+Samples with lower weights will have a much lower influence on the results.
+
+To produce our results, we simply need to apply our old friends `lmFit()` and `topTable()`
+
+```{r}
+resVoom <- v %>%
+  lmFit(design = X) %>%
+  eBayes() %>%
+  topTable(coef = "spleen", n = Inf)
+```
+
+This time our estimates of logFC and logCPM will be quite different, so let's remake the volcano & MA plots
+
+```{r}
+resVoom %>%
+  mutate(DE = adj.P.Val < 0.05) %>%
+  ggplot(aes(AveExpr, logFC)) +
+  geom_point(aes(colour = DE)) +
+  geom_smooth(se = FALSE, colour = "blue") +
+  geom_hline(yintercept = c(-1, 1)) +
+  scale_colour_manual(values = c("grey30", "red")) +
+  ggtitle("MA Plot: Voom")
+```
+
+
+```{r}
+resVoom %>%
+  mutate(DE = adj.P.Val < 0.05) %>%
+  ggplot(aes(logFC, -log10(P.Value))) +
+  geom_point(aes(colour = DE)) +
+  geom_vline(xintercept = c(-1, 1)) +
+  scale_colour_manual(values = c("grey30", "red")) +
+  ggtitle("Volcano Plot: Voom")
+```
+
+Let's also compare our p-values to the glmQLF as that appeared to be the most 'powerful' of the Negative Binomial approaches.
+
+```{r}
+resVoom %>%
+  dplyr::select(gene_id, gene_name, p_Voom = P.Value) %>%
+  left_join(
+    resQLF$table %>%
+      dplyr::select(gene_id, p_QLF = PValue)
+  ) %>%
+  as_tibble() %>%
+  mutate_at(vars(starts_with("p")), function(x){-log10(x)}) %>%
+  ggplot(aes(p_Voom, p_QLF)) +
+  geom_point() +
+  geom_abline(slope = 1, colour = "blue")
+```
+
+
