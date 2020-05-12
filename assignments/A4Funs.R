@@ -18,7 +18,7 @@ makeGsTestData <- function(id){
   pi <- runif(1, 0.1, 0.9)
   df <- tibble::tibble(
     inGeneSet = c(TRUE, FALSE),
-    DE = round(c(pi * nDE, (1-pi)*nDE), 1),
+    DE = round(c(pi * nDE, (1-pi)*nDE), 0),
     notDE = c(inGS, nGenes - inGS) - DE
   )
   df <- tidyr::pivot_longer(df, cols = c("DE", "notDE"), values_to = "Total", names_to = "DE")
