@@ -1605,7 +1605,7 @@ theme_set(theme_bw())</code></pre>
   as.data.frame() %&gt;%
   column_to_rownames(&quot;Geneid&quot;) %&gt;%
   as.matrix()</code></pre>
-<p>Be aware that now we have a matrix, if we type it’s name, we’ll get an information dump of ’000s of rows, so use <code>head(counts())</code> to check the contents.</p>
+<p>Be aware that now we have a matrix, if we type it’s name, we’ll get an information dump of ’000s of rows, so use <code>head(counts)</code> to check the contents.</p>
 </div>
 <div id="sample-metadata" class="section level3">
 <h3>Sample Metadata</h3>
@@ -1886,7 +1886,7 @@ sum(resGLM_treat$table$FDR &lt; 0.05)</code></pre>
 </div>
 <div id="using-the-quasi-likelihood-glm" class="section level2">
 <h2>Using the Quasi Likelihood GLM</h2>
-<p>As an alternative, the Quasi-Likelihood approach is the one now advocated for by the maintainers of <code>edgeR</code>. This is a newer approach and as such, you see this lees in tutorials and example workflows. The basic concept is essentially identical to the above though.</p>
+<p>As an alternative, the Quasi-Likelihood approach is the one now advocated for by the maintainers of <code>edgeR</code>. This is a newer approach and as such, you see this less often in tutorials and example workflows. The basic concept is essentially identical to the above though.</p>
 <pre class="r"><code>resQLF &lt;- dgeFilt %&gt;%
   glmQLFit(design = X) %&gt;%
   glmQLFTest(coef = &quot;spleen&quot;) %&gt;%
