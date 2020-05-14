@@ -1,0 +1,586 @@
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 9.2: Enrichment Analysis"
+date: "15^th^ May 2019"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+---
+
+# Introduction
+
+## Outline
+
+To day we'll look at two approaches to enrichment analysis:
+
+1. Enrichment within an analytically-defined set of genes
+2. Enrichment using a ranked list
+
+If time permits, we'll also try a few different strategies for visualisation.
+
+## Recap
+
+Last session we explored 4 approaches to finding DE genes
+
+1. Using the Exact Test for pair-wise comparisons
+2. Using the Negative Binomial with `glmFit()` and the `glmLRTest()`
+3. Using the Negative Binomial with quasi-likelihood methods for estimating dispersions: `glmQLFit()` / `glmQLFTest()`
+4. Using the combination of `voom` & `limma` to incorporate assumptions of normality
+
+The final filtered dataset, including shrunken dispersions, from this session is available [here](data/9.2_dgeFilt.rds).
+Place this in your working directory using `wget` in `bash`.
+Importantly, this data is slightly different to the one from the session earlier in the week as a different filtering criteria was applied.
+For this version, the filtering using `genes2Keep` specified at least 1CPM in every sample as an attempt to remove genes which were unique to the pancreas & likely represented a contaminant.
+
+## Setup
+
+Let's start a new R Markdown to keep everything clean.
+
+```
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 9.2: Enrichment Analysis"
+date: "15^th^ May 2019"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+---
+```
+
+My setup chunk is
+
+```{r setup, echo=TRUE}
+knitr::opts_chunk$set(
+    echo = TRUE, 
+    message = FALSE, 
+    warning = FALSE,
+    fig.align = "center",
+    results = "hide",
+    fig.show = "hide"
+)
+```
+
+The packages we'll need are
+
+```{r loadPackages}
+library(edgeR)
+library(tidyverse)
+library(magrittr)
+library(scales)
+library(goseq)
+library(msigdbr)
+library(pander)
+library(clusterProfiler)
+library(enrichplot)
+library(cowplot)
+library(UpSetR)
+theme_set(theme_bw())
+```
+
+Now we can start with the results from the glmQLFit and we'll use that for today
+
+```{r}
+dgeFilt <- read_rds("9.2_dgeFilt.rds")
+dim(dgeFilt)
+```
+
+```{r}
+X <- model.matrix(~tissue, data = dgeFilt$samples) %>%
+  set_colnames(str_remove_all(colnames(.), "tissue"))
+X
+```
+
+To start with we'll use the results from `glmTreat()` instead of `glmQLFtest()`.
+This time, we've added the conversion to a tibble to make it easier to check our results.
+
+```{r}
+resQLF <- dgeFilt %>%
+  glmQLFit(design = X) %>%
+  # glmQLFTest(coef = "spleen") %>%
+  glmTreat(coef = "spleen") %>%
+  topTags(n = Inf) %>%
+  .[["table"]] %>%
+  as_tibble() %>%
+  mutate(DE = FDR < 0.05)
+```
+
+This should gives us `r sum(resQLF$DE)` genes considered as DE, so let's start with a Volcano Plot to make sure we're happy with our results.
+Note that the big cloud of points to the left has mostly disappeared now.
+I've also added a light amount of transparency (`alpha`) to try and see a clearer picture of the density of points through the plot.
+
+
+```{r}
+resQLF %>%
+  ggplot(aes(logFC, -log10(PValue))) +
+  geom_vline(xintercept = c(-1, 1), linetype = 2) +
+  geom_point(aes(colour = DE), alpha = 0.6) +
+  scale_colour_manual(values = c("grey20", "red"))
+```
+
+Let's double check with an MA plot so we're sure we're dealing with a good dataset.
+
+```{r}
+resQLF %>%
+  ggplot(aes(logCPM, logFC)) +
+  geom_hline(yintercept = c(-1, 1), linetype = 2) +
+  geom_point(aes(colour = DE), alpha = 0.6) +
+  geom_smooth(se = FALSE) +
+  scale_colour_manual(values = c("grey20", "red"))
+```
+
+It appears there is a small amount of bias, however, correcting this is beyond the scope of today, so let's proceed.
+
+# Testing Within A Set of DE Genes
+
+## Testing Within A Single Gene Set
+
+The most simple approach to Enrichment Testing is to simply define a set of DE genes and check multiple externally derived gene-sets to see if our DE genes are enriched for these.
+These external gene-sets could be obtained from a database, or from an alternative experiment such as ChIP-Seq derived TF binding sites.
+
+A very simple example might be to test if our dataset is enriched for protein coding genes.
+We can obtain this data directly from our results to form a $2\times2$ table.
+
+```{r}
+resQLF %>%
+  mutate(
+    prot_coding = str_detect(gene_type, "protein_coding")
+  ) %>%
+  group_by(prot_coding, DE) %>%
+  tally() %>%
+  pivot_wider(
+    id_cols = prot_coding, names_from = DE, names_prefix = "DE_", values_from = n
+  )
+```
+
+Hopefully you can see that we have a structure which is easily converted to a $2\times2$ table.
+This is what's required as the input to `fisher.test()`, so let's try setting this up as a `data.frame` (so we can add rownames).
+From there, we can pass this directly to the function `fisher.test()`.
+
+```{r}
+resQLF %>%
+  mutate(
+    prot_coding = str_detect(gene_type, "protein_coding")
+  ) %>%
+  group_by(prot_coding, DE) %>%
+  tally() %>%
+  pivot_wider(
+    id_cols = prot_coding, names_from = DE, names_prefix = "DE_", values_from = n
+  ) %>%
+  as.data.frame() %>%
+  column_to_rownames("prot_coding") %>%
+  fisher.test() 
+```
+
+So we have the makings of a significant result, but is this actually enriched or is it the opposite.
+A good trick here would be to find the expected value, based on our non-DE genes, and then to check our Observed is greater than our expected.
+Performing this manually, we get an expected value of:
+
+```{r}
+(13 + 378)*(9670 / (9670 + 623))
+```
+
+Now we can see our observed value is greater than the expected, we could consider this set of DE genes to be enriched for protein coding genes.
+However, in reality, we'll be doing this test for large numbers of gene-sets, so we'd probably lose this one after correcting p-values for multiple testing considerations.
+
+## Testing with Multiple Gene Sets
+
+### Checking for Sampling Bias
+
+The package `limma` contains a function `goana()` for testing GO enrichment, and another `kegga()` for testing KEGG enrichment, however these are limited to using Entrez Gene IDs and are restricted to model organisms.
+Whilst they can be used, we'll explore a superior approach using the R package `goseq`.
+This approach allows for sampling bias based on any defined parameter such as gene length or GC content.
+
+As we know, the range spanned by the gene is not the same as gene length.
+Similarly, transcripts can have various lengths.
+Navigating this can be tricky, so we've provided you with a file available [here](data/ens98_mm_biomart.tsv) (using `wget`).
+Once you've downloaded this, import as follows.
+
+```{r}
+ens98 <- read_tsv("data/ens98_mm_biomart.tsv") %>%
+  dplyr::filter(gene_id %in% rownames(dgeFilt))
+```
+
+Whilst we have GC content at the gene level already, we need choose a method for choosing the gene length.
+For simplicity, let's select the longest transcript, and we'll use `dplyr` for this.
+Due to the *1:many* mappings for some Ensembl:Entrez identifiers, let's choose the mapping with the lowest EntrezGene ID.
+Normally, we'd be more sophisticated about this, but in general the lowest ID for multiple mapping will be the longest standing and so there is a degree of intelligence about this choice.
+
+```{r}
+ens98_GC <- ens98 %>%
+  group_by(gene_id, gene_name, gene_gc) %>%
+  summarise(
+    gene_length = max(transcript_length),
+    entrezgene = min(entrezgene)
+  )
+```
+
+Now we've obtained our GC content and gene length , let's add this to our results to make sure we have everything conveniently in a single object.
+
+```{r}
+resQLF <- left_join(resQLF, ens98_GC)
+```
+
+
+Now we have all our data, we can check for bias.
+We can only include one variable at a time, so let's start with gene length.
+This is a pre-tidyverse package, so we need to define our DE genes as logical vector *with names for each gene*.
+The function `nullp()` calculates the probability weight function for the sampling bias, and automatically generates a plot for us.
+
+```{r}
+deVec <- resQLF$DE %>%
+  setNames(resQLF$gene_id)
+pwf_length <- nullp(deVec, bias.data = resQLF$gene_length)
+```
+
+This doesn't reveal a strong bias here, which is good news, but it appears that shorter genes have slightly lower probability of being considered as DE.
+
+Now we can check for GC bias, using the same strategy.
+
+```{r}
+pwf_gc <- nullp(deVec, bias.data = resQLF$gene_gc)
+```
+
+There's no real GC bias here, so let's choose gene length as our sampling bias.
+
+**Note that if we do not provide our bias.data, `nullp()` will attempt to find it for us.**
+I don't trust anyone else to do these things correctly.
+
+### Using the function `goseq()`
+
+The function `goseq()` is now what we'll use to perform an enrichment test.
+Instead of providing a list of DE genes, we pass the output of `nullp()` as that has our DE status alongside our bias data (i.e. gene length).
+
+```{r}
+head(pwf_length)
+```
+
+The missing piece of the puzzle though is our allocations of genes to gene sets.
+There are a whole lot of automated steps to this, but I prefer doing it myself.
+A structure that we can pass to the argument `gene2cat` is a named list, where every element is vector corresponding to each gene's categories.
+
+```{r}
+gene2Type <- resQLF %>%
+  dplyr::select(gene_id, gene_type) %>%
+  split(f = .$gene_id) %>%
+  lapply(function(x){x$gene_type})
+head(gene2Type)
+```
+
+We can now test for enrichment of all of the gene categories at the same time.
+
+```{r}
+goseq(pwf_length, gene2cat = gene2Type)
+```
+
+Notice that protein coding is no longer significant!
+This is due to our inclusion of gene length as a parameter indicating biased likelihood of a gene being considered as DE.
+If we want to compare our results to a version where there is no bias (which we wouldn't actually every use as our results), we can change the default for the `method` argument to be `method = "Hypergeometric"`, instead of the default Wallenius.
+
+```{r}
+goseq(pwf_length, gene2cat = gene2Type, method = "Hypergeometric")
+```
+
+Protein coding is significant again, so clearly we could've made some special claims about this dataset which were an artefact!
+The p-value appears slightly different, however this is primarily due to this test being a one-sided test, whilst Fisher's Exact Test is a two-sided test.
+
+
+## Using A More Realistic Example
+
+Let's perform a more interesting test using the package `msigdbr` which is able to import all of the data from MSigDB.
+
+```{r}
+hm <- msigdbr(species = "Mus musculus", category = "H")
+hm
+```
+
+Here we have loaded the mappings from gene-set to gene using the Hallmark gene sets
+We can check the size of each gene set quickly.
+
+```{r}
+hm %>%
+  group_by(gs_name) %>%
+  tally()
+```
+
+As you may have noticed, all of the mappings here are from EntrezGene whilst we've been working with Ensembl Gene IDs.
+Fortunately, our `ens98` has these mappings for us, and these are also included in `ensDb` objects if we're working on our own.
+Let's add these mappings to the `hm` object.
+
+```{r}
+hm <- ens98 %>%
+  dplyr::filter(!is.na(entrezgene)) %>%
+  dplyr::select(gene_id, entrezgene) %>%
+  left_join(
+    msigdbr(species = "Mus musculus", category = "H"), by = c("entrezgene" = "entrez_gene")
+  ) %>%
+  dplyr::filter(!is.na(gs_id)) %>%
+  distinct(gene_id, gs_name, .keep_all = TRUE)
+```
+
+Notice that in the above we did a couple of cunning tricks.
+
+1. We used our `ens98` object in the `left_join()`, which means we automatically removed any undetectable genes
+2. We removed any gene ids which didn't map to a gene set (`dplyr::filter(!is.na(gs_id))`)
+3. We avoided possible multiple mappings by `distinct(gene_id, gs_name, .keep_all = TRUE)`
+
+The gene sets are a little smaller now, but we have restricted the analysis to our **detectable** genes.
+
+```{r}
+hm %>%
+  group_by(gs_name) %>%
+  tally()
+```
+
+We know that `goseq()` requires these to be a list with an element for each gene, so let's form this now.
+
+```{r}
+hmByGene <- hm %>%
+  split(f = .$gene_id) %>%
+  lapply(function(x){x$gs_name})
+head(hmByGene)
+```
+
+Now we just add this to the function like we did before.
+
+```{r}
+goseq(pwf_length, gene2cat = hmByGene)
+```
+
+In our analysis, we'd save that as an object convert to a `tibble` and adjust our p-values.
+
+```{r}
+hmGoseq <- goseq(pwf_length, gene2cat = hmByGene) %>%
+  as_tibble() %>%
+  dplyr::select(-under_represented_pvalue) %>%
+  mutate(adjP = p.adjust(over_represented_pvalue, "bonferroni"))
+```
+
+Here we have a nice set of results indicating some Immune Pathways which our collaborators would no doubt become very excited about.
+
+```{r}
+hmGoseq %>%
+  dplyr::filter(adjP < 0.05) %>%
+  dplyr::select(category, nDE = numDEInCat, N = numInCat, p = over_represented_pvalue, adjP) %>%
+  pander()
+```
+
+# Testing Using a Ranked List
+
+## GSEA
+
+There are numerous methods for testing within a ranked list, with the most widely used and most well-known being *Gene Set Enrichment Analysis* (GSEA).
+This is often done using a standalone tool, but can also be performed natively in R.
+A package we could use for this is `fgsea` which is a *fast* implementation of the GSEA algorithm.
+This is also wrapped by the function `GSEA()` from the package `clusterProfiler`, which can make visualisation a little easier, despite being **incredibly badly documented**.
+
+The basic concept which underlies GSEA is that we walk down the ranked list, and the 'enrichment score' increases every time we hit a gene within our gene-set, whilst it decreases every time we don't.
+The details of the scoring system aren't really relevant, but we look for the extreme enrichment scores within a gene set, and that appear to be more extreme than others when permuting the gene set labels amongst the genes.
+
+To perform GSEA, the first thing we'll need is a ranked list of genes, however, in `resQLF` we don't have a test statistic like a $T$-statistic to rank on.
+If we rank by a p-value, we lose any directionality.
+A *possible* solution is to rank by $-log_{10}p$, multiplied by the sign of the logFC. 
+This way, up-regulated genes will receive a positive score, whilst down-regulated genes will receive a negative score.
+The order that `GSEA()` expects genes to be in is descending (most up at the start).
+
+```{r}
+rnkIDs <- resQLF %>% 
+  mutate(rnk = -sign(logFC) * log10(PValue)) %>% 
+  arrange(desc(rnk)) %>%
+  with(
+    structure(rnk, names = gene_name)
+  )
+```
+
+When we run GSEA, the gene sets are permuted in order to determine the reference null distribution.
+The higher the number of permutations, the better the p-values we obtain.
+
+```{r}
+hmGsea <- GSEA(
+  rnkIDs,
+  nPerm = 1e6, 
+  TERM2GENE = dplyr::select(hm, term = gs_name, gene = gene_symbol), 
+  pvalueCutoff = 0.05,
+  pAdjustMethod = "bonferroni"
+)
+```
+
+This function is very poorly documented, but to get the results, we can dig into the `S4` object using the `@` symbol, a little like a normal list uses the `$` symbol.
+
+
+```{r}
+as_tibble(hmGsea@result)
+```
+
+A classic barcode plots shows us the genes in the gene-set, along with the running enrichment score
+
+```{r}
+gseaplot(hmGsea, geneSetID = "HALLMARK_MYC_TARGETS_V2", by = "runningScore", title = "HALLMARK_MYC_TARGETS_V2")
+```
+
+As you can see the genes appear to be at the up-regulated end.
+
+Fortunately, these are all `ggplot2` objects, so we can use `cowplot::plot_grid()` to plot multiple `ggplot` objects.
+
+```{r}
+barcodePlots <- hmGsea@result$ID %>%
+  lapply(function(x){
+    gseaplot(hmGsea, geneSetID = x, by = "runningScore", title = x) +
+      ylim(c(-1, 1)*0.75)
+  }
+  )
+cowplot::plot_grid(plotlist = barcodePlots)
+```
+
+If we want to see the actual distributions of expression patterns.
+
+```{r}
+ridgeplot(hmGsea)
+```
+
+A heatmap of expression patterns may be useful.
+First we'll need actual estimates of logFC though.
+
+```{r}
+fc <- resQLF %>% 
+  arrange(logFC) %>%
+  with(
+    structure(logFC, names = gene_name)
+  )
+```
+
+```{r}
+heatplot(hmGsea, foldChange = fc)
+```
+
+Sometimes network plots can be a nice way to visualise the relationships between gene sets.
+
+```{r}
+cnetplot(hmGsea, foldChange = fc, showCategory = 6)
+```
+
+This one isn't great for this dataset, but when you have a lot of gene-sets it can show which ones group together.
+
+```{r}
+emapplot(hmGsea)
+```
+
+### Flaws with GSEA
+
+GSEA is unable to take into account any biases in a dataset.
+It's been shown the subtle biases which don't affect significance, but influence the **middle** of a list can heavily skew the results from GSEA, so that technical artefacts are driving the results.
+
+Similarly, GSEA doesn't take into account any correlation structure between genes within a pathway, and this is an often-cited critique.
+Nevertheless, it is a heavily used approach and if you think your dataset is bias-free, can be very informative.
+
+## Fry
+
+An alternative, which doesn't technically account for these biases, but does incorporates inter-gene correlations is `fry()` from `limma` .
+Instead of permutations, it uses a Monte-Carlo system of randomisation known as rotation.
+The original implementation was known as `roast()` with `fry()` being a faster implementation.
+
+This time, we need our list of mappings from gene to gene-set in the other direction, so our list contains one element for each gene-set, with the vector of genes in that element.
+
+```{r}
+hmByGS <- hm %>%
+  split(f = .$gs_name) %>%
+  lapply(function(x){x$gene_id})
+```
+
+
+```{r}
+hmFry <- fry(dgeFilt, index = hmByGS, design = X, contrast = "spleen") %>%
+  rownames_to_column("gs_name") %>%
+  as_tibble()
+```
+
+As you may see, we have two analyses performed here.
+One indicates direction, similar to GSEA, whilst the other is non-directional.
+Clearly pathways can be impacted by genes going both up & down.
+For example, if a gene which activates a pathway goes down, whilst a gene which represses the same pathway goes up, then that's the same as the pathway going down.
+As usual, biology is complicated.
+
+Fry doesn't give a leading Edge, or any of the integrated visualisations of `clusterProfiler` and `enrichplot`.
+However, we can use those visualisations to develop our own.
+Perhaps we can make upset plots to visualise overlaps between gene-sets, or we could use `pheatmap` to indicate expression patterns for genes in a gene-set.
+
+As an example, we could show just the overlap of DE genes in each of the directional results from fry.
+
+```{r}
+hmByGS %>%
+  .[dplyr::filter(hmFry, FDR < 0.05)$gs_name] %>%
+  lapply(intersect, y = dplyr::filter(resQLF, FDR < 0.05)$gene_id) %>%
+  fromList() %>%
+  upset()
+```
+
+This clearly shows that both of the Interferon gene sets show a fair degree of overlap.
+We could even perform the same strategy with our `goseq` results from earlier.
+Here, I'm also removing the `HALLMARK_` prefix to make the plot tidier.
+
+```{r}
+hmByGS %>%
+  .[dplyr::filter(hmGoseq, adjP < 0.05)$category] %>%
+  lapply(intersect, y = dplyr::filter(resQLF, FDR < 0.05)$gene_id) %>%
+  setNames(str_remove(names(.), "HALLMARK_")) %>%
+  fromList() %>%
+  upset()
+```
+
+## Challenges For Ranked Lists
+
+When using ranked lists, the aforementioned biases can have considerable influence through the middle of the list.
+When using these approaches, we need to be comfortable that we'll turn p true biological signal and not technical artefacts.
+Checking GC and length bias in the context if ranked lists is very wise.
+
+```{r}
+a <- resQLF %>%
+  ggplot(
+    aes(gene_gc, -sign(logFC) * log10(PValue))
+  ) +
+  geom_point(aes(colour = DE), alpha = 0.6) +
+  geom_smooth(se = FALSE) +
+  labs(
+    x = "GC Content",
+    y = "Ranking Statistic"
+  ) +
+  scale_colour_manual(values = c("grey40", "red")) +
+  theme(legend.position = "none")
+b <- resQLF %>%
+  ggplot(
+    aes(log10(gene_length), -sign(logFC) * log10(PValue))
+  ) +
+  geom_point(aes(colour = DE), alpha = 0.6) +
+  geom_smooth(se = FALSE) +
+  labs(
+    x = "log10 Gene Length",
+    y = "Ranking Statistic"
+  ) +
+  scale_colour_manual(values = c("grey40", "red")) +
+  theme(legend.position = "none")
+plot_grid(a, b, labels = c("A", "B"))
+```
+
+Given these plots above, **how do you now feel about the following plot**?
+
+```{r}
+ridgeplot(hmGsea)
+```
+
+
+```{r}
+hm %>%
+  left_join(resQLF) %>%
+  dplyr::filter(gs_name %in% hmGsea@result$ID) %>%
+  mutate(gs_name = str_replace_all(gs_name, "HALLMARK", "HM")) %>%
+  ggplot(aes(gs_name, gene_gc)) +
+  geom_boxplot() +
+  geom_hline(yintercept = mean(resQLF$gene_gc), linetype = 2) +
+  theme(
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
+  )
+```
+

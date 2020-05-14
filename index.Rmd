@@ -47,7 +47,7 @@ pracs <- tribble(
     8, "2020-05-04", "Statistics for RNA-Seq", "Stephen Pederson", "lectures/7_Stats_For_RNASeq.pdf", "Alignments and Visualisation", "practicals/8.1_Alignments.html",
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Alignments and Visualisation", "practicals/8.2_Scripting_Alignments.html",
     9, "2020-05-11", "Enrichment Analysis", "Stephen Pederson", "lectures/8_EnrichmentTesting.pdf", "Differential Expression Using edgeR", "practicals/9.1_edgeR.html",
-    NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Enrichment Strategies", "",
+    NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Enrichment Strategies", "practicals/9.2_EnrichmentAnalysis.html",
     10, "2020-05-18", "Network Analysis", "TBC", "", "WGCNA", "",
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "WGCNA", "",
     11, "2020-05-25", "Single Cell RNA-Seq", "Stephen Pederson", "", "scRNA", "",

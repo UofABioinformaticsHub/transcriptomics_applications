@@ -294,7 +294,7 @@ We can set some informative colours though.
 tissueCols <- c(pancreas = "red", spleen = "green")[as.character(dgeList$samples$tissue)]
 dgeList %>%
   cpm(log = TRUE) %>%
-  plotDensities(legend = "topright", col = tissueCols)
+  plotDensities(legend = "topright", col = as.integer(dgeList$samples$tissue))
 ```
 
 Although this doesn't give us an idea which sample is which, we can clearly see if there is an issue tracking with a tissue type.
@@ -335,7 +335,7 @@ We can assume that these may be DE as the must have $>16$ counts in at least hal
 Some people like to create a new `DGEList` which then becomes the object we work on, and we'll do that here for simplicity.
 
 ```{r}
-dgeFilt <- dgeList[genes2keep,]
+dgeFilt <- dgeList[genes2keep,,keep.lib.sizes = FALSE]
 dim(dgeFilt)
 dgeFilt
 ```

@@ -1706,7 +1706,7 @@ dgeList</code></pre>
 <pre class="r"><code>tissueCols &lt;- c(pancreas = &quot;red&quot;, spleen = &quot;green&quot;)[as.character(dgeList$samples$tissue)]
 dgeList %&gt;%
   cpm(log = TRUE) %&gt;%
-  plotDensities(legend = &quot;topright&quot;, col = tissueCols)</code></pre>
+  plotDensities(legend = &quot;topright&quot;, col = as.integer(dgeList$samples$tissue))</code></pre>
 <p>Although this doesn’t give us an idea which sample is which, we can clearly see if there is an issue tracking with a tissue type. The big peak you can see on the left is the set of genes we would <em>consider to be undetectable</em> as they have logCPM &lt; 0, which means less than one count per million. The smaller peak to the right is our detectable genes and we’ll try to keep those, whilst discarding the undetectable ones.</p>
 <p>A common strategy is to use a filtering threshold of &gt; 1 CPM in all samples from one treatment group. To approximate this, we could just say that we need 6 samples to satisfy this criteria. It’s also worth noting that this equates to at least 16 counts in at least half the samples, based on the smallest library, and this seems to make intuitive sense.</p>
 <p>To do this filtering, we check the CPM values for each gene in each sample, returning a <code>logical</code> matrix. Then we can add up the values for each gene (row) and any rows with a tally <span class="math inline">\(\geq\)</span> 6 would be retained.</p>
@@ -1722,7 +1722,7 @@ dgeList %&gt;%
   plotDensities(legend = &quot;topright&quot;, col = tissueCols)</code></pre>
 <p>Now we can see that the large peak at the left is gone, although there are still a few genes which appear to be marginally detectable. We can assume that these may be DE as the must have <span class="math inline">\(&gt;16\)</span> counts in at least half of our samples.</p>
 <p>Some people like to create a new <code>DGEList</code> which then becomes the object we work on, and we’ll do that here for simplicity.</p>
-<pre class="r"><code>dgeFilt &lt;- dgeList[genes2keep,]
+<pre class="r"><code>dgeFilt &lt;- dgeList[genes2keep,,keep.lib.sizes = FALSE]
 dim(dgeFilt)
 dgeFilt</code></pre>
 <p>Notice that the <code>$genes</code> element has also been subset correctly retaining the structure of the complete object.</p>
