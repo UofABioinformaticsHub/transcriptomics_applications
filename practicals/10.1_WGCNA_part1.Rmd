@@ -1,0 +1,277 @@
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 10.1: Co-expression network analysis using WGCNA, part 1"
+date: "20^th^ May 2020"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+---
+
+# Introduction
+
+## Outline
+
+As we learned in the lecutre, we will use R package `WGCNA` (Weighted Gene
+Co-expression Network Analysis) to do co-expression network analysis. WGCNA was
+originally designed for analysing microassays data, so definitely you can use
+the gene expression profile (logs of the ratio of the fluorescence intensity
+and the unit fluorescence intensity) from microarrays as the input data.
+However, as RNA-Seq has much more advantages than microarrays and are more
+popular nowadays, we will use raw counts of RNA-Seq data as the input of WGCNA in this practice. 
+
+In general WGCNA has 5 steps, which are as follows:
+
+1. Data input and preprocessing
+2. Network construction and module detection
+3. Relating modules to external clinical traits
+4. Exploration of individual genes within co-expression module
+5. Network visualisation
+
+In this practice, we will learn how to perform the step 1 and step 2, and we
+will learn step 3, step 4 and step 5 in the next practice.
+
+## R Markdown Setup
+
+As per usual, we'll work mainly in R Markdown today, so create a new R Project in your `~/transcriptomics` folder called `week_10` or something else appropriate.
+Call today's R Markdown whatever you'd like, but I've called mine `10.1_WGCNA_part1.Rmd`.
+My YAML is
+
+```
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 10.1: Co-expression network analysis using WGCNA, part 1"
+date: "20^th^ May 2020"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+---
+```
+
+My setup chunk is
+
+```{r setup, echo=TRUE}
+knitr::opts_chunk$set(
+    echo = TRUE, 
+    message = FALSE, 
+    warning = FALSE,
+    fig.align = "center",
+    results = "hide",
+    fig.show = "hide"
+)
+```
+The installation of the WGCNA package is according to WGCNA homepage (https://horvath.genetics.ucla.edu/html/CoexpressionNetwork/Rpackages/WGCNA/InstallationInstructions.html). Here I attached the R prompt for the installation of WGCNA if you want to install it in your own computer, but you don't need run these commands in today's practice because we have already had WGCNA pre-installed in your VM:
+
+```{r}
+#install.packages(c("matrixStats", "Hmisc", "splines", "foreach", "doParallel",
+#                   "fastcluster", "dynamicTreeCut", "survival"))
+#if (!requireNamespace("BiocManager", quietly = TRUE))
+#    install.packages("BiocManager")
+#BiocManager::install(c("GO.db", "preprocessCore", "impute"))
+
+#install.packages("WGCNA")
+```
+
+Another two R packges that we will require today are `limma` and `ape`.
+`limma` is already installed in your VM because we had used it in previous
+practice. Use the
+following command to install `ape` from CRAN in your R prompt:
+```{r}
+install.packages("ape")
+```
+You may be asked to use local library to install R package, and just answer "Yes".
+And also you may be asked to choose a server/mirror to download installation
+file, and just type a number to choose a server, for example "0".
+
+Once you get all required packages installed, you need to load packages required in this analysis 
+```{r loadPackages}
+library(WGCNA)
+library(limma)
+library(ape)
+options(stringsAsFactor = F)
+```
+
+## Input data for WGCNA analysis 
+We only need two data for a typical WGCNA analysis, gene expression data and
+external clinical data. We will use a subset of RNA-Seq data from a TCGA (The
+Cancer Genome Atlas) study for skin cutaneous melanomas (SKCM). The gene
+expression data is a RNA-Seq raw counts file including expression profiles of
+human reference genes from 41 primary tissues of patients with SKCM. The
+clinical data used in this analysis is the so called lymphocyte score, which
+summarises the lymphocyte distribution and density in the pathological view.
+For more information about the datasets, please read the article (DOI: 10.1016/j.cell.2015.05.044). 
+
+In today's analysis, we only need the gene expression data. The file including gene expression data is available [here](data/WGCNA_PRAC_RNASeq_rawCounts.tsv) so please right-click on that link to get the file path. Then, move to your terminal in RStudio and use `wget` to download the file into your current R Project.
+Make sure it's called `WGCNA_PARC_RNAS_rawCounts.tsv` and is in the parent directory of your R Project.
+
+# Data input and preprocessing
+
+## Import gene expression data
+The input data is the raw counts from RNA-Seq data. You have learned from
+previous lectures that raw counts from RNA-Seq data are read numbers mapped to
+gene features. The first row of the table is the gene id (with column name
+"geneID") and all the rest columns are individual samples/patients.
+
+This is a *tab-delimited file*, I use `read.table()` to import file into R and
+use 1st row of the file as the column names. The imported data format is `data.frame` format, so we removed the 1st column (geneID) and convert `data.frame` to `matrix` format for the expression data and designate gene ID as row names of gene expression data. We can use `dim()` to check the size of the matrix, with 1st returned value as number of rows and 2nd returned value as number of columns. Because the matrix is very big, we only select fist 5 rows and 5 columns to get a rough idea about the whole matrix.
+
+```{r}
+counts.df = read.table("WGCNA_PRAC_RNASeq_rawCounts.tsv", header = T)
+counts = as.matrix(counts.df[, -1])
+rownames(counts) = counts.df[, 1]
+dim(counts)
+counts[1:5, 1:5]
+```
+
+## Data preprocessing 
+
+### Remove genes without read counts in majority of samples 
+
+The first step of data preprocessing is to remove genes without expression in
+most samples. The criteria used in following R code is: remove genes if they
+have no read counts in more than 80% of samples.
+
+```{r}
+counts = counts[rowSums(counts) > ncol(counts)*0.8, ]
+dim(counts)
+```
+### Normalisation and removal of expression-stable genes
+As read counts follow a negative binomial distribution, RNAseq data was normalised with the `voom` function. The `voom` method estimates the mean-variance of the log-counts and generates a precision weight for each observation. This way, a comparative analysis can be performed with all bioinformatic workflows originally developed for microarrays analyses.
+
+In addition, expression-stable genes across samples are not interesting, so we
+want to exclude them from co-expression analysis as well. We use `mad` (Median
+Absolute Devision) to measue the variability and as a heuristic cutoff, the top
+5000 most variant genes are selected in our analysis. And then we use `t` to transpose the gene expression data to get the WGCNA matrix.
+
+```{r}
+countsVoom = voom(counts)$E
+countsVoom[1:5, 1:5]
+countsVoom = countsVoom[order(apply(countsVoom,1,mad), decreasing = T)[1:5000], ]
+WGCNAmatrix = t(countsVoom)
+```
+There is an optinal step in data preprocessing, which is to detect whether
+there is sample outliers. The idea is to cluster the samples (in contrast to
+clustering genes in following co-expression analysis) to see if there are any
+obvious outliers.
+```{r}
+sampleTree = hclust(dist(WGCNAmatrix), method = 'average')
+plot(sampleTree, main = "Sample clustering to detect outliers",
+     sub = "", xlab = "", cex.lab = 1, cex.axis = 1, cex.main = 1.5)
+```
+It appears that there is no outliers in our dataset, we will use all samples
+for following analysis. If there are outliers, you can remove them by hand or use an
+automatic approach.
+
+# Network construction and module detection
+## Network construction
+As we have learned from the lecture that we want to have our network
+approximately satisfy scale free topology by choosing an appropriate soft
+threshold power $\beta$. The way that we check whether our network satisfies
+scale free topology is to check the linear model fitting index $R^2$. And we
+choose a lowest power $\beta$ to make the curve saturate, and the $R^2$ reaches
+a high value (0.9 as suggested by the authors of WGCNA). In WGCNA package,
+function `pickSoftThreshold` can be used to calcuate $R^2$ for a series of power
+$\beta$. Then we can plot the power $\beta$ versus $R^2$ to find the appropriate $\beta$.
+
+```{r}
+powers = c(c(1:10), seq(from = 12, to=20, by=2))
+sft = pickSoftThreshold(WGCNAmatrix, powerVector = powers, verbose = 5)
+plot(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+     xlab='Soft Threshold (power)',ylab='Scale Free Topology Model Fit,signed R^2',
+     type='n', main = paste('Scale independence'));
+text(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+     labels=powers,cex=1,col='red'); abline(h=0.90,col='red')
+
+plot(sft$fitIndices[,1], sft$fitIndices[, 5],
+     xlab="Soft Threshold (power)", ylab="Mean Connectivity", type = "n",
+     main = paste("Mean connectivity"))
+text(sft$fitIndices[, 1], sft$fitIndices[, 5], labels=powers, cex=1, col="red")
+```
+In our analysis, we choose soft thersholding power 8 to calculate the wighted
+adjacency matrix. if you still remember the equation of calculating adjacency
+matrix for signed network:
+$$A_{ij} = |\frac{1+cor(x_{i},x_{j})}{2}|^\beta$$
+We use function `adjacency` in WGCNA to calculate the adjacency matrix. You can
+choose different correlation measurement methods with option `corFnc`, and you can
+chooes either "signed" or "unsigned" network construction using option `type`.
+Here we calculate the adjacency matrix as a signed network with Pearson correlation (default) using power "8".
+
+```{r}
+beta = 8
+adjacency = adjacency(WGCNAmatrix, type="signed", power=beta)
+adjacency[1:5, 1:5]
+```
+
+And then, the Topological Overlap Matrix (TOM) and dissimilarity matrix are
+calculated as follows:
+
+```{r}
+TOM = TOMsimilarity(adjacency)
+TOM[1:5, 1:5]
+dissTOM= 1 - TOM
+dissTOM[1:5, 1:5]
+```
+
+## Module detection
+To identify co-expression modules, genes are next clustered based on the dissimilarity measure, where branches of the dendrogram correspond to modules. We plot the clustering dendrogram as a figure, and in the clustering tree (dendrogram),each leaf, that is a short vertical line, corresponds to a gene. Branches of the dendrogram group together densely interconnected, highly co-expressed genes. Module identification amounts to the identification of individual branches(”cutting the branches off the dendrogram”). There are several methods for branch cutting; our standard method is the Dynamic Tree Cut from the package `dynamicTreeCut`. 
+
+```{r}
+geneTree = hclust(as.dist(dissTOM), method = 'average')
+plot(geneTree, xlab="", sub="", main = "Gene clustering on TOM-based dissimilarity",
+     labels = F, hang = 0.04)
+```
+
+In the dynamic tree cut function `cutreeDynamic`, we set the minimum module size as 30. Another two important options are `deepSplit` and `PAM`. deepSplit(0-4) controls how finely the branches should be split, higher values give more smaller modules, low values(0) give fewer larger modules, `pamRespectsDendro` (T or F, default is enabled) stage allows the user to assign more outlying objects to clusters, without PAM stage, sometimes there are many "grey" genes, with PAM stage the dendrogram is sometimes more difficult to interpret.
+
+```{r}
+#Module identification using dynamic tree cut
+minModuleSize = 30
+dynamicMods = cutreeDynamic(dendro = geneTree, distM = dissTOM, deepSplit = 4,
+                            pamRespectsDendro = FALSE, minClusterSize = 30)
+table(dynamicMods)
+
+#assign module colours
+dynamicColors = labels2colors(dynamicMods)
+table(dynamicColors)
+
+#plot the dendrogram and corresponding colour bars underneath
+plotDendroAndColors(geneTree, dynamicColors, 'Dynamic Tree Cut',
+                    dendroLabels = FALSE, hang = 0.03,
+                    addGuide = TRUE, guideHang = 0.05, main='')
+```
+
+The relation between the identified co-expression modules can be visualized by
+a dendrogram of their eigengenes. The module eigengene is defined as
+the first principal component of its expression matrix. It could be shown that
+the module eigengene is highly correlated with the gene that has the highest
+intramodular connectivity.
+
+```{r}
+##calculate eigengenes
+MEList = moduleEigengenes(WGCNAmatrix, colors = dynamicColors)
+MEs = MEList$eigengenes
+
+#Calculate dissimilarity of module eigengenes
+MEDiss = 1 - cor(MEs)
+
+#Cluster module eigengenes
+METree = hclust(as.dist(MEDiss), method = "average")
+
+par(mar=c(2,2,2,2))
+plot.phylo(as.phylo(METree), type = "fan", show.tip.label = F,
+           main = "Clustering of module eigengenes")
+tiplabels(frame = "circle", col = "black",
+          text = rep("", length(unique(dynamicMods))),
+          bg = levels(as.factor(dynamicColors)))
+```
+
+Before we finish, we need to save our WGCNA matrx and module colors for use in 2nd part of our WGCNA practice.
+
+```{r}
+save(WGCNAmatrix, MEs, dynamicMods, dynamicColors, geneTree, file
+     = "WGCNA_RNASeq_part1.RData")
+```
+
