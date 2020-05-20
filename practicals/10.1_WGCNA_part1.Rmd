@@ -91,7 +91,7 @@ Once you get all required packages installed, you need to load packages required
 library(WGCNA)
 library(limma)
 library(ape)
-options(stringsAsFactor = F)
+options(stringsAsFactor = FALSE)
 ```
 
 ## Input data for WGCNA analysis 
@@ -119,7 +119,7 @@ This is a *tab-delimited file*, I use `read.table()` to import file into R and
 use 1st row of the file as the column names. The imported data format is `data.frame` format, so we removed the 1st column (geneID) and convert `data.frame` to `matrix` format for the expression data and designate gene ID as row names of gene expression data. We can use `dim()` to check the size of the matrix, with 1st returned value as number of rows and 2nd returned value as number of columns. Because the matrix is very big, we only select fist 5 rows and 5 columns to get a rough idea about the whole matrix.
 
 ```{r}
-counts.df = read.table("WGCNA_PRAC_RNASeq_rawCounts.tsv", header = T)
+counts.df = read.table("WGCNA_PRAC_RNASeq_rawCounts.tsv", header = TRUE)
 counts = as.matrix(counts.df[, -1])
 rownames(counts) = counts.df[, 1]
 dim(counts)
@@ -149,7 +149,7 @@ Absolute Devision) to measue the variability and as a heuristic cutoff, the top
 ```{r}
 countsVoom = voom(counts)$E
 countsVoom[1:5, 1:5]
-countsVoom = countsVoom[order(apply(countsVoom,1,mad), decreasing = T)[1:5000], ]
+countsVoom = countsVoom[order(apply(countsVoom,1,mad), decreasing = TRUE)[1:5000], ]
 WGCNAmatrix = t(countsVoom)
 ```
 There is an optinal step in data preprocessing, which is to detect whether
@@ -221,10 +221,10 @@ To identify co-expression modules, genes are next clustered based on the dissimi
 ```{r}
 geneTree = hclust(as.dist(dissTOM), method = 'average')
 plot(geneTree, xlab="", sub="", main = "Gene clustering on TOM-based dissimilarity",
-     labels = F, hang = 0.04)
+     labels = FALSE, hang = 0.04)
 ```
 
-In the dynamic tree cut function `cutreeDynamic`, we set the minimum module size as 30. Another two important options are `deepSplit` and `PAM`. deepSplit(0-4) controls how finely the branches should be split, higher values give more smaller modules, low values(0) give fewer larger modules, `pamRespectsDendro` (T or F, default is enabled) stage allows the user to assign more outlying objects to clusters, without PAM stage, sometimes there are many "grey" genes, with PAM stage the dendrogram is sometimes more difficult to interpret.
+In the dynamic tree cut function `cutreeDynamic`, we set the minimum module size as 30. Another two important options are `deepSplit` and `PAM`. deepSplit(0-4) controls how finely the branches should be split, higher values give more smaller modules, low values(0) give fewer larger modules, `pamRespectsDendro` (TRUE or FALSE, default is enabled) stage allows the user to assign more outlying objects to clusters, without PAM stage, sometimes there are many "grey" genes, with PAM stage the dendrogram is sometimes more difficult to interpret.
 
 ```{r}
 #Module identification using dynamic tree cut
@@ -261,7 +261,7 @@ MEDiss = 1 - cor(MEs)
 METree = hclust(as.dist(MEDiss), method = "average")
 
 par(mar=c(2,2,2,2))
-plot.phylo(as.phylo(METree), type = "fan", show.tip.label = F,
+plot.phylo(as.phylo(METree), type = "fan", show.tip.label = FALSE,
            main = "Clustering of module eigengenes")
 tiplabels(frame = "circle", col = "black",
           text = rep("", length(unique(dynamicMods))),
