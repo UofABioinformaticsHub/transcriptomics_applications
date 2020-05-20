@@ -1,12 +1,15 @@
 ---
 title: "BIOINF3005/7160:<br>Transcriptomics Applications"
-subtitle: "Week 10.1: Co-expression network analysis using WGCNA, part 1"
-date: "20^th^ May 2020"
-output: 
-  html_document: 
+output:
+  html_document:
     toc: yes
     toc_depth: 2
     toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '2'
+date: "20^th^ May 2020"
+subtitle: 'Week 10.1: Co-expression network analysis using WGCNA, part 1'
 ---
 
 # Introduction
@@ -99,7 +102,7 @@ We only need two data for a typical WGCNA analysis, gene expression data and
 external clinical data. We will use a subset of RNA-Seq data from a TCGA (The
 Cancer Genome Atlas) study for skin cutaneous melanomas (SKCM). The gene
 expression data is a RNA-Seq raw counts file including expression profiles of
-human reference genes from 41 primary tissues of patients with SKCM. The
+human reference genes from primary tumor tissues of 41 patients with SKCM. The
 clinical data used in this analysis is the so called lymphocyte score, which
 summarises the lymphocyte distribution and density in the pathological view.
 For more information about the datasets, please read the article (DOI: 10.1016/j.cell.2015.05.044). 
@@ -112,11 +115,11 @@ Make sure it's called `WGCNA_PARC_RNAS_rawCounts.tsv` and is in the parent direc
 ## Import gene expression data
 The input data is the raw counts from RNA-Seq data. You have learned from
 previous lectures that raw counts from RNA-Seq data are read numbers mapped to
-gene features. The first row of the table is the gene id (with column name
+gene features. The first column of the table is the gene id (with column name
 "geneID") and all the rest columns are individual samples/patients.
 
 This is a *tab-delimited file*, I use `read.table()` to import file into R and
-use 1st row of the file as the column names. The imported data format is `data.frame` format, so we removed the 1st column (geneID) and convert `data.frame` to `matrix` format for the expression data and designate gene ID as row names of gene expression data. We can use `dim()` to check the size of the matrix, with 1st returned value as number of rows and 2nd returned value as number of columns. Because the matrix is very big, we only select fist 5 rows and 5 columns to get a rough idea about the whole matrix.
+use 1st row of the file as the column names. The imported data format is `data.frame` format, so we remove the 1st column (geneID) and convert `data.frame` to `matrix` format for the expression data and designate gene ID as row names of gene expression data. We can use `dim()` to check the size of the matrix, with 1st returned value as number of rows and 2nd returned value as number of columns. Because the matrix is very big, we only select first 5 rows and 5 columns to get a rough idea about the whole matrix.
 
 ```{r}
 counts.df = read.table("WGCNA_PRAC_RNASeq_rawCounts.tsv", header = TRUE)
@@ -128,14 +131,14 @@ counts[1:5, 1:5]
 
 ## Data preprocessing 
 
-### Remove genes without read counts in majority of samples 
+### Remove genes without read counts in the majority of samples 
 
 The first step of data preprocessing is to remove genes without expression in
-most samples. The criteria used in following R code is: remove genes if they
-have no read counts in more than 80% of samples.
+most samples. The criteria used in following R code is: keep genes only if they
+have read counts (expression) in more than 80% of samples.
 
 ```{r}
-counts = counts[rowSums(counts) > ncol(counts)*0.8, ]
+counts = counts[rowSums(counts > 0) > ncol(counts)*0.8, ]
 dim(counts)
 ```
 ### Normalisation and removal of expression-stable genes
@@ -152,18 +155,18 @@ countsVoom[1:5, 1:5]
 countsVoom = countsVoom[order(apply(countsVoom,1,mad), decreasing = TRUE)[1:5000], ]
 WGCNAmatrix = t(countsVoom)
 ```
-There is an optinal step in data preprocessing, which is to detect whether
-there is sample outliers. The idea is to cluster the samples (in contrast to
+There is an optional step in data preprocessing, which is to detect whether
+there are sample outliers. The idea is to cluster the samples (in contrast to
 clustering genes in following co-expression analysis) to see if there are any
 obvious outliers.
 ```{r}
-sampleTree = hclust(dist(WGCNAmatrix), method = 'average')
+sampleTree = hclust(dist(WGCNAmatrix), method = "average")
 plot(sampleTree, main = "Sample clustering to detect outliers",
      sub = "", xlab = "", cex.lab = 1, cex.axis = 1, cex.main = 1.5)
 ```
-It appears that there is no outliers in our dataset, we will use all samples
+It appears that there is no outlier in our dataset, we will use all samples
 for following analysis. If there are outliers, you can remove them by hand or use an
-automatic approach.
+automatic approach which you can find in the WGCNA vignette.
 
 # Network construction and module detection
 ## Network construction
@@ -180,27 +183,30 @@ $\beta$. Then we can plot the power $\beta$ versus $R^2$ to find the appropriate
 powers = c(c(1:10), seq(from = 12, to=20, by=2))
 sft = pickSoftThreshold(WGCNAmatrix, powerVector = powers, verbose = 5)
 plot(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
-     xlab='Soft Threshold (power)',ylab='Scale Free Topology Model Fit,signed R^2',
-     type='n', main = paste('Scale independence'));
+     xlab="Soft Threshold (power)", ylab="Scale Free Topology Model Fit,signed R^2",
+     type="n", main = paste("Scale independence"))
 text(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
-     labels=powers,cex=1,col='red'); abline(h=0.90,col='red')
-
+     labels=powers,cex=1,col="red")
+abline(h=0.90,col="red") #add a horizontal line which shows $R^2$ as 0.9
+```
+We can also plot the mean connectivity as a function of the soft-thresholding power to see how connectivity changes along with the power $\beta$. 
+```{r}
 plot(sft$fitIndices[,1], sft$fitIndices[, 5],
      xlab="Soft Threshold (power)", ylab="Mean Connectivity", type = "n",
      main = paste("Mean connectivity"))
 text(sft$fitIndices[, 1], sft$fitIndices[, 5], labels=powers, cex=1, col="red")
 ```
-In our analysis, we choose soft thersholding power 8 to calculate the wighted
+In our analysis, we choose soft thersholding power $\beta$ 4 to calculate the wighted
 adjacency matrix. if you still remember the equation of calculating adjacency
 matrix for signed network:
 $$A_{ij} = |\frac{1+cor(x_{i},x_{j})}{2}|^\beta$$
 We use function `adjacency` in WGCNA to calculate the adjacency matrix. You can
 choose different correlation measurement methods with option `corFnc`, and you can
 chooes either "signed" or "unsigned" network construction using option `type`.
-Here we calculate the adjacency matrix as a signed network with Pearson correlation (default) using power "8".
+Here we calculate the adjacency matrix as a signed network with Pearson correlation (default) using power $\beta$ 4.
 
 ```{r}
-beta = 8
+beta = 4
 adjacency = adjacency(WGCNAmatrix, type="signed", power=beta)
 adjacency[1:5, 1:5]
 ```
@@ -216,10 +222,10 @@ dissTOM[1:5, 1:5]
 ```
 
 ## Module detection
-To identify co-expression modules, genes are next clustered based on the dissimilarity measure, where branches of the dendrogram correspond to modules. We plot the clustering dendrogram as a figure, and in the clustering tree (dendrogram),each leaf, that is a short vertical line, corresponds to a gene. Branches of the dendrogram group together densely interconnected, highly co-expressed genes. Module identification amounts to the identification of individual branches(”cutting the branches off the dendrogram”). There are several methods for branch cutting; our standard method is the Dynamic Tree Cut from the package `dynamicTreeCut`. 
+To identify co-expression modules, genes are next clustered based on the dissimilarity measure, where branches of the dendrogram correspond to modules. We plot the clustering dendrogram as a figure, and in the clustering tree (dendrogram),each leaf, that is a short vertical line, corresponds to a gene. Branches of the dendrogram group together densely interconnected, highly co-expressed genes. Module identification amounts to the identification of individual branches (cutting the branches off the dendrogram). There are several methods for branch cutting; our standard method is the Dynamic Tree Cut from the package `dynamicTreeCut`. 
 
 ```{r}
-geneTree = hclust(as.dist(dissTOM), method = 'average')
+geneTree = hclust(as.dist(dissTOM), method = "average")
 plot(geneTree, xlab="", sub="", main = "Gene clustering on TOM-based dissimilarity",
      labels = FALSE, hang = 0.04)
 ```
