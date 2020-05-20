@@ -1,0 +1,409 @@
+---
+title: "Transcriptomics Applications"
+subtitle: "Assignment 2 Solutions"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: true
+---
+
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 8px; padding: 12px;}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE, 
+    warning = FALSE,
+    message = FALSE
+)
+```
+
+```{r}
+library(tidyverse)
+```
+
+# Instructions
+
+## Submission Format [3 marks]
+
+This is assignment is due by 5pm, **Tuesday 12^th^ May**.
+
+- Submissions must be made as a *zip archive* containing 2 files:
+    1. Your **source R Markdown Document** (with an Rmd suffix)
+    2. A **compiled pdf**, showing all code
+- All file names **within the zip archive** must start with your student number.
+However the name of the zip archive is not important as myUni will likely modify this during submission. [See here for help creating a zip archive](#creating-a-zip-archive)
+    
+*All questions are to be answered on the same R Markdown / PDF, regardless of if they require a plain text answer, or require execution of code.*
+
+**Marks directly correspond to the amount of time and effort we expect for each question, so please answer with this is mind.**
+
+We **strongly advise** working in the folder `~/transcriptomics/assignment2` on your virtual machine.
+Using an R Project for each individual assignment is also strongly advised.
+
+## Creating a zip archive {.tabset}
+
+### On Your VM
+
+If all files required for submission *are contained on your VM*:
+
+1. Select both files using the **Files** pane in R Studio
+2. Click export
+3. They will automatically be placed into a single zip archive. Please name this in whatever informative name you decide is suitable, but it should contain the suffix `.zip`
+
+### Windows
+
+If all files are on your on your *local Windows machine*:
+
+1. Using File Explorer, enter the folder containing both files
+2. Select all files simultaneously by using <kbd>Ctrl</kbd> + Click
+3. Right click on one of the files and select `Send to > Compressed (zipped) folder`
+4. Rename as appropriate, ensuring the archive ends with the suffix `.zip`
+
+### Mac OS
+
+If all the files are on your *local macOS machine`:
+
+1. Locate the items to zip in the Mac Finder (file system)
+2. Right-click on a file, folder, or files you want to zip
+3. Select “Compress Items”
+4. Find the newly created .zip archive in the same directory and name as appropriate
+
+
+# Questions
+
+```{r}
+marks <- tibble(q = 0, marks = 3)
+q <- 1
+```
+
+## Question `r q` [8 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 8)
+    )
+```
+
+Two common strategies for RNA Seq library preparation are the depletion of rRNA molecules or the preferential amplification of poly-adenylated RNA.
+Briefly contrast these two approaches, describing their respective strengths and limitations.
+
+<div class = "blue">
+
+Any of the following points up to the total of 8 marks will be accepted, along with any other suitable comparisons
+
+- totalRNA (rRNA-depletion) actively removes RNA molecules by one of a number of strategies, using sequence identity to remove molecules such as rRNA which are not of experimental interest
+- polyA techniques use an amplification strategy in which polyA/T sequences are targeted for amplification
+- polyA techniques will preferentially amplify mature mRNAs with a polyA tail, ensuring mature mRNAs form the majority of the sequenced molecules. rRNA-reduction strategies will include immature (i.e. unprocessed) transcripts in their pool of amplified molecules
+- polyA amplification will include any molecules with a polyA tail, but will miss molecules such as those ncRNA without a polyA tail. These are captured by rRNA-reduction strategies however
+- rRNA-reduction can be highly variable between samples within the same experiment adding noise
+
+</div>
+
+```{r}
+q <- q + 1
+```
+
+## Question `r q` [10 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 10)
+    )
+```
+
+A common alignment and quantification workflow is to align an RNA Seq sample to a reference genome and count reads which align to each gene, as defined in a `gtf` file.
+
+a. Describe two important considerations during the quantification step, and how these may differ for polyA and total RNA libraries?
+b. What advantages and disadvantages does this approach offer in comparison to using pseudo-alignment to a reference transcriptome
+
+
+<div class = "blue">
+
+a.
+- Do we count reads which align strictly to exonic regions, or do we include reads that partially overlap introns? For total-RNA we may have unspliced transcripts, whereas we probably won't for polyA libraries
+- Reads can often align to multiple locations, so how do we manage multi-mapped reads. This should be the same for either library preparation method
+
+b.
+- Using a gene-centric model enables easier visualisation and detection of unusual splice variation.
+- Novel transcripts are more easily detected as we're not limited to known transcripts or even to known exons
+- Using a transcriptome as our reference is faster, and gives transcript-level expression estimates.
+
+
+</div>
+
+```{r}
+q <- q + 1
+```
+
+## Question `r q` [8 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 8)
+    )
+```
+
+A transcriptomic experiment was designed to test differences in gene expresson based on loss-of-function mutations in a specific gene (*myGene*).
+Three genotypes: *Wild-Type*, *Heterozygous* and *Homozygous* were analysed, and these may also be described as *myGene^+/+^*, *myGene^+/-^* and *myGene^-/-^*.
+For an experiment with $n = 4$ samples from each genotype, describe two possible approaches detailing advantages of each over the other.
+Include code for generating a model matrix and a contrast matrix based on the following layout.
+
+You should start the coding section by copying the following code to generate the appropriate metadata object.
+
+```{r, echo=TRUE}
+genoData <- tibble(
+  sampleID = paste0("S", 1:12),
+  replicate = rep(1:4, 3),
+  myGene = rep(c("+/+", "+/-", "-/-"), each = 4),
+  genotype = rep(c("WT", "Het", "Hom"), each = 4)
+)
+```
+
+(Hint: Consider how to set a categorical variable in R)
+
+<div class = "blue">
+
+We could take a few approaches here, with two of these being setting a reference genotype, such as the wild-type samples, and assessing the impact of the mutant genotype in comparison to this.
+One possible parameterisation would be as follows.
+
+```{r, echo=TRUE}
+library(limma)
+genoData <- genoData %>%
+  mutate(genotype = factor(genotype, levels = c("WT", "Het", "Hom")))
+X_wt_as_ref <- model.matrix(~genotype, data = genoData)
+X_wt_as_ref
+```
+
+Under this parameterisation, the columns `genotypeHet` and `genotypeHom` capture the differences between each mutant genotype and the WT samples (i.e. the intercept).
+To compare between genotypes, we could define a contrast matrix
+
+```{r, echo=TRUE}
+makeContrasts(
+  HetVsWT = genotypeHet,
+  HomVsWT = genotypeHom,
+  HomVsHet = genotypeHom - genotypeHet,
+  levels = colnames(X_wt_as_ref)
+)
+```
+
+An approach in which no reference group was defined could be as follows
+
+```{r, echo=TRUE}
+X_no_ref <- model.matrix(~0 + genotype, data = genoData)
+X_no_ref
+```
+
+Under this strategy, we need to define our contrassts again
+
+```{r, echo=TRUE}
+makeContrasts(
+  HetVsWT = genotypeHet - genotypeWT,
+  HomVsWT = genotypeHom - genotypeWT,
+  HomVsHet = genotypeHom - genotypeHet,
+  levels = colnames(X_no_ref)
+)
+```
+
+A final option may be to define WT as the reference level, then include a column for the presence of a mutant allele, followed by a third indicating the effects of be homozygous mutant.
+
+```{r, echo=TRUE}
+genoData <- genoData %>%
+  mutate(
+    mutant = str_detect(myGene, "-"),
+    homMut = str_detect(genotype, "Hom")
+  ) 
+X_mut_geno <- model.matrix(~mutant + homMut, data = genoData)
+X_mut_geno
+```
+
+This parameterisation works very well in either a dominant or recessive context.
+In a dominant model most genes will be detected as DE by the column `mutantTRUE`, whilst in a recessive model, most genes would be detected as DE by the column `homMutTRUE`.
+This effectively captures the common effects of the mutation between genotypes, and where they differ.
+No contrast matrix is really necessary as this captures most of the information we need.
+
+
+</div>
+
+```{r}
+q <- q + 1
+```
+
+
+## Question `r q` [18 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 18)
+    )
+```
+
+For this question all data was obtained from the public dataset located [here](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE71868), but has bene partially prepared and filtered for you.
+Data was generated using Illumina Microarrays and as such the assumption of normality is appropriate.
+Using the [metadata](data/GSE71868_meta.txt), [gene annotation](data/GSE71868_genes.tsv) and [expression values](data/GSE71868_exprs.tsv) contained in each of these three files:
+
+1. Form an `ExpressionSet`, followed by a suitable design matrix
+2. Perform a differential expression analysis based on your design matrix 
+3. Generate MA and Volcano plots, labelling any genes you think are appropriate 
+4. Produce a table of the top 10 most highly ranked genes from this analysis
+
+Include captions explaining each figure or table and ensure correctly labelled axes where appropriate. 
+
+**For the most highly-ranked upregulated gene (based on the p-value), which sample group is it the most highly-expressed in?**
+
+<div class = "blue">
+
+```{r, echo=TRUE}
+library(tidyverse)
+library(Biobase)
+library(magrittr)
+library(ggrepel)
+library(pander)
+exprs <- read_tsv("data/GSE71868_exprs.tsv") %>%
+  as.data.frame() %>%
+  column_to_rownames("ILMN_ID") %>%
+  as.matrix()
+samples <- read_tsv("data/GSE71868_meta.txt") %>%
+  mutate(
+    age = factor(age, levels = c("6-8 weeks", "10-13 months")),
+    group = str_extract(sample, "(Middle-aged|Young)"),
+    group = factor(group, levels = c("Young", "Middle-aged"))
+  ) %>%
+  as.data.frame() %>%
+  set_rownames(.$geo_accession) %>%
+  .[colnames(exprs),]
+genes <- read_tsv("data/GSE71868_genes.tsv") %>%
+  as.data.frame() %>%
+  set_rownames(.$ID) %>%
+  .[rownames(exprs),]
+eset <- ExpressionSet(
+  assayData = exprs,
+  phenoData = AnnotatedDataFrame(samples),
+  featureData = AnnotatedDataFrame(genes)
+)
+eset
+```
+
+```{r, echo=TRUE}
+# NB: you could also have used the age column
+X <- model.matrix(~group, data = pData(eset))
+X
+```
+
+```{r, echo=TRUE}
+fit <- lmFit(eset, X) %>%
+  eBayes()
+results <- topTable(fit, coef = "groupMiddle-aged", number = Inf) %>%
+  as_tibble() %>%
+  mutate(DE = adj.P.Val < 0.05)
+head(results)
+```
+
+```{r, echo=TRUE}
+results %>%
+  ggplot(aes(AveExpr, logFC)) +
+  geom_point(aes(colour = DE), alpha = 0.5) +
+  geom_smooth(se = FALSE) +
+  geom_hline(yintercept = c(-1, 1), colour = "blue", linetype = 2) +
+  geom_text_repel(
+    aes(colour = DE, label = Symbol),
+    data = . %>% dplyr::filter(logFC > 4),
+    show.legend = FALSE
+  ) +
+  geom_text_repel(
+    aes(colour = DE, label = Symbol),
+    data = . %>% dplyr::filter(logFC < -2.5 & DE),
+    show.legend = FALSE
+  ) +
+  scale_color_manual(values = c("grey50", "red")) +
+  theme_bw()
+```
+
+```{r, echo=TRUE}
+results %>%
+  ggplot(aes(logFC, -log10(P.Value))) +
+  geom_point(aes(colour = DE), alpha = 0.5) +
+  geom_vline(xintercept = c(-1, 1), colour = "blue", linetype = 2) +
+  geom_text_repel(
+    aes(colour = DE, label = Symbol),
+    data = . %>% dplyr::filter(P.Value < 1e-6),
+    show.legend = FALSE
+  ) +
+  scale_color_manual(values = c("grey50", "red")) +
+  theme_bw()
+```
+
+```{r, echo=TRUE}
+results %>%
+  arrange(P.Value) %>%
+  dplyr::slice(1:10) %>%
+  dplyr::select(
+    ID, EntrezGene = Entrez_Gene_ID, Symbol, logFC, AveExpr, t, P.Value, FDR = adj.P.Val
+  ) %>%
+  pander(
+    justify = "lllrrrrr",
+    caption = "The 10 most highly-ranked DE genes when comparing the two ages",
+    split.table = Inf
+  )
+```
+
+Given our design matrix, an upregulated gene will be most highly expressed in the 'Middle-aged' samples, and this is the case for our most highly ranked gene, 2310016A09Rik
+
+</div>
+
+# Total: `r sum(marks$marks)` marks
+
+
+
+```{r results, results='as.is'}
+late <- tibble(`Student ID` = c("a1678209", "a1724305"), Penalty = c(0.1, 0.5))
+here::here("assignments", "A3.csv") %>%
+  read_csv() %>%
+  rename(points = marks) %>%
+  pivot_longer(
+    cols = starts_with("a"),
+    names_to = "Student ID",
+    values_to = "awarded"
+  ) %>%
+  dplyr::filter(!is.na(awarded)) %>%
+  group_by(`Student ID`) %>%
+  summarise(
+    Marks = sum(awarded),
+    Points = sum(points)
+  ) %>%
+  left_join(
+    here::here("practicals/VMs.csv") %>%
+      read_csv
+  ) %>%
+  dplyr::select(
+    contains("Student"), Marks, Points
+  ) %>%
+  left_join(late) %>%
+  mutate(
+    Penalty = ifelse(is.na(Penalty), 0, Penalty),
+    Total = Marks*(1 - Penalty),
+    Total = round(2*Total, 0) / 2,
+    `Scaled (10)` = round(10*Total / Points, 1),
+    Grade = cut(
+      `Scaled (10)`, 
+      breaks = c(0, 5, 6.5, 7.5, 8.5, 10), 
+      labels = c("F", "P", "C", "D", "HD"),
+      include.lowest = TRUE
+      )
+  ) %T>%
+  write_csv(here::here("assignments/A3_results.csv")) %>%
+  arrange(desc(Total)) %>%
+  # pander::pander(split.table = Inf)# %>%
+  summarise(
+    highest = max(`Scaled (10)`),
+    median = median(`Scaled (10)`)
+  ) %>%
+  pander::pander(caption = "Summary of grades for assessment 3 2020, scaled to be out of a possible 10 marks")
+```
