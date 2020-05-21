@@ -1,6 +1,6 @@
 ---
 title: "Transcriptomics Applications"
-subtitle: "Assignment 2 Solutions"
+subtitle: "Assignment 3 Solutions"
 output: 
   html_document: 
     toc: yes
