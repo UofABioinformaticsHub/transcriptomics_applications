@@ -157,6 +157,8 @@
 
 \section{scRNA Protocols}
 
+\subsection{Cell Isolation}
+
 \begin{frame}{Isolating Individual Cells}
 
 	\begin{itemize}
@@ -175,10 +177,44 @@
 \begin{frame}{Protocol Timeline}
 
 	\begin{center}
-		\includegraphics[width=0.8\textwidth]{figures/scRNATimeline.jpg} 
+		\includegraphics[width=0.85\textwidth]{figures/scRNATimeline.jpg} 
 	\end{center}
 
 	\blfootnote{Taken from \cite{pmid29494575}}
+
+\end{frame}
+
+\begin{frame}{Protocol Timeline}
+
+	\begin{center}
+		\includegraphics[width=0.85\textwidth]{figures/scRNATimeline.pdf} 
+	\end{center}
+
+	\blfootnote{Data taken from \cite{pmid29494575}}
+
+\end{frame}
+
+\begin{frame}{IFC Capture}
+
+	\begin{itemize}
+		\item Integrated Fluidic Circuit (IFC) chips
+		\begin{itemize}
+			\item Most common is the Fluidigm C1
+		\end{itemize}
+		\item Deliver tiny volumes into `reaction chambers'
+		\item Early chips had 96 chambers $\implies$ multiple chips / experiment
+		\item Recent chips handle $\sim$800 cells
+	\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Protocol Timeline}
+
+	\begin{center}
+		\includegraphics[width=0.85\textwidth]{figures/scRNATimeline.pdf} 
+	\end{center}
+
+	\blfootnote{Data taken from \cite{pmid29494575}}
 
 \end{frame}
 
@@ -188,7 +224,26 @@
 		\includegraphics[width=0.7\textwidth]{figures/Droplet.jpg}
 	\end{center}
 	
+	\pause
+	Flow rate is modelled as a \textit{Poisson} process to minimise doublets
+	
 	\blfootnote{Taken from \cite{pmid29789704}}
+
+\end{frame}
+
+\subsection{Sequencing Protocols}
+
+\begin{frame}{Sequencing Overview}
+
+	\begin{itemize}
+		\item Individual cells are isolated $\implies$ how do we sequence?
+		\item Need a method to track which reads come from which cell
+		\item Sequencing is performed on a standard Illumina machine, i.e. multiplexed
+		\item Each cell is essentially an individual library prep
+		\begin{itemize}
+			\item Barcodes / UMIs are used to identify individual cells
+		\end{itemize}
+	\end{itemize}
 
 \end{frame}
 
