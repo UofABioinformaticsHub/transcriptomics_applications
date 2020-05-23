@@ -148,10 +148,10 @@
 \begin{frame}{Workflow Outline}
 
 	\begin{center}
-	\includegraphics[width=0.5\textwidth]{figures/scRNAWorkflow.jpg} 
+	\includegraphics[width=0.27\textwidth]{figures/scRNAWorkflow.png} 
 	\end{center}
 	
-	\blfootnote{Taken from \cite{10.3389/fgene.2019.00317}}
+	\blfootnote{Taken from \cite{pmid28821273}}
 
 \end{frame}
 
@@ -241,11 +241,139 @@
 		\item Sequencing is performed on a standard Illumina machine, i.e. multiplexed
 		\item Each cell is essentially an individual library prep
 		\begin{itemize}
-			\item Barcodes / UMIs are used to identify individual cells
+			\item Barcodes / UMIs are used for cell / molecule identification
+		\end{itemize}
+		\item For bulk RNA-Seq we need $0.1-1\mu$g of RNA ($10^5-10^6$pg)
+		\begin{itemize}
+			\item An individual cell contains 1-50pg
 		\end{itemize}
 	\end{itemize}
 
 \end{frame}
+
+\begin{frame}{SMART\footnote{SMART = Switching Mechanism at 5' End of RNA Template}-Seq (C1)}
+
+	\begin{enumerate}
+		\item All reagents are in the IFC reaction chambers
+		\item Cells are lysed
+		\item polyA RNA reverse transcribed into \textbf{full length cDNA}
+		\begin{itemize}
+			\item oligo(dT) priming and template switching
+		\end{itemize}
+		\item 12-18 PCR cycles
+		\item cDNA fragmentation and Adapter ligation
+	\end{enumerate}
+
+
+\end{frame}
+
+\begin{frame}
+	\begin{center}
+	\includegraphics[width=0.35\textwidth]{figures/SMARTSeq.png} 
+	\end{center}
+	\blfootnote{Image from \cite{pmid27442339}}
+\end{frame}
+
+\begin{frame}{Droplet-based Methods}
+
+	\begin{itemize}
+		\item Popularised by the 10X Genomics Chromium System
+		\item Each gel bead contains the reagents
+		\begin{itemize}
+			\item 30nt poly(dT) primer with 16nt 10x Barcode, 12nt UMI\footnote{Unique Molecular Identifier}
+		\end{itemize}
+		\item Illumina primers and restriction enzymes added later
+	\end{itemize}
+
+\end{frame}
+
+\begin{frame}{10X Chromium Protocol}
+
+	\begin{columns}[T]
+		\begin{column}{.45\textwidth}
+			\includegraphics[width=0.75\textwidth]{figures/10xInsideGEM.png} 
+			~\\[3mm]
+			\small
+			Barcoded, full-length cDNA is pooled then PCR amplified
+		\end{column}
+		\hfill
+		\pause
+		\begin{column}{.45\textwidth}
+			\includegraphics[width=0.75\textwidth]{figures/10xPooled.png} 
+		\end{column}
+	\end{columns}
+	\blfootnote{Images from \href{https://assets.ctfassets.net/an68im79xiti/1eX2FPdpeCgnCJtw4fj9Hx/7cb84edaa9eca04b607f9193162994de/CG000204\_ChromiumNextGEMSingleCell3\_v3.1\_Rev\_D.pdf}{10X Genomics CG000204\_ChromiumNextGEMSingleCell3\_v3.1\_Rev\_D.pdf}}
+\end{frame}
+
+\begin{frame}{10X Chromium Protocol}
+	\begin{center}
+		\includegraphics[width=0.6\textwidth]{figures/10XPairedRead.png} 
+	\end{center}
+	
+	\begin{itemize}
+		\item Only R2 contains the sequence information
+		\item Only the 3' end is sequenced
+		\item Each template RNA should have one UMI $\implies$ PCR duplicates can be identified
+	\end{itemize}		
+	
+\end{frame}
+
+\begin{frame}{Other Variations}
+
+CITE-Seq\footnote{Cellular Indexing of Transcriptomes and Epitopes by sequencing}
+	
+	\begin{itemize}
+		\item Prior to sorting cells can be `labelled' with antibody-oligo complexes
+		\item Oligos allow additional recognition of surface proteins
+		\item On cell lysis these oligos are amplified along with RNA
+	\end{itemize}		
+	
+\end{frame}
+
+\begin{frame}{Other Variations}
+
+SPLIT-Seq\footnote{Split-Pool Ligation-based Transcriptome Sequencing}
+	\begin{itemize}
+		\item Cells are split into pools and fixed
+		\item One barcode/pool
+		\item Multiple rounds of pooling and barcoding
+		\item All amplification is \textit{in situ}
+		\item Able to be applied to single nuclei
+	\end{itemize}
+	
+\end{frame}
+
+\begin{frame}{Comparison of Methods}
+
+	\begin{center}
+	
+		\small
+		\begin{tabular}{l|llll}
+			\textbf{Protocol} & \textbf{C1 (SMART-Seq)} & \textbf{SMART-Seq2} & \textbf{Chromium} & \textbf{SPLIT-Seq}\\
+			\midrule
+			\textit{Platform} & Microfluidics & Plate-based & Droplet & Plate-based\\
+			\textit{Transcript} & Full-length & Full-length & 3'-end & 3'-end\\
+			\textit{Cells} & $10^2 - 10^3$ & $10^2 - 10^3$ & $10^3-10^4$ & $10^3 - 10^5$\\
+			\textit{Reads/Cell} & $10^6$ & $10^6$ & $10^4-10^5$ & $10^4$\\
+			\bottomrule
+		\end{tabular}
+
+	\end{center}
+
+	\blfootnote{Data sourced from \cite{pmid28821273}}
+
+\end{frame}
+
+\begin{frame}{Protocol Timeline}
+
+	\begin{center}
+		\includegraphics[width=0.85\textwidth]{figures/scRNATimeline.pdf} 
+	\end{center}
+
+	\blfootnote{Data taken from \cite{pmid29494575}}
+
+\end{frame}
+
 
 \section{Data Analysis}
 
