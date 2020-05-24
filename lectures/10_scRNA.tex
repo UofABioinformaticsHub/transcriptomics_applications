@@ -97,7 +97,10 @@
 	\begin{itemize}
 		\item scRNA-Seq is the `latest and greatest' transcriptomic technique
 		\item Previously all our analysis involved multiple cells per sample
-		\item All were combined during tissue extraction, library preparation etc.
+		\begin{itemize}
+			\item Now commonly known as bulk RNA-Seq
+		\end{itemize}
+		\item Large cell numbers during tissue extraction, library preparation etc.
 		\item Most experiments have \textbf{highly} heterogeneous cell populations, e.g.
 		\pause
 		\begin{itemize}
@@ -120,7 +123,7 @@
 			\item Or is it down 2-fold in 25\% and up 8-fold in 25\% and unchanged in 50\%?
 		\end{itemize}
 		\item Changes in gene expression can be highly specific to individual cell-types
-		\item In general, determining heterogeneity of our samples is challenging
+		\item Determining heterogeneity of our bulk samples is challenging
 	\end{itemize}
 
 \end{frame}
@@ -132,23 +135,24 @@
 		\item Reality is much trickier than this
 		\pause
 		\item How do we characterise which cell is which cell-type?
+		\item What do we even mean by the term `cell-type'?
 		\item How do we capture as many transcripts from each cell as we can?
 		\begin{itemize}
 			\item Missing values are a huge issue in scRNA-seq
 		\end{itemize}
 		\item How do we compare within the same cell-types between experimental groups?
 		\begin{itemize}
-			\item E.g., treated and untreated cell types may not be assigned to the same cluster/cell-type
+			\item e.g. treated and untreated cell types may not be easily assigned to the same cluster/cell-type
 		\end{itemize}
 	\end{itemize}
 
 \end{frame}
 
 
-\begin{frame}{Workflow Outline}
+\begin{frame}{Summarised scRNA Workflow}
 
 	\begin{center}
-	\includegraphics[width=0.27\textwidth]{figures/scRNAWorkflow.png} 
+	\includegraphics[width=0.9\textwidth]{figures/scRNAWorkflow.png} 
 	\end{center}
 	
 	\blfootnote{Taken from \cite{pmid28821273}}
@@ -161,7 +165,7 @@
 		\item Bulk RNA-Seq is primarily focussed on differentially expressed (DE) genes
 		\item scRNA-Seq focusses on identifying cell-types within a sample
 		\item How do we discriminate between different cell-types and different cell-states?
-		\item What is the most intelligent approach for identifying DE genes
+		\item What is the most intelligent approach for identifying DE genes\\[2mm]
 		\begin{itemize}
 			\item Is it between clusters/cell-types $\implies$ marker genes
 			\item Is it between the same cell-types under differing treatments/cell-states?
@@ -171,8 +175,6 @@
 \end{frame}
 
 \section{scRNA Protocols}
-
-\subsection{Cell Isolation}
 
 \begin{frame}{Isolating Individual Cells}
 
@@ -185,6 +187,7 @@
 			\item MACS is a magnetic-based approach
 		\end{itemize}
 		\item Microfluidics/Droplet-based approaches
+		\item Multiple rounds of splitting and pooling
 	\end{itemize}
 
 \end{frame}
@@ -246,8 +249,6 @@
 
 \end{frame}
 
-\subsection{Sequencing Protocols}
-
 \begin{frame}{Sequencing Overview}
 
 	\begin{itemize}
@@ -260,7 +261,7 @@
 		\end{itemize}
 		\item For bulk RNA-Seq we need $0.1-1\mu$g of RNA ($10^5-10^6$pg)
 		\begin{itemize}
-			\item An individual cell contains 1-50pg
+			\item An individual cell contains 1-50pg RNA
 		\end{itemize}
 	\end{itemize}
 
@@ -282,9 +283,9 @@
 
 \end{frame}
 
-\begin{frame}
+\begin{frame}{SMART-Seq (C1)}
 	\begin{center}
-	\includegraphics[width=0.35\textwidth]{figures/SMARTSeq.png} 
+	\includegraphics[width=0.3\textwidth]{figures/SMARTSeq.png} 
 	\end{center}
 	\blfootnote{Image from \cite{pmid27442339}}
 \end{frame}
@@ -364,7 +365,7 @@ SPLIT-Seq\footnote{Split-Pool Ligation-based Transcriptome Sequencing}
 	
 		\small
 		\begin{tabular}{l|llll}
-			\textbf{Protocol} & \textbf{C1 (SMART-Seq)} & \textbf{SMART-Seq2} & \textbf{Chromium} & \textbf{SPLIT-Seq}\\
+			\textbf{Protocol} & \textbf{C1 (SMART-Seq)} & \textbf{SMART-Seq2} & \textbf{10X Chromium} & \textbf{SPLIT-Seq}\\
 			\midrule
 			\textit{Platform} & Microfluidics & Plate-based & Droplet & Plate-based\\
 			\textit{Transcript} & Full-length & Full-length & 3'-end & 3'-end\\
@@ -374,6 +375,9 @@ SPLIT-Seq\footnote{Split-Pool Ligation-based Transcriptome Sequencing}
 		\end{tabular}
 
 	\end{center}
+	\pause
+	~\\[3mm]
+	Saturation for detection of expressed genes occurs around $5\times10^5$ reads/cell
 
 	\blfootnote{Data sourced from \cite{pmid28821273}}
 
@@ -402,15 +406,13 @@ SPLIT-Seq\footnote{Split-Pool Ligation-based Transcriptome Sequencing}
 		\item Efficiency of cell capture ($\sim$50\% for 10X)
 		\item How to deal with batch effects
 		\begin{itemize}
-			\item Cells from each treatment group are always processed separately
+			\item Cells from each treatment group are always prepared separately
 		\end{itemize}
 	\end{itemize}
 
 \end{frame}
 
 \section{Data Analysis}
-
-\subsection{Pre-Processing}
 
 \begin{frame}{Automated Pipelines}
 	\begin{itemize}
@@ -425,7 +427,7 @@ SPLIT-Seq\footnote{Split-Pool Ligation-based Transcriptome Sequencing}
 			\item A \textbf{feature} is commonly thought of as a gene in scRNA-Seq
 			\item Other single-cell approaches (e.g. scATAC-Seq) are not gene focussed
 		\end{itemize}
-		\item Similar to counts from bulk RNA-Seq but with many more columns
+		\item Similar to counts from bulk RNA-Seq but with many more columns (cells)
 	\end{itemize}
 \end{frame}
 
@@ -440,6 +442,9 @@ SPLIT-Seq\footnote{Split-Pool Ligation-based Transcriptome Sequencing}
 		\end{enumerate}
 		\pause
 		\item Also need a method for considering each gene as detectable (Average Counts $>1$)
+		\begin{itemize}
+			\item Treatment Groups and Cell-Types are less easily defined \textit{a priori}
+		\end{itemize}
 	\end{itemize}
 
 \end{frame}
@@ -458,11 +463,9 @@ SPLIT-Seq\footnote{Split-Pool Ligation-based Transcriptome Sequencing}
 			\item Normalise across all clusters (TMM assumes most genes are not DE)
 			\item Deconvolute cells and normalisation factors
 		\end{enumerate}
-		\item Calculate log-transformed, normalised expression values
+		\item Calculate log-transformed, normalised expression values (\texttt{logcounts})
 	\end{itemize}
 \end{frame}
-
-\subsection{Clustering}
 
 \begin{frame}{Clustering}
 
@@ -471,10 +474,11 @@ SPLIT-Seq\footnote{Split-Pool Ligation-based Transcriptome Sequencing}
 		\item To speed this up, we often choose the most highly variable genes (HVGs)
 		\item Perform dimensional reduction:
 		\begin{itemize}
-			\item PCA 
+			\item PCA is the preferred linear approach, with non-linear approaches being:
 			\item tSNE (t-Distributed Stochastic Neighbour Embedding)
 			\item UMAP (Uniform Manifold Approximation and Projection)
 		\end{itemize}
+		\item Both tSNE and UMAP are highly sensitive to parameter choice
 	\end{itemize}
 
 \end{frame}
@@ -493,14 +497,182 @@ SPLIT-Seq\footnote{Split-Pool Ligation-based Transcriptome Sequencing}
 		\end{column}
 	\end{columns}
 	\blfootnote{Images from \url{https://scrnaseq.readthedocs.io/en/latest/ecellranger.html}}
+	
+\end{frame}
+
+\begin{frame}{Clustering}
+
+	\begin{itemize}
+		\item Formation of clusters allows for \textit{identification of cell-types}
+		\item Is there a ``ground truth"?
+		\item Different approaches will provide different results
+		\item Different parameter settings with provide different results
+		\item Each approach could be considered an alternate view-point on the data
+		\begin{itemize}
+			\item Some viewpoints reveal particular information
+			\item Alternate viewpoints reveal different insights
+		\end{itemize}
+		\item These are not necessarily contradictory
+		\item Clusters are essentially \textit{artificial constructs} used to represent one or more biological features
+	\end{itemize}
+	
+\end{frame}
+
+\begin{frame}{Graph-Based Clustering}
+
+	\begin{itemize}
+		\item Common approaches are $k$-nearest neighbours / shared neighbour weighting
+		\item Relatively efficient computationally
+		\item Uses the reduced dimensional data \textbf{not gene expression}
+		\begin{itemize}
+			\item Commonly PCA with some optimising for the number of retained PCs
+		\end{itemize}
+		\item Represents the similarity between cells as an ``edge weight" 
+		\item No assumption about `shape' of any clustering
+		\item Clusters are identified using \textit{Community Detection}
+	\end{itemize}
 
 \end{frame}
 
-\subsection{DE Analysis}
+\begin{frame}{Visualising Clusters: tSNE}
 
-\subsection{Trajectory Analysis}
+	\begin{center}
+	\includegraphics[width=0.6\textwidth]{figures/tsne-clust-graph-1.png} 
+	\end{center}
+	
+	\blfootnote{Image taken from \href{https://osca.bioconductor.org/}{Orchestrating Single-Cell Analysis with Bioconductor}}
+	
+\end{frame}
 
-\section{Spatial Transcriptomics}
+\begin{frame}{Visualising Clusters: Force-Directed Layout}
 
+	\begin{center}
+	\includegraphics[width=0.6\textwidth]{figures/pbmc-force-1.png} 
+	\end{center}
+	
+	\blfootnote{Image taken from \href{https://osca.bioconductor.org/}{Orchestrating Single-Cell Analysis with Bioconductor}}
+	
+\end{frame}
+
+\begin{frame}{Graph-Based Clustering}
+
+	\begin{itemize}
+		\item Forcing a minimum number of neighbours minimises small clusters
+		\begin{itemize}
+			\item Choosing large $k$ gives fewer larger clusters
+		\end{itemize}
+		\item Clustering is performed in high-dimensions (e.g. using 10PCs) but visualised in 2
+		\item Is essentially an exploratory process
+	\end{itemize}
+	
+\end{frame}
+
+\begin{frame}{Graph-Based Clustering}
+
+	\begin{center}
+		\includegraphics[width=0.55\textwidth]{figures/junweiAlluvial.png} 
+	\end{center}
+	
+	\blfootnote{Image from Junwei Wang, Masters Thesis, 2019}
+
+\end{frame}
+
+\begin{frame}{Alternative Clustering Methods}
+	\begin{itemize}
+		\item We can use $k$-Means $\implies$ assumes $k$ multi-dimensional spheres
+		\item $k$ explicitly sets the number of clusters
+	\end{itemize}
+	
+\end{frame}
+
+\begin{frame}{Alternative Clustering Methods}
+	\begin{columns}[T]
+		\begin{column}{.45\textwidth}
+			\centering
+			\includegraphics[width=0.95\textwidth]{figures/tsne-clust-kmeans-1.png} 
+			~\\
+			Setting $k = 10$
+		\end{column}
+		\hfill
+		\pause
+		\begin{column}{.45\textwidth}
+			\centering
+			\includegraphics[width=0.95\textwidth]{figures/tsne-clust-kmeans-best-1.png} 
+			~\\
+			Setting $k=20$
+		\end{column}
+	\end{columns}
+	\blfootnote{Images taken from \href{https://osca.bioconductor.org/}{Orchestrating Single-Cell Analysis with Bioconductor}}
+\end{frame}
+
+
+\begin{frame}{Marker Selection}
+
+	\begin{itemize}
+		\item An alternative perspective to differential expression $\implies$ marker gene selection
+		\item We find which genes \textit{define} one or more clusters $\implies$ identify known/unknown cell types
+		\item Can also use known markers from CITE-Seq to identify cell-types
+		\item Each cluster needs to be compared to all other clusters
+		\begin{itemize}
+			\item Can use $t$-tests, \texttt{limma/voom}, \texttt{edgeR}
+			\item For unique markers, choose the maximal p-value across all comparisons
+		\end{itemize}
+	\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Marker Selection}
+
+	\begin{center}
+		\includegraphics[width=0.9\textwidth]{figures/junweiCluster3.png}
+	\end{center}
+
+	\blfootnote{Image modified from Junwei Wang, Masters Thesis, 2019}
+
+\end{frame}
+
+\begin{frame}{Marker Selection}
+
+	\begin{itemize}
+		\item Often needs close discussion with biologist
+		\item Relies on their expertise and knowledge of existing markers
+		\item Still much scope for identifying new marker genes and cell-types
+	\end{itemize}
+
+\end{frame}
+
+\section{Trajectory Analysis}
+
+\begin{frame}{RNA Dynamics}
+	\begin{itemize}
+		\item With scRNA, we have dynamic information about each specific cell
+		\item We can see which transcripts are being actively up/down-regulated
+		\item Many introns also have poly(A) sites which are unintended targets for amplification
+		\item If an RNA is being \textit{actively} transcribed we may see introns
+		\item If an RNA \textit{has been processed} and exported we only see exons
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{RNA Dynamics}
+	\begin{center}
+		\includegraphics[width=0.8\textwidth]{figures/velocityFig1.png} 
+	\end{center}
+	\blfootnote{Image taken from \cite{pmid30089906}}
+	\end{frame}
+
+\begin{frame}{RNA Velocity}
+	\begin{itemize}
+		\item RNA Velocity is defined as the rate of change in spliced RNA with time
+		\item We obtain a value for each gene in each sample
+		\item Use dimensional reduction techniques $\implies$ project a velocity field onto clusters
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{RNA Velocity}
+	\begin{center}
+	\includegraphics[width=0.8\textwidth]{figures/velocityFig3.png} 
+	\end{center}
+	\blfootnote{Image taken from \cite{pmid30089906}}
+\end{frame}
 
 \end{document}
