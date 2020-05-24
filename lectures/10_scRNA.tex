@@ -155,6 +155,21 @@
 
 \end{frame}
 
+\begin{frame}{Motivation}
+
+	\begin{itemize}
+		\item Bulk RNA-Seq is primarily focussed on differentially expressed (DE) genes
+		\item scRNA-Seq focusses on identifying cell-types within a sample
+		\item How do we discriminate between different cell-types and different cell-states?
+		\item What is the most intelligent approach for identifying DE genes
+		\begin{itemize}
+			\item Is it between clusters/cell-types $\implies$ marker genes
+			\item Is it between the same cell-types under differing treatments/cell-states?
+		\end{itemize}
+	\end{itemize}
+
+\end{frame}
+
 \section{scRNA Protocols}
 
 \subsection{Cell Isolation}
@@ -374,16 +389,112 @@ SPLIT-Seq\footnote{Split-Pool Ligation-based Transcriptome Sequencing}
 
 \end{frame}
 
+\begin{frame}{Technical Challenges}
+
+	\begin{itemize}
+		\item How to detect intact/viable cells, free RNA etc
+		\item How to ensure only single cells captured, i.e. no doublets
+		\item Unbiased of sampling of RNA molecules (e.g. PCR impacts) and individual cells
+		\begin{itemize}
+			\item Large numbers of zero counts for expressed genes
+			\item Lack of evidence for expression $\neq$ evidence for lack of expression
+		\end{itemize}
+		\item Efficiency of cell capture ($\sim$50\% for 10X)
+		\item How to deal with batch effects
+		\begin{itemize}
+			\item Cells from each treatment group are always processed separately
+		\end{itemize}
+	\end{itemize}
+
+\end{frame}
 
 \section{Data Analysis}
 
-\subsection{QC}
+\subsection{Pre-Processing}
 
-\subsection{Quantification}
+\begin{frame}{Automated Pipelines}
+	\begin{itemize}
+		\item Most pre-processing for 10X data is performed using \texttt{CellRanger}
+		\item Handles demultiplexing, alignment (\texttt{STAR}) and quantification (using UMIs)
+		\begin{itemize}
+			\item Full-length transcript methods can utilise \texttt{kallisto/salmon}
+		\end{itemize}
+		\item We end up with a \texttt{feature-barcode matrix}
+		\begin{itemize}
+			\item A \textbf{barcode} represents an individual cell (or a set of reactions)
+			\item A \textbf{feature} is commonly thought of as a gene in scRNA-Seq
+			\item Other single-cell approaches (e.g. scATAC-Seq) are not gene focussed
+		\end{itemize}
+		\item Similar to counts from bulk RNA-Seq but with many more columns
+	\end{itemize}
+\end{frame}
 
-\subsection{Normalisation}
+\begin{frame}{Filtering}
+
+	\begin{itemize}
+		\item We need to keep the high quality cells and discard the dubious cells, such as:\\[2mm]
+		\begin{enumerate}
+			\item Low/High read numbers (library sizes)
+			\item Low feature/gene numbers
+			\item High proportions of mitochondrial RNA $\implies$ cells broken prior to lysis\\[2mm]
+		\end{enumerate}
+		\pause
+		\item Also need a method for considering each gene as detectable (Average Counts $>1$)
+	\end{itemize}
+
+\end{frame}
+
+
+\begin{frame}{Normalisation}
+	\begin{itemize}
+		\item Cell-specific offsets are once again calculated
+		\begin{itemize}
+			\item Each cell is it's own source of variability
+		\end{itemize}
+		\item Methods such as TMM are heavily influenced by the large numbers of zero counts
+		\item Pooling and deconvolution:
+		\begin{enumerate}
+			\item Perform rudimentary clustering of cells		
+			\item Normalise across all clusters (TMM assumes most genes are not DE)
+			\item Deconvolute cells and normalisation factors
+		\end{enumerate}
+		\item Calculate log-transformed, normalised expression values
+	\end{itemize}
+\end{frame}
 
 \subsection{Clustering}
+
+\begin{frame}{Clustering}
+
+	\begin{itemize}
+		\item A key process is grouping similar cells with each other $\implies$ identifying cell-types
+		\item To speed this up, we often choose the most highly variable genes (HVGs)
+		\item Perform dimensional reduction:
+		\begin{itemize}
+			\item PCA 
+			\item tSNE (t-Distributed Stochastic Neighbour Embedding)
+			\item UMAP (Uniform Manifold Approximation and Projection)
+		\end{itemize}
+	\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Clustering}
+
+	\begin{columns}[T]
+		\begin{column}{.45\textwidth}
+			\centering
+			\includegraphics[width=0.75\textwidth]{figures/eCRfeatureplotmarker.png} 
+		\end{column}
+		\hfill
+		\begin{column}{.45\textwidth}
+			\centering
+			\includegraphics[width=0.75\textwidth]{figures/eCRfeatureplotpca.png} 
+		\end{column}
+	\end{columns}
+	\blfootnote{Images from \url{https://scrnaseq.readthedocs.io/en/latest/ecellranger.html}}
+
+\end{frame}
 
 \subsection{DE Analysis}
 
