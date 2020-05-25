@@ -1592,6 +1592,9 @@ div.tocify {
 </div>
 <div id="question-5-12-marks" class="section level2">
 <h2>Question 5 [12 marks]</h2>
+<!-- Data was obtained from https://hemberg-lab.github.io/scRNA.seq.datasets/mouse/brain/#usoskin -->
+<!-- Genes were removed if showing an AveExpr < 1, as were those with names starting with r_ -->
+<!-- celltypes were removed from the colData as were the spikeIns. -->
 <p>Using the <a href="data/sce.rds">SingleCellExperiment</a> object provided, perform the following steps. Please note that undetectable genes and low quality cells have already been removed from this dataset. Counts are already normalised and log transformed, and contain expression patterns from 622 mouse neuronal cells.</p>
 <ol style="list-style-type: lower-roman">
 <li>Perform PCA and generate a plot of the cells using PC1 and PC2</li>

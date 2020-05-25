@@ -156,6 +156,10 @@ marks <- marks %>%
     )
 ```
 
+<!-- Data was obtained from https://hemberg-lab.github.io/scRNA.seq.datasets/mouse/brain/#usoskin -->
+<!-- Genes were removed if showing an AveExpr < 1, as were those with names starting with r_ -->
+<!-- celltypes were removed from the colData as were the spikeIns. -->
+
 Using the [SingleCellExperiment](data/sce.rds) object provided, perform the following steps.
 Please note that undetectable genes and low quality cells have already been removed from this dataset.
 Counts are already normalised and log transformed, and contain expression patterns from 622 mouse neuronal cells.
