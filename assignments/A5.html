@@ -1592,12 +1592,12 @@ div.tocify {
 </div>
 <div id="question-5-12-marks" class="section level2">
 <h2>Question 5 [12 marks]</h2>
-<p>Using the [feature-barcode matrix] provided, perform the following steps. Please note that undetectable genes have already been removed from this dataset.</p>
+<p>Using the <a href="data/sce.rds">SingleCellExperiment</a> object provided, perform the following steps. Please note that undetectable genes and low quality cells have already been removed from this dataset. Counts are already normalised and log transformed, and contain expression patterns from 622 mouse neuronal cells.</p>
 <ol style="list-style-type: lower-roman">
-<li>Identify and remove low quality cells, explaining why you are performing each step</li>
 <li>Perform PCA and generate a plot of the cells using PC1 and PC2</li>
-<li>Choose a suitable method and define clusters</li>
-<li>Overlay your clusters on either a UMAP or tSNE plot</li>
+<li>Choosing a suitable method, define clusters of cell types</li>
+<li>Visualise your clusters using <strong>only one</strong> of either a PCA, UMAP or tSNE plot</li>
+<li>Find the top 10 marker genes for <strong>one</strong> of your clusters and visualise the expression patterns</li>
 <li>Discuss your clusters and comment on how effective your approach was</li>
 </ol>
 </div>

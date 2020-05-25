@@ -156,13 +156,14 @@ marks <- marks %>%
     )
 ```
 
-Using the [feature-barcode matrix] provided, perform the following steps.
-Please note that undetectable genes have already been removed from this dataset.
+Using the [SingleCellExperiment](data/sce.rds) object provided, perform the following steps.
+Please note that undetectable genes and low quality cells have already been removed from this dataset.
+Counts are already normalised and log transformed, and contain expression patterns from 622 mouse neuronal cells.
 
-i. Identify and remove low quality cells, explaining why you are performing each step
-ii. Perform PCA and generate a plot of the cells using PC1 and PC2
-iii. Choose a suitable method and define clusters
-iv. Overlay your clusters on either a UMAP or tSNE plot
+i. Perform PCA and generate a plot of the cells using PC1 and PC2
+ii. Choosing a suitable method, define clusters of cell types
+iii. Visualise your clusters using **only one** of either a PCA, UMAP or tSNE plot
+iv. Find the top 10 marker genes for **one** of your clusters and visualise the expression patterns
 v. Discuss your clusters and comment on how effective your approach was
 
 ```{r}
