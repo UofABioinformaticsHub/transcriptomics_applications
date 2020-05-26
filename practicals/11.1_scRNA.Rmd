@@ -1,0 +1,133 @@
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 11.1: scRNA Data"
+date: "27^th^ May 2019"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+---
+
+# Introduction
+
+Today we'll look at working with scRNA data, after alignment and assignment of reads to genes.
+The data we'll work with was generated using the 10X Genomics Chromium system (i.e. a droplet-based protocol) followed by the Cell Ranger pipeline, and is available from the 10X Genomics website.
+This pipeline has already aligned reads to the genome using STAR and counted indivudal UMIs for each gene.
+All reads were obtained from Peripheral Blood Mononuclear Cells (PBMCs) from a single healthy donor.
+A summary of the Cell Ranger output can be found [here](http://cf.10xgenomics.com/samples/cell-exp/3.0.0/pbmc_1k_v3/pbmc_1k_v3_web_summary.html)
+
+
+## Outline
+
+Today we'll go through some QC steps with the aim of defining clusters that represent individual cell types within the original sample.
+Once we've obtained the clusters, we'll try and identify marker genes for each cell-type.
+Along the way we'll also explore multiple approaches for visualising scRNA data.
+
+## Setup
+
+Let's create a new R Project called `week_11` inside your transcriptomics folder.
+Once you've formed this folder and project, head to the `Terminal` and using bash, download today's data from [this link](data/wk11.tar.gz) using `wget`.
+
+Once you have obtained this file, please extract it using the following command.
+
+```
+tar -xzvf wk11.tar.gz
+```
+
+This should produce a folder called `raw_feature_bc_matrix` and inside that folder will be three files.
+Please check that you have everything required using the following command **in the bash Terminal** (not the R Console).
+
+```{bash}
+ls -alh raw_feature_bc_matrix
+```
+
+After this, please check the `md5sum` for each file to ensure that the data has transferred correctly.
+Your values should match the following output exactly.
+
+```{bash}
+md5sum raw_feature_bc_matrix/*
+```
+
+## R Markdown
+
+Now that we've made sure we have the correct data for today, and that everything is in the correct place, let's begin our R Markdown document.
+Once you've finished your `YAML` header, here are my `setup` and `loadPackages` chunks.
+
+```{r setup, echo=TRUE}
+knitr::opts_chunk$set(
+    echo = TRUE, 
+    message = FALSE, 
+    warning = FALSE,
+    fig.align = "center"
+)
+```
+
+```{r customSetup, echo=FALSE}
+knitr::opts_chunk$set(
+    results = "hide",
+    fig.show = "hide"
+)
+```
+
+```{r loadPackages}
+library(tidyverse)
+library(scales)
+library(DropletUtils)
+```
+
+If any of the above packages are not installed on your VMs, please install using `BiocManager::install("pkgName")`.
+
+```{r}
+theme_set(theme_bw())
+```
+
+
+## Data Import
+
+The basic R object structure that we work with for scRNA data is known as a `SingleCellExperiment` object.
+Once again, this is an `S4` object so the structure is fairly inflexible, and with good reason.
+Given that the output from the 10X Genomics `CellRanger` pipeline is fairly common, we can import these directly using the function `read10xCounts()`.
+This will take 20-30 seconds to run.
+
+```{r cache=TRUE, results='markup'}
+sce <- read10xCounts("raw_feature_bc_matrix")
+sce
+```
+
+Now we have our object imported, we should be setup and ready to start the filtering.
+
+
+# Data Pre-Processing
+
+The first step in any scRNA analysis is to remove "emptyCells" which really means remove barcodes for which no cellular information was obtained.
+The GEMs may have not had a cell, may have had free RNA or the library preparation may have just failed for some other reason.
+The most common approach is to rank each cell by the total counts and find where the clear dropoff in counts is that is likely to represent empty cells.
+
+```{r}
+bcRanks <- sce %>%
+  counts() %>%
+  barcodeRanks()
+```
+
+```{r}
+bcRanks %>%
+  subset(total > 1) %>%
+  as.data.frame() %>%
+  ggplot(aes(rank, total)) +
+  geom_point() +
+  geom_hline(
+    yintercept = metadata(bcRanks)$knee,
+    linetype = 2,
+    colour = "green"
+  ) +
+  geom_hline(
+    yintercept = metadata(bcRanks)$inflection,
+    linetype = 2,
+    colour = "red"
+  ) +
+  scale_x_log10(label = comma) +
+  scale_y_log10(label = comma) +
+  labs(x = "Barcode Rank", y = "Total UMI Counts")
+```
+
