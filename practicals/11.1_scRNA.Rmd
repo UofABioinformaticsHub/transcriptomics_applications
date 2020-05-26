@@ -13,9 +13,11 @@ output:
 
 Today we'll look at working with scRNA data, after alignment and assignment of reads to genes.
 The data we'll work with was generated using the 10X Genomics Chromium system (i.e. a droplet-based protocol) followed by the Cell Ranger pipeline, and is available from the 10X Genomics website.
-This pipeline has already aligned reads to the genome using STAR and counted indivudal UMIs for each gene.
+This pipeline has already aligned reads to the genome using STAR and counted individual Um Is for each gene.
 All reads were obtained from Peripheral Blood Mononuclear Cells (PBMCs) from a single healthy donor.
 A summary of the Cell Ranger output can be found [here](http://cf.10xgenomics.com/samples/cell-exp/3.0.0/pbmc_1k_v3/pbmc_1k_v3_web_summary.html)
+
+In addition to the above all barcodes returning a UMI count of zero have been removed, ensuring the data is a little smaller and more workable than the original (>600,000 barcodes).
 
 
 ## Outline
@@ -68,12 +70,19 @@ knitr::opts_chunk$set(
     results = "hide",
     fig.show = "hide"
 )
+if (interactive()) here::here("practicals") %>% setwd()
 ```
 
 ```{r loadPackages}
 library(tidyverse)
 library(scales)
 library(DropletUtils)
+library(scater)
+library(scran)
+library(AnnotationHub)
+library(ensembldb)
+library(robustbase)
+library(cowplot)
 ```
 
 If any of the above packages are not installed on your VMs, please install using `BiocManager::install("pkgName")`.
@@ -90,7 +99,7 @@ Once again, this is an `S4` object so the structure is fairly inflexible, and wi
 Given that the output from the 10X Genomics `CellRanger` pipeline is fairly common, we can import these directly using the function `read10xCounts()`.
 This will take 20-30 seconds to run.
 
-```{r cache=TRUE, results='markup'}
+```{r sce, cache=TRUE, results='markup'}
 sce <- read10xCounts("raw_feature_bc_matrix")
 sce
 ```
@@ -100,22 +109,40 @@ Now we have our object imported, we should be setup and ready to start the filte
 
 # Data Pre-Processing
 
-The first step in any scRNA analysis is to remove "emptyCells" which really means remove barcodes for which no cellular information was obtained.
+## Barcode Ranks
+
+The first step in any scRNA analysis is to remove empty droplets which really means remove barcodes for which no cellular information was obtained.
 The GEMs may have not had a cell, may have had free RNA or the library preparation may have just failed for some other reason.
 The most common approach is to rank each cell by the total counts and find where the clear dropoff in counts is that is likely to represent empty cells.
 
-```{r}
+```{r bcRanks, cache=TRUE}
 bcRanks <- sce %>%
   counts() %>%
   barcodeRanks()
+bcRanks
 ```
+
+This gives a `DataFrame` with each barcode's rank and the total UMI count associated with each barcode.
+Hidden inside this object is a metadata element, which we can access using  `metadata()`.
+The values for `knee` and `inflection` refer to the points 1) where the UMI counts being to drop off, and 2) where the drop begins to flatten out again.
+The most informative of these is the `knee` and gives an initial idea as to how many cells we may retain as informative.
+
+```{r}
+metadata(bcRanks)
+```
+
+```{r}
+bcRanks %>% subset(total > metadata(.)$knee)
+```
+
+We can see this visually, and it seems like we may lose a few informative cells if we use this as out initial filter.
 
 ```{r}
 bcRanks %>%
   subset(total > 1) %>%
   as.data.frame() %>%
   ggplot(aes(rank, total)) +
-  geom_point() +
+  geom_point(alpha = 0.5) +
   geom_hline(
     yintercept = metadata(bcRanks)$knee,
     linetype = 2,
@@ -130,4 +157,407 @@ bcRanks %>%
   scale_y_log10(label = comma) +
   labs(x = "Barcode Rank", y = "Total UMI Counts")
 ```
+
+## Finding Empty Droplets
+
+The function `emptyDrops()` actually performs a fairly sophisticated analysis.
+By default any cell with counts < 100 (`lower = 100`) is confidently assumed not to contain a cell, and is used to build a profile of the expected ambient RNA.
+A Monte Carlo (i.e. random sampling) approach is then taken to provide a p-value for the probability of a barcode representing an empty droplet.
+
+```{r emptyDrops, cache=TRUE}
+emptyBC <- sce %>%
+  counts() %>%
+  emptyDrops()
+emptyBC
+```
+
+Note that this is specifically designed to be the same size as the the number of barcodes in our `sce` object.
+To really check our results, we can use.
+
+```{r}
+emptyBC %>%
+  subset(FDR < 0.01)
+```
+
+As you can see, this has identified 1205 droplets as containing a cell.
+Notice that the original (unfiltered) data was > 600000 barcodes, so we have a fairly high rate (>99%) of empty droplets.
+
+Let's check how this result tracks with UMI counts, and compare it with our naive `knee` and `inflection` values obtained from `barcodeRanks()`
+
+```{r}
+emptyBC %>%
+  subset(!is.na(LogProb)) %>%
+  as.data.frame() %>%
+  mutate(isCell = FDR < 0.01) %>%
+  ggplot(aes(Total, -LogProb, colour = isCell)) +
+  geom_point() +
+  geom_vline(
+    xintercept = unlist(metadata(bcRanks)),
+    linetype = 2,
+    colour = "blue"
+  ) +
+  scale_colour_manual(values = c("black", "red")) +
+  labs(x = "Total UMI Count", y = "-logProb")
+```
+
+As you can see, there may be a few outliers at the top with very large UMI counts too.
+Let's save this as a new `SingleCellExperiment` object, only retaining the droplets which contain a cell.
+
+```{r}
+sceWC <- sce[,which(emptyBC$FDR < 0.01)]
+```
+
+## Removing Other Low Quality Cells
+
+### Adding Gene Annotations
+
+Now we have the identified the droplets which contain a cell, we still have no idea about the quality of the cells within each droplet.
+Some may be doublets, whilst others may be low quality (i.e. broken prior to incorporation in the droplet).
+As we'll use mitochondrial reads for part of this process, we'll need to map our gene IDs to where they actually lie on the genome.
+Our old friend `AnnotationHub` will be handy for this.
+
+```{r}
+ah <- AnnotationHub() %>%
+  subset(species == "Homo sapiens" & rdataclass == "EnsDb")
+```
+
+Given that the data was made public in Nov 2018, it's likely that Ensembl Release 93 will be close to the gene annotations used for obtaining the UMI counts.
+Unfortunately, 10X genomics have not made this information public so we can't be sure, but my testing seemed to check this guess out.
+
+```{r}
+ah %>% subset(str_detect(title, "Ensembl 93"))
+```
+
+```{r}
+ensDb <- ah[["AH64446"]]
+genesGR <- genes(ensDb)
+```
+
+We can place the `GRanges` object associated with each gene in the `rowRanges` slot within the `SingleCellExperiment` object.
+
+```{r}
+rowRanges(sceWC) <- genesGR[rownames(sceWC)]
+```
+
+### Adding QC Statistics
+
+We can now use the mitochondrial genes to perform QC.
+
+```{r}
+mito <- sceWC %>%
+  rowRanges() %>%
+  seqnames() %>%
+  str_detect("MT")
+table(mito)
+```
+
+We can see that we have UMI counts for 13 mitochondrial genes and we can use these to assess whether a cell contains an excessive amount of mitochondrial RNA.
+The function `addPerCellQC()` will modify the `colData` of the object, so we have all of our QC stats included in the object, as opposed to having multiple objects with different sources and getting ourselves confused.
+
+Let's check the `colData(sceWC)` first, and notice that we only have two columns, with the primary column being the Barcode.
+Once you've checked that, run `addPerCellQC()` and check the `colData()` once again.
+
+```{r}
+sceWC <- addPerCellQC(sceWC, subsets = list(mito = mito))
+colData(sceWC)
+```
+
+Now we have:
+
+- the UMI library sizes (sum/total)
+- the number of detected genes (i.e. with at least one read)
+- a breakdown of the top 50 to 200 genes as a percentage of the library
+- the details about the mitochondrial content of each droplet
+
+We can manually use these for QC, so let's check the library sizes against the number of detected genes first.
+
+### Using Gene Information
+
+```{r}
+colData(sceWC) %>%
+  as.data.frame() %>%
+  ggplot(aes(detected, sum)) +
+  geom_point() +
+  geom_smooth(se = FALSE) +
+  scale_x_log10(label = comma) + 
+  scale_y_log10(label = comma) +
+  labs(x = "Detected Genes", y = "Total UMI Count")
+```
+
+This seems pretty consistent using visual inspection.
+In particular, we are looking for cells which:
+
+- have unusually high counts as that may indicate a doublet
+- contain low numbers of reads/detected genes as these are likely to poorly sampled transcriptomes
+
+There do appear to be some cells at the low end which are poorly sampled cells.
+We can add this directly to the colData in our `SingleCellExperiment` object.
+
+```{r}
+sceWC$lowCounts <- colData(sceWC)$detected < 200
+table(sceWC$lowCounts)
+```
+
+### Using Mitochondrial Information
+
+Next we'll check the mitochondrial content by plotting the number of mitochondrial genes detected against the proportion of the library which is mitochondrial.
+
+```{r}
+colData(sceWC) %>%
+  as.data.frame() %>%
+  mutate(subsets_mito_detected = as.factor(subsets_mito_detected)) %>%
+  ggplot(aes(subsets_mito_detected, subsets_mito_percent)) +
+  geom_boxplot() +
+  labs(x = "Number of Mitochondrial Genes Detected", y = "Mitochondrial %")
+```
+
+Now we have some cells which appear to be outliers, with some being > 60% mitochondrial.
+These are likely to be damaged cells, and as such, will be not a good sample of the true transcriptional state of the cell.
+We could manually set a threshold anywhere we choose, and I'd be tempted by 20% given this plot.
+
+```{r}
+sceWC$hiMito <- colData(sceWC)$subsets_mito_percent > 20
+table(sceWC$hiMito)
+```
+
+By this strategy, we would lose 63 cells.
+Let's see how this relates to the small library sizes
+
+```{r}
+colData(sceWC) %>%
+  as.data.frame() %>%
+  group_by(lowCounts, hiMito) %>%
+  tally()
+```
+
+Combining these two filtering approaches, we would now retain 1138 cells for downstream analysis.
+
+### Detection of Doublets
+
+An automated approach to doublet detection is also available.
+This simulates doublets by adding sets of two randomly selected cells and uses this set of information to provide a score for whether a cell is likely to be a doublet.
+
+```{r doublets, cache=TRUE}
+sceWC$doubletScore <- doubletCells(sceWC) 
+```
+
+```{r}
+colData(sceWC) %>%
+  as.data.frame() %>%
+  mutate(doubletScore = log10(1 + doubletScore)) %>%
+  ggplot(aes(detected, sum)) +
+  geom_point(aes(colour = doubletScore)) +
+  geom_smooth(se = FALSE) +
+  scale_x_log10(label = comma) + 
+  scale_y_log10(label = comma) +
+  scale_colour_viridis_c() +
+  labs(x = "Detected Genes", y = "Total UMI Count")
+```
+
+There are a few candidates here, and a score at the top end of the range (e.g. > 10^4^) may be a suitable filter
+
+```{r}
+sceWC$isDoublet <- sceWC$doubletScore > 1e4
+```
+
+Checking all of our QC criteria we would now have 1136 cells to keep for clustering.
+
+```{r}
+sceWC$discard <- colData(sceWC) %>%
+  with(
+    lowCounts | hiMito | isDoublet
+  )
+colData(sceWC) %>%
+  as.data.frame() %>%
+  group_by(lowCounts, hiMito, isDoublet, discard) %>%
+  tally()
+```
+
+
+### Automated approaches
+
+Alternatively, we can use automated approaches where we simply provide all of our diagnostic criteria to an R function that determines a cell's "outlyingness"
+
+```{r}
+sceWC$isOutlier <- colData(sceWC) %>%
+  as.data.frame() %>%
+  dplyr::select(sum, detected, subsets_mito_percent, doubletScore) %>%
+  mutate_at(vars(sum, detected), log10) %>%
+  mutate(doubletScore = log10(1 + doubletScore)) %>%
+  adjOutlyingness(only.outlyingness = TRUE) %>%
+  isOutlier(type = "higher") 
+```
+
+```{r}
+colData(sceWC) %>%
+  as.data.frame() %>%
+  group_by(lowCounts, hiMito, isDoublet, discard, isOutlier) %>%
+  tally()
+```
+
+We can compare our automated approach with the manual approach
+
+```{r}
+a <- colData(sceWC) %>%
+  as.data.frame() %>%
+  ggplot(aes(detected, sum)) +
+  geom_point(aes(colour = isOutlier)) +
+  geom_smooth(se = FALSE) +
+  scale_x_log10(label = comma) + 
+  scale_y_log10(label = comma) +
+  scale_colour_manual(values = c("black", "red")) +
+  labs(x = "Detected Genes", y = "Total UMI Count")
+b <- colData(sceWC) %>%
+  as.data.frame() %>%
+  ggplot(aes(detected, sum)) +
+  geom_point(aes(colour = discard)) +
+  geom_smooth(se = FALSE) +
+  scale_x_log10(label = comma) + 
+  scale_y_log10(label = comma) +
+  scale_colour_manual(values = c("black", "red")) +
+  labs(x = "Detected Genes", y = "Total UMI Count")
+plot_grid(a, b, nrow = 1)
+```
+
+Let's proceed with a filtered version of the above dataset using our manual filtering approach.
+However, we'll also remove any genes with zero counts at this point too.
+We can add this largest observed count to the `rowData()` as this time we're working with *gene-level* information.
+
+```{r}
+rowData(sceWC)$maxCount <- sceWC %>%
+  counts() %>%
+  as.matrix() %>%
+  rowMaxs() 
+```
+
+The `subset()` function for `SingleCellExperiment` objects is a little different.
+For this the argument `subset` refers to the `rowData()` element, whilst the `select` argument refers to the `colData()` element.
+
+```{r}
+sceFilt <- subset(sceWC, subset = maxCount > 0, select = !discard)
+sceFilt
+```
+
+
+## Normalisation
+
+As discussed in lectures we can take a couple of different approaches to normalisation, and today we'll use the deconvolution approach.
+Under this approach we'll perform some quick and unsophisticated clustering and calculate normalisation factors for each cluster, in a similar manner to bulk-RNA.
+The clusters are then deconvoluted back to the individual cells for cell-specific normalisation factors.
+There is only a slight difference in the final values obtained under this method and normalisation by library size, so both are generally appropriate.
+
+```{r}
+sceFilt$quickClust <- quickCluster(sceFilt)
+table(sceFilt$quickClust)
+```
+
+```{r}
+sizeFactors(sceFilt) <- calculateSumFactors(sceFilt, cluster = colData(sceFilt)$quickClust)
+summary(sizeFactors(sceFilt))
+colData(sceFilt) %>%
+  as.data.frame() %>%
+  mutate(size_factors = sizeFactors(sceFilt)) %>%
+  ggplot(aes(sum, size_factors)) +
+  geom_point() 
+```
+
+Now that we have found our factors for normalisaton, we can add our normalised counts to the `SingleCellExperiment` object.
+We do this simply by calling the function `logNormCounts()` which adds this as a new `assay` to the original object.
+
+```{r}
+sceFilt <- logNormCounts(sceFilt)
+```
+
+# Clustering
+
+## Variable genes
+
+Now we have all that we need to start the fun part of the analysis, which is clustering the cells and identifying cell types and marker genes.
+The first step towards this is to select the most variable genes as that is where the bulk of our biological signal should come from.
+First we need to model our gene-level means and variances
+
+```{r}
+geneVars <- modelGeneVar(sceFilt)
+```
+
+We can inspect the relationship between these using the `metadata()` element of this object.
+It's a bit messy though.
+
+```{r}
+geneVars %>%
+  metadata() %>%
+  with(
+    tibble(mean, var, trend = trend(mean))
+  ) %>%
+  arrange(desc(var)) %>%
+  mutate(hvg = seq_len(nrow(.)) <= 1000) %>%
+  ggplot(aes(mean, var, colour = hvg)) +
+  geom_point() +
+  geom_line(aes(y = trend), colour = "blue") +
+  scale_colour_manual(values = c("black", "red"))
+```
+
+Now we have the gene-level variance modelled, we can select our most variable genes.
+There are multiple approaches we can choose, but here, we'll just choose the 1000 most variable.
+Note that this may exclude genes at the low end of expression.
+
+```{r}
+hvg <- getTopHVGs(geneVars, n = 1000)
+```
+
+## PCA
+
+You might notice that the `SingleCellExperiment` object we're working with has a (blank) element called `reducedDimNames`.
+This is ready to store any output from dimensional reduction, such as PCA, tSNE or UMAP.
+As we're now becoming used to, we just add this by calling the function `runPCA()` and overwriting the original object.
+The genes identified as `hvg` are added as `subset_row`.
+
+```{r}
+sceFilt <- runPCA(sceFilt, subset_row = hvg)
+sceFilt
+```
+
+By default, the first 50 PCs are saved.
+
+```{r}
+reducedDim(sceFilt, "PCA") %>% dim()
+```
+
+At some point, each principal component just captures technical noise, so we should find how many are informative.
+
+```{r}
+sceFilt %>%
+  reducedDim("PCA") %>%
+  attr("percentVar") %>%
+  enframe(value = "Var (%)", name = c()) %>%
+  mutate(PC = seq_along(`Var (%)`))%>%
+  ggplot(aes(PC, `Var (%)`)) +
+  geom_point()
+```
+
+As we can see, the variance captured by each PC drops off rapidly, and beyond PC5, there is minimal contribution to the overall variance.
+We should choose the elbow point on this plot and although there are automated approaches, I'd be comfortable choosing 7 by looking at that plot.
+Let's remove the un-informative PCs.
+
+```{r}
+reducedDim(sceFilt, "PCA") <- reducedDim(sceFilt, "PCA")[,1:7]
+```
+
+Now let's look at our data, just using the first two PCs.
+
+```{r}
+plotReducedDim(sceFilt, dimred = "PCA")
+```
+
+Let's overlay the number of detected to see if the clusters are correlating with this simple value.
+Let's also extend out to PC3.
+
+```{r}
+plotReducedDim(sceFilt, dimred = "PCA", colour_by = "detected", ncomponents = 3) 
+```
+
+Clearly much of the separation between cells is captured by PC1 and PC2.
+PC3 adds minimal information.
+Our next step would be to apply clustering techniques and try alternate visualisations such as tSNE and UMAP.
+
 
