@@ -70,7 +70,7 @@ knitr::opts_chunk$set(
     results = "hide",
     fig.show = "hide"
 )
-if (interactive()) here::here("practicals") %>% setwd()
+if (interactive()) setwd(here::here("practicals"))
 ```
 
 ```{r loadPackages}
@@ -83,6 +83,7 @@ library(AnnotationHub)
 library(ensembldb)
 library(robustbase)
 library(cowplot)
+library(pheatmap)
 ```
 
 If any of the above packages are not installed on your VMs, please install using `BiocManager::install("pkgName")`.
@@ -419,8 +420,8 @@ b <- colData(sceWC) %>%
 plot_grid(a, b, nrow = 1)
 ```
 
-Let's proceed with a filtered version of the above dataset using our manual filtering approach.
-However, we'll also remove any genes with zero counts at this point too.
+Let's proceed with a filtered version of the above dataset using our manual filtering approach to remove low quality cells.
+However, we'll also **remove any genes with zero counts** at this point too.
 We can add this largest observed count to the `rowData()` as this time we're working with *gene-level* information.
 
 ```{r}
@@ -468,7 +469,7 @@ We do this simply by calling the function `logNormCounts()` which adds this as a
 sceFilt <- logNormCounts(sceFilt)
 ```
 
-# Clustering
+# Dimensional Reduction
 
 ## Variable genes
 
@@ -530,7 +531,7 @@ sceFilt %>%
   reducedDim("PCA") %>%
   attr("percentVar") %>%
   enframe(value = "Var (%)", name = c()) %>%
-  mutate(PC = seq_along(`Var (%)`))%>%
+  mutate(PC = seq_along(`Var (%)`)) %>%
   ggplot(aes(PC, `Var (%)`)) +
   geom_point()
 ```
@@ -559,5 +560,175 @@ plotReducedDim(sceFilt, dimred = "PCA", colour_by = "detected", ncomponents = 3)
 Clearly much of the separation between cells is captured by PC1 and PC2.
 PC3 adds minimal information.
 Our next step would be to apply clustering techniques and try alternate visualisations such as tSNE and UMAP.
+
+## tSNE
+
+The $t$-stochastic neighbor embedding approach is commonly used for visualisation of scRNA data.
+As this is non-linear and is bound by preserving distances between points, it can tease apart clusters more easily.
+Let's first check our results from the `quickCluster()` output that we used for Normalisation.
+
+```{r}
+plotReducedDim(sceFilt, dimred = "PCA", colour_by = "quickClust")
+```
+
+There are a few cells that seem to group nicely, but other clusters are less compelling.
+Let's now add the tSNE output to our `reducedDims` element.
+Note that it relies on a PCA already being performed *a priori*, so we can just use our existing PCA element
+As there is a step involving randomising the data, I've set the random seed here so we should all see similar plots.
+
+```{r}
+set.seed(100)
+sceFilt <- runTSNE(sceFilt, dimred = "PCA")
+sceFilt
+```
+
+Our `reducedDims` element now has a `TNSE` copmonent and we can plot this using very similar code to above.
+Instead of plotting PCA, we just change the `dimred` argument to be `"TSNE"`.
+
+```{r}
+plotReducedDim(sceFilt, dimred = "TSNE", colour_by = "quickClust")
+```
+
+## UMAP
+
+An alternative to tSNE which is gaining popularity is Uniform manifold approximation and projection (UMAP).
+The underlying mathematics is quite different, however, like the tSNE, the motivation is produce a reduced dimensional visualisation which demonstrates the relationships between cells.
+
+```{r}
+set.seed(101)
+sceFilt <- runUMAP(sceFilt, dimred = "PCA")
+sceFilt
+```
+
+```{r}
+plotReducedDim(sceFilt, dimred = "UMAP", colour_by = "quickClust")
+```
+
+There is no correct visualisation, and how we present our results is always a matter of judgement.
+Here we'll compare the three approaches, and will overlay the number of detected genes to see if this is influencing our layouts at all.
+
+```{r}
+plot_grid(
+  plotReducedDim(sceFilt, dimred = "PCA", colour_by = "detected") + 
+    theme(legend.position = "none") +
+    ggtitle("PCA"),
+  plotReducedDim(sceFilt, dimred = "TSNE", colour_by = "detected") + 
+    theme(legend.position = "none") +
+    ggtitle("tSNE"),
+  plotReducedDim(sceFilt, dimred = "UMAP", colour_by = "detected") + 
+    ggtitle("UMAP"),
+  nrow = 1,
+  rel_widths = c(5, 5, 6)
+)
+```
+
+# Clustering
+
+As we can see above, there is no perfect layout, just our personal choice.
+Identifying clusters can play a key role in selecting our preferred visualisation so let's be a bit more rigorous than our previous method.
+However, as with visualistions, there is no correct solution, rather there are just different perspectives, some of which may be more informative than others.
+Whilst there do appear to be some distinct cell types in this dataset, there are clearly a few cells which are less definitive.
+
+## Shared Neighbour Graphs
+
+One of the most common clustering approaches is to first determine how similar each cell is to each other using our retained Principal Components.
+Once we've determined those distances, clusters are formed from cells which appear to be similar to each other.
+
+```{r}
+g <- buildSNNGraph(sceFilt, k = 10, use.dimred = "PCA")
+sceFilt$snnCluster <- igraph::cluster_walktrap(g)$membership %>%
+  as.factor()
+table(sceFilt$snnCluster)
+plotReducedDim(sceFilt, dimred = "PCA", colour_by = "snnCluster", text_by = "snnCluster") 
+```
+
+After you've had a good look at these clusters, try alternate visualisations using tSNE or UMAP as the dimensional reduction.
+
+**Do you think our clusters are a good representation of the cell types?**
+
+### Cluster Modularity
+
+If you're unclear about the clusters, a helpful viewpoint can be *cluster modularity*.
+This essentially looks at how connected cells are to each other.
+If the clustering is good, the most connectivity (i.e. the sum of edge weights) will be **within** clusters with minimal connectivity **between** clusters.
+The most common approach to this in scRNA clustering is to check the ratio of *observed edge weights* to *expected edge weights*.
+
+```{r}
+clustMod <- clusterModularity(g, sceFilt$snnCluster, as.ratio = TRUE)
+clustMod
+```
+
+Here values of zero indicate that clusters are not connected.
+Given that these are ratios, plotting on the log scale can be useful but let's add an offset of 1 to ensure our minimum value on the log scale is zero.
+
+```{r}
+log2(clustMod + 1) %>%
+  pheatmap(
+    color = colorRampPalette(c("white", "blue"))(100),
+    cluster_cols = FALSE,
+    cluster_rows = FALSE
+  )
+```
+
+As expected from our initial PCA plot we have one very distinct cluster, whilst some neighbouring clusters on the PCA visualisation have a degree of connectivity.
+Whether we need to refine our clusering is a value judgement and we'll try this later on.
+
+As our modularity score represents how connected modules are, we can consider this an adjacency matrix and also display how connected each cluster is.
+First we'll make a graph from our modularity scores, then we'll plot it, over-riding the default edge widths, which are set to 1.
+
+```{r}
+log2(clustMod + 1) %>%
+  igraph::graph_from_adjacency_matrix(
+    mode = "upper", weighted = TRUE, diag = FALSE
+  ) %>%
+  plot(
+    edge.width = igraph::E(.)$weight*5
+  )
+```
+
+This reinforces the view that we have one distinct cluster with 2 or 3 other related clusters.
+Perhaps these represent the same cell-types in different states.
+This is where collaboration with a biologist can be helpful (once we find the marker genes for each cluster)
+
+## k-Means Clustering
+
+An alternative approach to clustering is to use $k$-means, in which we define (up to) $k$ clusters beforehand.
+This algorithm then finds the optimal means for each cluster and allocates each cell to the cluster with the nearest mean.
+Unfortunately there is a bias towards clusters of the same spherical radius.
+The `kmeans()` function required to perform the clustering here is actually a `base` function too.
+
+```{r}
+set.seed(100)
+km <- reducedDim(sceFilt, type = "PCA") %>%
+  kmeans(centers = 10)
+table(km$cluster)
+sceFilt$kMeans <- as.factor(km$cluster)
+plotReducedDim(sceFilt, dimred = "PCA", colour_by = "kMeans", text_by = "kMeans") 
+```
+
+Here we can simply explore the relationship between clusters using dendrogram
+
+```{r}
+dist(km$centers) %>%
+  hclust("ward.D2") %>%
+  plot()
+```
+
+### Additional notes regarding k-means
+
+As it is not build from any edges or graph-based approaches, it is very easy to *over-cluster* using $k$-means.
+This can actually be useful for separating extremes of a relatively continuous cluster and enables detection of marker genes which may denote the gradient of a caluter.
+
+Unfortunately our version of R is too out of date for this, but in the newer versions of `scran`, there is a new function where we can use $k$-means as initial clustering before generating the shared neighbour graph.
+It is expected this may become a common approach in the next few years, particularly with large datasets.
+
+# Marker Gene Detection
+
+One of the key motivations behind any scRNA analysis is to identify cell types within one or more samples, and determine what genes are defining the differences between cell types or cell states.
+This is performed relatively simply using the function `findMarkers()`, which performs a simple $t$-test.
+
+```{r}
+markers <- findMarkers(sceFilt, groups = sceFilt$snnCluster)
+```
 
 
