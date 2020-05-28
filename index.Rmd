@@ -51,7 +51,7 @@ pracs <- tribble(
     10, "2020-05-18", "Network Analysis", "Zhipeng Qu", "lectures/Lecture10_Network_Analysis_ZQ_2020.pdf", "WGCNA_part1", "practicals/10.1_WGCNA_part1.html",
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "WGCNA_part2", "practicals/10.2_WGCNA_part2.html",
     11, "2020-05-25", "Single Cell RNA-Seq", "Stephen Pederson", "lectures/10_scRNA.pdf", "scRNA", "practicals/11.1_scRNA.html",
-    NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "scRNA", "",
+    NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "scRNA", "practicals/11.1_scRNA.html#removing_other_low_quality_cells",
     12, "2020-06-01", "Transcriptome Assembly", "Terry Bertozzi", "", "Using StringTie to Define New Transcripts", "",
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Checking the Quality of a Transcriptome Assembly", "",
     # NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Using Git with RStudio", "",

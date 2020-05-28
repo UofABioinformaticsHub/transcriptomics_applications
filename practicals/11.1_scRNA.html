@@ -1532,7 +1532,7 @@ div.tocify {
 <pre class="bash"><code>ls -alh raw_feature_bc_matrix</code></pre>
 <pre><code>## total 52M
 ## drwxrwxr-x 2 steveped steveped 4.0K May 26 18:08 .
-## drwxrwxr-x 7 steveped steveped 4.0K May 27 03:19 ..
+## drwxrwxr-x 7 steveped steveped 4.0K May 28 22:36 ..
 ## -rw-rw-r-- 1 steveped steveped 4.3M May 26 18:08 barcodes.tsv
 ## -rw-rw-r-- 1 steveped steveped 794K May 26 18:08 genes.tsv
 ## -rw-rw-r-- 1 steveped steveped  47M May 26 18:08 matrix.mtx</code></pre>
@@ -1849,13 +1849,13 @@ sceFilt</code></pre>
 </div>
 <div id="tsne" class="section level2">
 <h2>tSNE</h2>
-<p>The <span class="math inline">\(t\)</span>-stochastic neighbor embedding approach is commonly used for visualisation of scRNA data. As this is non-linear and is bound by preserving distances between points, it can tease apart clusters more easily. Let’s first check our results from the <code>quickCluster()</code> output that we used for Normalisation.</p>
+<p>The <span class="math inline">\(t\)</span>-stochastic neighbour embedding approach is commonly used for visualisation of scRNA data. As this is non-linear and is bound by preserving distances between points, it can tease apart clusters more easily. Let’s first check our results from the <code>quickCluster()</code> output that we used for Normalisation.</p>
 <pre class="r"><code>plotReducedDim(sceFilt, dimred = &quot;PCA&quot;, colour_by = &quot;quickClust&quot;)</code></pre>
 <p>There are a few cells that seem to group nicely, but other clusters are less compelling. Let’s now add the tSNE output to our <code>reducedDims</code> element. Note that it relies on a PCA already being performed <em>a priori</em>, so we can just use our existing PCA element As there is a step involving randomising the data, I’ve set the random seed here so we should all see similar plots.</p>
 <pre class="r"><code>set.seed(100)
 sceFilt &lt;- runTSNE(sceFilt, dimred = &quot;PCA&quot;)
 sceFilt</code></pre>
-<p>Our <code>reducedDims</code> element now has a <code>TNSE</code> copmonent and we can plot this using very similar code to above. Instead of plotting PCA, we just change the <code>dimred</code> argument to be <code>&quot;TSNE&quot;</code>.</p>
+<p>Our <code>reducedDims</code> element now has a <code>TNSE</code> component and we can plot this using very similar code to above. Instead of plotting PCA, we just change the <code>dimred</code> argument to be <code>&quot;TSNE&quot;</code>.</p>
 <pre class="r"><code>plotReducedDim(sceFilt, dimred = &quot;TSNE&quot;, colour_by = &quot;quickClust&quot;)</code></pre>
 </div>
 <div id="umap" class="section level2">
@@ -1882,7 +1882,7 @@ sceFilt</code></pre>
 </div>
 <div id="clustering" class="section level1">
 <h1>Clustering</h1>
-<p>As we can see above, there is no perfect layout, just our personal choice. Identifying clusters can play a key role in selecting our preferred visualisation so let’s be a bit more rigorous than our previous method. However, as with visualistions, there is no correct solution, rather there are just different perspectives, some of which may be more informative than others. Whilst there do appear to be some distinct cell types in this dataset, there are clearly a few cells which are less definitive.</p>
+<p>As we can see above, there is no perfect layout, just our personal choice. Identifying clusters can play a key role in selecting our preferred visualisation so let’s be a bit more rigorous than our previous method. However, as with visualisations, there is no correct solution, rather there are just different perspectives, some of which may be more informative than others. Whilst there do appear to be some distinct cell types in this dataset, there are clearly a few cells which are less definitive.</p>
 <div id="shared-neighbour-graphs" class="section level2">
 <h2>Shared Neighbour Graphs</h2>
 <p>One of the most common clustering approaches is to first determine how similar each cell is to each other using our retained Principal Components. Once we’ve determined those distances, clusters are formed from cells which appear to be similar to each other.</p>
@@ -1893,6 +1893,16 @@ table(sceFilt$snnCluster)
 plotReducedDim(sceFilt, dimred = &quot;PCA&quot;, colour_by = &quot;snnCluster&quot;, text_by = &quot;snnCluster&quot;) </code></pre>
 <p>After you’ve had a good look at these clusters, try alternate visualisations using tSNE or UMAP as the dimensional reduction.</p>
 <p><strong>Do you think our clusters are a good representation of the cell types?</strong></p>
+<div id="checking-for-artefacts" class="section level3">
+<h3>Checking for artefacts</h3>
+<p>Sometimes clusters can be formed from cells showing similar expression patterns, but where these patterns are driven by other artefacts. A possible checking step is to inspect the data we have and how it is distributed amongst existing clusters. Let’s see if the number of detected genes has had any impact on cluster formation.</p>
+<pre class="r"><code>plotColData(sceFilt, y = &quot;detected&quot;, x = &quot;snnCluster&quot;, colour_by = &quot;snnCluster&quot;) +
+  labs(x = &quot;Cluster&quot;, y = &quot;# Detected Genes&quot;)</code></pre>
+<p>It is entirely possible that any discrepancies between the number of features is true biology, however it is also possible that is a technical artefact. At this point, it is very difficult to make any clear judgement about the source of any variation.</p>
+<p>We can also check the library sizes in much the same way.</p>
+<pre class="r"><code>plotColData(sceFilt, y = &quot;total&quot;, x = &quot;snnCluster&quot;, colour_by = &quot;snnCluster&quot;) +
+  labs(x = &quot;Cluster&quot;, y = &quot;Total Reads&quot;)</code></pre>
+</div>
 <div id="cluster-modularity" class="section level3">
 <h3>Cluster Modularity</h3>
 <p>If you’re unclear about the clusters, a helpful viewpoint can be <em>cluster modularity</em>. This essentially looks at how connected cells are to each other. If the clustering is good, the most connectivity (i.e. the sum of edge weights) will be <strong>within</strong> clusters with minimal connectivity <strong>between</strong> clusters. The most common approach to this in scRNA clustering is to check the ratio of <em>observed edge weights</em> to <em>expected edge weights</em>.</p>
@@ -1905,7 +1915,7 @@ clustMod</code></pre>
     cluster_cols = FALSE,
     cluster_rows = FALSE
   )</code></pre>
-<p>As expected from our initial PCA plot we have one very distinct cluster, whilst some neighbouring clusters on the PCA visualisation have a degree of connectivity. Whether we need to refine our clusering is a value judgement and we’ll try this later on.</p>
+<p>As expected from our initial PCA plot we have one very distinct cluster, whilst some neighbouring clusters on the PCA visualisation have a degree of connectivity. Whether we need to refine our clustering is a value judgement and we’ll try this later on.</p>
 <p>As our modularity score represents how connected modules are, we can consider this an adjacency matrix and also display how connected each cluster is. First we’ll make a graph from our modularity scores, then we’ll plot it, over-riding the default edge widths, which are set to 1.</p>
 <pre class="r"><code>log2(clustMod + 1) %&gt;%
   igraph::graph_from_adjacency_matrix(
@@ -1932,13 +1942,110 @@ plotReducedDim(sceFilt, dimred = &quot;PCA&quot;, colour_by = &quot;kMeans&quot;
   plot()</code></pre>
 <div id="additional-notes-regarding-k-means" class="section level3">
 <h3>Additional notes regarding k-means</h3>
-<p>As it is not build from any edges or graph-based approaches, it is very easy to <em>over-cluster</em> using <span class="math inline">\(k\)</span>-means. This can actually be useful for separating extremes of a relatively continuous cluster and enables detection of marker genes which may denote the gradient of a caluter.</p>
+<p>As it is not build from any edges or graph-based approaches, it is very easy to <em>over-cluster</em> using <span class="math inline">\(k\)</span>-means. This can actually be useful for separating extremes of a relatively continuous cluster and enables detection of marker genes which may denote the gradient of a cluster.</p>
 <p>Unfortunately our version of R is too out of date for this, but in the newer versions of <code>scran</code>, there is a new function where we can use <span class="math inline">\(k\)</span>-means as initial clustering before generating the shared neighbour graph. It is expected this may become a common approach in the next few years, particularly with large datasets.</p>
 </div>
 </div>
 </div>
 <div id="marker-gene-detection" class="section level1">
 <h1>Marker Gene Detection</h1>
+<div id="genes-which-are-de-somewhere" class="section level2">
+<h2>Genes which are DE somewhere</h2>
+<p>One of the key motivations behind any scRNA analysis is to identify cell types within one or more samples, and determine what genes are defining the differences between cell types or cell states. This is performed relatively simply using the function <code>findMarkers()</code>, which performs a simple <span class="math inline">\(t\)</span>-test when left with default settings.</p>
+<pre class="r"><code>markersAny &lt;- findMarkers(sceFilt, groups = sceFilt$snnCluster)
+subset(markersAny[[1]], FDR &lt; 0.01)</code></pre>
+<p>Looking at the most significant marker genes from cluster 1 immediately highlights some of the challenges.</p>
+<ul>
+<li>How was the p-value obtained. From just one comparison, from all comparisons or another method?</li>
+<li>Looking across the the logFC for each comparison, how do we consider a gene to be a marker for each cell type?</li>
+</ul>
+<p>The default setting for the p-value is not made clear in the manual, however this is set to <code>pval.type = &quot;any&quot;</code>. This uses a method for combining p-values (Simes’ method) testing the null hypothesis that the gene is DE nowhere with the alternative the gene is DE somewhere. The <code>Top</code> column shows the minimum rank across all comparisons for that gene, such that all genes with <code>Top = 1</code> were the most highly ranked in at least one comparison. This column only appears when using the default setting of <code>pval.type = &quot;any&quot;</code> and you’ll notice that it disappears as we look at different options.</p>
+<p>As you can also see, no directionality has been applied to the test, but we can rerun this setting <code>direction=&quot;up&quot;</code> which will now return results for genes that are up-regulated somewhere.</p>
+<pre class="r"><code>markersAny &lt;- findMarkers(sceFilt, groups = sceFilt$snnCluster, direction = &quot;up&quot;)
+subset(markersAny[[1]], FDR &lt; 0.01)</code></pre>
+<p>Notice that we can still see genes that are highly-ranked for being up in one comparison, but are still down in other comparisons.</p>
+<p>We can quickly summarise the results for all clusters using some <code>lapply()</code> magic.</p>
+<pre class="r"><code>markersAny %&gt;%
+  lapply(subset, FDR &lt; 0.01) %&gt;% 
+  sapply(nrow)</code></pre>
+<p>The last command (<code>sapply()</code>) is like <code>lapply()</code> but it attempts to simplify the output. Here it’s done well and has returned a vector instead of a list.</p>
+</div>
+<div id="genes-which-are-de-in-many-comparisons" class="section level2">
+<h2>Genes which are DE in many comparisons</h2>
+<p>As an alternative, we can change the value for <code>pval.type = &quot;some&quot;</code>, which will now test the Null Hypothesis that each gene is not DE in more than half the comparisons, with the alternative that the gene is DE in more than half of the comparisons. This involves a different strategy for combining the p-values</p>
+<pre class="r"><code>markersSome &lt;- findMarkers(sceFilt, groups = sceFilt$snnCluster, direction = &quot;up&quot;, pval.type = &quot;some&quot;)
+markersSome %&gt;%
+  lapply(subset, FDR &lt; 0.01) %&gt;% 
+  sapply(nrow)</code></pre>
+<p>As this is a more stringent test, we clearly have fewer results</p>
+<pre class="r"><code>subset(markersSome[[1]], FDR &lt; 0.01)</code></pre>
+<p>Now our genes appear to be more consistently up-regulated in cluster 1 compared to other clusters. When checking this, it’s always good to be aware of which clusters were the most related to each other too.</p>
+</div>
+<div id="genes-which-are-de-in-all-comparisons" class="section level2">
+<h2>Genes which are DE in all comparisons</h2>
+<p>Clearly the next approach would be to look for marker genes which are up-regulated in each cluster compared to all other clusters, and we do this by setting <code>pval.type = &quot;all&quot;</code>. This uses a different method again for combining p-values and as this is the most difficult hurdle to overcome, we’d expect to see far fewer genes.</p>
+<pre class="r"><code>markersAll &lt;- findMarkers(sceFilt, groups = sceFilt$snnCluster, direction = &quot;up&quot;, pval.type = &quot;all&quot;)
+markersAll %&gt;%
+  lapply(subset, FDR &lt; 0.01) %&gt;% 
+  sapply(nrow)</code></pre>
+<p>We may see that some clusters have no unique markers under this strategy.</p>
+<p>Let’s check our first cluster again</p>
+<pre class="r"><code>subset(markersAll[[1]], FDR &lt; 0.01)</code></pre>
+<p>Looking at the logFC values when comparing against all other clusters, this looks like a promising set of candidate genes. From here, we should inspect the expression patterns. Before we move on though, it might be worth discussing a couple of other alternatives to the testing strategy.</p>
+</div>
+<div id="alternative-tests" class="section level2">
+<h2>Alternative Tests</h2>
+<p>In the above sections, we used a <span class="math inline">\(t\)</span> test to find our markers, but <code>findMarkers()</code> offer two more alternatives. The argument <code>test.type</code> can take one of three options: 1) <code>&quot;t&quot;</code>; 2) <code>&quot;wilcox&quot;</code> or 3) <code>&quot;binom&quot;</code>. The Wilcoxon Rank-Sum test is what’s known as a non-parametric test, in that it doesn’t rely on the assumption of normality. The ranks of the logcounts are instead compared across clusters, however it is known that non-parametric tests are less powerful than parametric tests if the conditions of normality are approximately satisfied.</p>
+<p>The third option <code>test.type = &quot;binom&quot;</code> models the probability of a cell within a cluster expressing the gene and this can lend an alternative viewpoint on the data.</p>
+<pre class="r"><code>markersBinom &lt;- findMarkers(sceFilt, groups = sceFilt$snnCluster, test.type = &quot;binom&quot;, direction = &quot;up&quot;, pval.type = &quot;all&quot;)
+markersBinom %&gt;%
+  lapply(subset, FDR &lt; 0.01) %&gt;% 
+  sapply(nrow)</code></pre>
+<p>This is clearly less powerful than the t-test but as you may realise, may by highly appropriate in some circumstances</p>
+</div>
+</div>
+<div id="visualisation" class="section level1">
+<h1>Visualisation</h1>
+<div id="using-pcatsne" class="section level2">
+<h2>Using PCA/TSNE</h2>
+<p>Now that we’ve identified a few genes which appear unique to a given cluster, we can visualise the expression of these genes within each cluster. Two common approaches are to overlay the logcounts over our clusters, or to produce violin plots for each cluster. Let’s start by overlaying the expression values over the clusters.</p>
+<pre class="r"><code>gn &lt;- rownames(markersAll[[1]])[1]
+plotReducedDim(sceFilt, dimred = &quot;PCA&quot;, colour_by = gn)</code></pre>
+<p>Unfortunately, if we’d like to add the gene name instead of the Ensembl ID, we have to regenerate the fill colours. However this is a <code>ggplot</code> object so if we know the fill is just the default <code>scale_fill_viridis_c()</code> this is easy enough. The alternative would be to set the rownames as the gene name/symbol at the beginning of our analysis. Some people do prefer this.</p>
+<pre class="r"><code>plotReducedDim(sceFilt, dimred = &quot;PCA&quot;, colour_by = gn) +
+  scale_fill_viridis_c(name = rowData(sceFilt)[gn, &quot;gene_name&quot;])</code></pre>
+<p>This approach is great for overlaying a single gene (or other confounders such as doubletScore or <code>total</code>)</p>
+</div>
+<div id="violin-plots" class="section level2">
+<h2>Violin Plots</h2>
+<p>If we wish to check out more than one marker gene, we can produce violin plots.</p>
+<pre class="r"><code>plotExpression(sceFilt, features = gn, x = &quot;snnCluster&quot;, colour_by = &quot;snnCluster&quot;)</code></pre>
+<pre class="r"><code>gn &lt;- markersAll[[1]] %&gt;%
+  subset(FDR &lt; 0.01) %&gt;%
+  rownames() %&gt;%
+  .[seq(1, min(10, length(.)))]
+plotExpression(sceFilt, features = gn, x = &quot;snnCluster&quot;, colour_by = &quot;snnCluster&quot;)</code></pre>
+<p>Once again we can take advantage of our <code>ggplot</code> skills and remake the facets, including a labeller function. This is a common trick used to change the labels for facets without changing your data.</p>
+<pre class="r"><code>gnLabeller &lt;- as_labeller(
+  rowData(sceFilt)$gene_name %&gt;% setNames(rownames(sceFilt))
+  )
+plotExpression(sceFilt, features = gn, x = &quot;snnCluster&quot;, colour_by = &quot;snnCluster&quot;) +
+  facet_wrap(~Feature, labeller = gnLabeller, ncol = 2)</code></pre>
+<p>Let’s get the top ranked gene from each cluster and run a quick check across all of our data.</p>
+<pre class="r"><code>topRank &lt;- markersAll %&gt;%
+  lapply(subset, FDR &lt; 0.01) %&gt;%
+  lapply(rownames) %&gt;%
+  sapply(magrittr::extract, 1) %&gt;%
+  .[!is.na(.)]
+gnLabeller(topRank) %&gt;% unlist()</code></pre>
+<pre class="r"><code>plotExpression(sceFilt, features = topRank, x = &quot;snnCluster&quot;, colour_by = &quot;snnCluster&quot;) +
+  facet_wrap(~Feature, labeller = gnLabeller, ncol = 2)</code></pre>
+</div>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion</h1>
+<p>Now you’ve thoroughly inspected your clusters, do you believe them? Have we found markers that we have faith in? How could we pick up more complex patterns?</p>
+<p>Please change your clustering approach and see if you are able to improve your results.</p>
 </div>
 
 

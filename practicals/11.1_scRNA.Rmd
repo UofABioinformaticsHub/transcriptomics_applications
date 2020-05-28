@@ -563,7 +563,7 @@ Our next step would be to apply clustering techniques and try alternate visualis
 
 ## tSNE
 
-The $t$-stochastic neighbor embedding approach is commonly used for visualisation of scRNA data.
+The $t$-stochastic neighbour embedding approach is commonly used for visualisation of scRNA data.
 As this is non-linear and is bound by preserving distances between points, it can tease apart clusters more easily.
 Let's first check our results from the `quickCluster()` output that we used for Normalisation.
 
@@ -582,7 +582,7 @@ sceFilt <- runTSNE(sceFilt, dimred = "PCA")
 sceFilt
 ```
 
-Our `reducedDims` element now has a `TNSE` copmonent and we can plot this using very similar code to above.
+Our `reducedDims` element now has a `TNSE` component and we can plot this using very similar code to above.
 Instead of plotting PCA, we just change the `dimred` argument to be `"TSNE"`.
 
 ```{r}
@@ -626,7 +626,7 @@ plot_grid(
 
 As we can see above, there is no perfect layout, just our personal choice.
 Identifying clusters can play a key role in selecting our preferred visualisation so let's be a bit more rigorous than our previous method.
-However, as with visualistions, there is no correct solution, rather there are just different perspectives, some of which may be more informative than others.
+However, as with visualisations, there is no correct solution, rather there are just different perspectives, some of which may be more informative than others.
 Whilst there do appear to be some distinct cell types in this dataset, there are clearly a few cells which are less definitive.
 
 ## Shared Neighbour Graphs
@@ -645,6 +645,29 @@ plotReducedDim(sceFilt, dimred = "PCA", colour_by = "snnCluster", text_by = "snn
 After you've had a good look at these clusters, try alternate visualisations using tSNE or UMAP as the dimensional reduction.
 
 **Do you think our clusters are a good representation of the cell types?**
+
+### Checking for artefacts
+
+Sometimes clusters can be formed from cells showing similar expression patterns, but where these patterns are driven by other artefacts.
+A possible checking step is to inspect the data we have and how it is distributed amongst existing clusters.
+Let's see if the number of detected genes has had any impact on cluster formation.
+
+```{r}
+plotColData(sceFilt, y = "detected", x = "snnCluster", colour_by = "snnCluster") +
+  labs(x = "Cluster", y = "# Detected Genes")
+```
+
+It is entirely possible that any discrepancies between the number of features is true biology, however it is also possible that is a technical artefact.
+At this point, it is very difficult to make any clear judgement about the source of any variation.
+
+We can also check the library sizes in much the same way.
+
+```{r}
+plotColData(sceFilt, y = "total", x = "snnCluster", colour_by = "snnCluster") +
+  labs(x = "Cluster", y = "Total Reads")
+```
+
+
 
 ### Cluster Modularity
 
@@ -671,7 +694,7 @@ log2(clustMod + 1) %>%
 ```
 
 As expected from our initial PCA plot we have one very distinct cluster, whilst some neighbouring clusters on the PCA visualisation have a degree of connectivity.
-Whether we need to refine our clusering is a value judgement and we'll try this later on.
+Whether we need to refine our clustering is a value judgement and we'll try this later on.
 
 As our modularity score represents how connected modules are, we can consider this an adjacency matrix and also display how connected each cluster is.
 First we'll make a graph from our modularity scores, then we'll plot it, over-riding the default edge widths, which are set to 1.
@@ -717,18 +740,191 @@ dist(km$centers) %>%
 ### Additional notes regarding k-means
 
 As it is not build from any edges or graph-based approaches, it is very easy to *over-cluster* using $k$-means.
-This can actually be useful for separating extremes of a relatively continuous cluster and enables detection of marker genes which may denote the gradient of a caluter.
+This can actually be useful for separating extremes of a relatively continuous cluster and enables detection of marker genes which may denote the gradient of a cluster.
 
 Unfortunately our version of R is too out of date for this, but in the newer versions of `scran`, there is a new function where we can use $k$-means as initial clustering before generating the shared neighbour graph.
 It is expected this may become a common approach in the next few years, particularly with large datasets.
 
 # Marker Gene Detection
 
+## Genes which are DE somewhere
+
 One of the key motivations behind any scRNA analysis is to identify cell types within one or more samples, and determine what genes are defining the differences between cell types or cell states.
-This is performed relatively simply using the function `findMarkers()`, which performs a simple $t$-test.
+This is performed relatively simply using the function `findMarkers()`, which performs a simple $t$-test when left with default settings.
 
 ```{r}
-markers <- findMarkers(sceFilt, groups = sceFilt$snnCluster)
+markersAny <- findMarkers(sceFilt, groups = sceFilt$snnCluster)
+subset(markersAny[[1]], FDR < 0.01)
 ```
 
+Looking at the most significant marker genes from cluster 1 immediately highlights some of the challenges.
+
+- How was the p-value obtained. From just one comparison, from all comparisons or another method?
+- Looking across the the logFC for each comparison, how do we consider a gene to be a marker for each cell type?
+
+The default setting for the p-value is not made clear in the manual, however this is set to `pval.type = "any"`.
+This uses a method for combining p-values (Simes' method) testing the null hypothesis that the gene is DE nowhere with the alternative the gene is DE somewhere.
+The `Top` column shows the minimum rank across all comparisons for that gene, such that all genes with `Top = 1` were the most highly ranked in at least one comparison.
+This column only appears when using the default setting of `pval.type = "any"` and you'll notice that it disappears as we look at different options.
+
+As you can also see, no directionality has been applied to the test, but we can rerun this setting `direction="up"` which will now return results for genes that are up-regulated somewhere.
+
+```{r}
+markersAny <- findMarkers(sceFilt, groups = sceFilt$snnCluster, direction = "up")
+subset(markersAny[[1]], FDR < 0.01)
+```
+
+Notice that we can still see genes that are highly-ranked for being up in one comparison, but are still down in other comparisons.
+
+We can quickly summarise the results for all clusters using some `lapply()` magic.
+
+```{r}
+markersAny %>%
+  lapply(subset, FDR < 0.01) %>% 
+  sapply(nrow)
+```
+
+The last command (`sapply()`) is like `lapply()` but it attempts to simplify the output.
+Here it's done well and has returned a vector instead of a list.
+
+## Genes which are DE in many comparisons
+
+As an alternative, we can change the value for `pval.type = "some"`, which will now test the Null Hypothesis that each gene is not DE in more than half the comparisons, with the alternative that the gene is DE in more than half of the comparisons.
+This involves a different strategy for combining the p-values
+
+```{r}
+markersSome <- findMarkers(sceFilt, groups = sceFilt$snnCluster, direction = "up", pval.type = "some")
+markersSome %>%
+  lapply(subset, FDR < 0.01) %>% 
+  sapply(nrow)
+```
+
+As this is a more stringent test, we clearly have fewer results
+
+```{r}
+subset(markersSome[[1]], FDR < 0.01)
+```
+
+Now our genes appear to be more consistently up-regulated in cluster 1 compared to other clusters.
+When checking this, it's always good to be aware of which clusters were the most related to each other too.
+
+## Genes which are DE in all comparisons
+
+Clearly the next approach would be to look for marker genes which are up-regulated in each cluster compared to all other clusters, and we do this by setting `pval.type = "all"`.
+This uses a different method again for combining p-values and as this is the most difficult hurdle to overcome, we'd expect to see far fewer genes.
+
+```{r}
+markersAll <- findMarkers(sceFilt, groups = sceFilt$snnCluster, direction = "up", pval.type = "all")
+markersAll %>%
+  lapply(subset, FDR < 0.01) %>% 
+  sapply(nrow)
+```
+
+We may see that some clusters have no unique markers under this strategy.
+
+Let's check our first cluster again
+
+```{r}
+subset(markersAll[[1]], FDR < 0.01)
+```
+
+Looking at the logFC values when comparing against all other clusters, this looks like a promising set of candidate genes.
+From here, we should inspect the expression patterns.
+Before we move on though, it might be worth discussing a couple of other alternatives to the testing strategy.
+
+## Alternative Tests
+
+In the above sections, we used a $t$ test to find our markers, but `findMarkers()` offer two more alternatives.
+The argument `test.type` can take one of three options: 1) `"t"`; 2) `"wilcox"` or 3) `"binom"`.
+The Wilcoxon Rank-Sum test is what's known as a non-parametric test, in that it doesn't rely on the assumption of normality.
+The ranks of the logcounts are instead compared across clusters, however it is known that non-parametric tests are less powerful than parametric tests if the conditions of normality are approximately satisfied.
+
+The third option `test.type = "binom"` models the probability of a cell within a cluster expressing the gene and this can lend an alternative viewpoint on the data.
+
+```{r}
+markersBinom <- findMarkers(sceFilt, groups = sceFilt$snnCluster, test.type = "binom", direction = "up", pval.type = "all")
+markersBinom %>%
+  lapply(subset, FDR < 0.01) %>% 
+  sapply(nrow)
+```
+
+This is clearly less powerful than the t-test but as you may realise, may by highly appropriate in some circumstances
+
+# Visualisation
+
+## Using PCA/TSNE
+
+Now that we've identified a few genes which appear unique to a given cluster, we can visualise the expression of these genes within each cluster.
+Two common approaches are to overlay the logcounts over our clusters, or to produce violin plots for each cluster.
+Let's start by overlaying the expression values over the clusters.
+
+```{r}
+gn <- rownames(markersAll[[1]])[1]
+plotReducedDim(sceFilt, dimred = "PCA", colour_by = gn)
+```
+
+Unfortunately, if we'd like to add the gene name instead of the Ensembl ID, we have to regenerate the fill colours.
+However this is a `ggplot` object so if we know the fill is just the default `scale_fill_viridis_c()` this is easy enough.
+The alternative would be to set the rownames as the gene name/symbol at the beginning of our analysis.
+Some people do prefer this.
+
+```{r}
+plotReducedDim(sceFilt, dimred = "PCA", colour_by = gn) +
+  scale_fill_viridis_c(name = rowData(sceFilt)[gn, "gene_name"])
+```
+
+This approach is great for overlaying a single gene (or other confounders such as doubletScore or `total`)
+
+## Violin Plots
+
+If we wish to check out more than one marker gene, we can produce violin plots.
+
+```{r}
+plotExpression(sceFilt, features = gn, x = "snnCluster", colour_by = "snnCluster")
+```
+
+```{r}
+gn <- markersAll[[1]] %>%
+  subset(FDR < 0.01) %>%
+  rownames() %>%
+  .[seq(1, min(10, length(.)))]
+plotExpression(sceFilt, features = gn, x = "snnCluster", colour_by = "snnCluster")
+```
+
+Once again we can take advantage of our `ggplot` skills and remake the facets, including a labeller function.
+This is a common trick used to change the labels for facets without changing your data.
+
+```{r}
+gnLabeller <- as_labeller(
+  rowData(sceFilt)$gene_name %>% setNames(rownames(sceFilt))
+  )
+plotExpression(sceFilt, features = gn, x = "snnCluster", colour_by = "snnCluster") +
+  facet_wrap(~Feature, labeller = gnLabeller, ncol = 2)
+```
+
+Let's get the top ranked gene from each cluster and run a quick check across all of our data.
+
+```{r}
+topRank <- markersAll %>%
+  lapply(subset, FDR < 0.01) %>%
+  lapply(rownames) %>%
+  sapply(magrittr::extract, 1) %>%
+  .[!is.na(.)]
+gnLabeller(topRank) %>% unlist()
+```
+
+```{r}
+plotExpression(sceFilt, features = topRank, x = "snnCluster", colour_by = "snnCluster") +
+  facet_wrap(~Feature, labeller = gnLabeller, ncol = 2)
+```
+
+
+
+# Conclusion
+
+Now you've thoroughly inspected your clusters, do you believe them?
+Have we found markers that we have faith in?
+How could we pick up more complex patterns?
+
+Please change your clustering approach and see if you are able to improve your results.
 
