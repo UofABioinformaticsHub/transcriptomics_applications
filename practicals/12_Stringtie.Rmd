@@ -1,0 +1,60 @@
+---
+title: "BIOINF3005/7160:<br>Transcriptomics Applications"
+subtitle: "Week 12: Transcriptome Assembly"
+date: "3^rd^ June 2020"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: yes
+---
+
+# Introduction
+
+Today we'll look at identifying transcripts which are not included in the reference transcriptome.
+This is a short-read specific technique and will use the `hisat2 -> stringtie` workflow.
+
+## Setup 
+
+Firstly, we'll need to go through the usual process of setting up a new R Project, and please start today's R Project in the `~/transcriptomics` directory and name the project/folder `week12`
+
+Once you have this setup, go to the `bash` Terminal in R Studio and enter the following code to download today's data.
+This should take 1-2 min as it is about 2Gb.
+The first two lines setup the download, whilst the next two lines will extract the tarball and remove the original file.
+
+```
+cd ~/transcriptomics/week12
+wget ftp://ftp.ccb.jhu.edu/pub/RNAseq_protocol/chrX_data.tar.gz
+tar -xzvf chrX_data.tar.gz
+rm chrX_data.tar.gz
+```
+
+This gives us the following structure
+
+```{bash}
+tree chrX_data
+```
+
+- The genes in the reference transcriptome are contained in `genes/chrX.gtf`
+- The sequence of the reference genome is in `genome/chrX.fa`
+- Phenotypic information is in `guevadis_phenodata.csv`
+- The `hisat2` indexes which we'll use for alignment are in `indexes/`
+- Our raw fasta files are in `samples`
+
+
+As we'll be primarily in `bash` for today's session, we'll need to activate our `transcriptomics` conda enrivonment.
+We also need to install two key tools for today's session: 1) The aligner `hisat2` and 2) The tool `stringtie` which we will use to identify new transcripts.
+
+```
+conda activate transcriptomics
+conda install -c bioconda hisat2
+```
+
+Choose `y` when prompted 
+
+```
+conda install -c bioconda stringtie
+```
+
+Again, choose `y` when prompted
+
