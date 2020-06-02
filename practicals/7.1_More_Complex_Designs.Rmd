@@ -1,7 +1,7 @@
 ---
 title: "BIOINF3005/7160:<br>Transcriptomics Applications"
 subtitle: "Week 7.1: More Complex Designs"
-date: "29^th^ April 2019"
+date: "29^th^ April 2020"
 output: 
   html_document: 
     toc: yes
@@ -42,7 +42,7 @@ eset <- here::here("practicals/data/pi16_Th_eset.rds") %>%
 
 Before the mid-semester break, we looked at using a model matrix to analyse a transcriptomic dataset.
 The samples were used for this were $T_h$ cells which were either PI16^+^ of PI16^-^, based on the detection of the PI16 protein on the cell surface.
-The paper this came from can be found [here](https://onlinelibrary.wiley.com/doi/abs/10.1002/eji.201948094).
+The paper this came from can be found [here](https://onlinelibrary.wiley.com/doi/abs/10.1002/eji.202048094).
 
 Our metadata for this analysis had the following structure:
 
@@ -119,7 +119,7 @@ Add your own name in the (currently missing) `author:` field if you'd like, and 
 ---
 title: "BIOINF3005/7160:<br>Transcriptomics Applications"
 subtitle: "Week 7.1: More Complex Designs"
-date: "29^th^ April 2019"
+date: "29^th^ April 2020"
 output: 
   html_document: 
     toc: yes

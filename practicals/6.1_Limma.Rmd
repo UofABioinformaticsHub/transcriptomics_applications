@@ -1,7 +1,7 @@
 ---
 title: "BIOINF3005/7160:<br>Transcriptomics Applications"
 subtitle: "Week 6.1: Using Limma For Differential Expression"
-date: "8^th^ April 2019"
+date: "8^th^ April 2020"
 output: 
   html_document: 
     toc: yes
@@ -34,7 +34,7 @@ Add your own name in the (currently missing) `author:` field if you'd like, and 
 ---
 title: "BIOINF3005/7160:<br>Transcriptomics Applications"
 subtitle: "Week 6.1: Linear Models in Differential Expression"
-date: "8^th^ April 2019"
+date: "8^th^ April 2020"
 output: 
   html_document: 
     toc: yes

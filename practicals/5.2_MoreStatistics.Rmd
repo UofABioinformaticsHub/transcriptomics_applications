@@ -1,7 +1,7 @@
 ---
 title: "BIOINF3005/7160:<br>Transcriptomics Applications"
 subtitle: "Week 5.2: Linear Models and Dimensional Reduction"
-date: "3^rd^ April 2019"
+date: "3^rd^ April 2020"
 output: 
   html_document: 
     toc: yes
@@ -37,7 +37,7 @@ Add your own name in the (currently missing) `author:` field if you'd like, and 
 ---
 title: "BIOINF3005/7160:<br>Transcriptomics Applications"
 subtitle: "Week 5.2: Linear Models and Dimensional Reduction"
-date: "3^rd^ April 2019"
+date: "3^rd^ April 2020"
 output: 
   html_document: 
     toc: yes
@@ -82,7 +82,7 @@ theme_set(theme_bw())
 
 ## Today's Data
 
-The dataset we'll analyse is from Prof. Simon Barry (Robinson Research Institute) [published last year](https://doi.org/10.1002/eji.201948094).
+The dataset we'll analyse is from Prof. Simon Barry (Robinson Research Institute) [published last year](https://doi.org/10.1002/eji.202048094).
 The larger dataset as published has 4 cell types, but for today we'll just be comparing T~h~ (T helper) cells which are positive or negative for the surface marker *PI16*.
 These were sourced from blood samples given by researchers within Prof. Barry's group.
 

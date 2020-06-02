@@ -1,7 +1,7 @@
 ---
 title: "BIOINF3005/7160:<br>Transcriptomics Applications"
 subtitle: "Week 11.1: scRNA Data"
-date: "27^th^ May 2019"
+date: "27^th^ May 2020"
 output: 
   html_document: 
     toc: yes

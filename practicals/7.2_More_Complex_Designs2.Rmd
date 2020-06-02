@@ -1,7 +1,7 @@
 ---
 title: "BIOINF3005/7160:<br>Transcriptomics Applications"
 subtitle: "Week 7.2: More Complex Designs (Part 2)"
-date: "1^st^ May 2019"
+date: "1^st^ May 2020"
 output: 
   html_document: 
     toc: yes
@@ -42,7 +42,7 @@ Here's my example
 title: "BIOINF3005/7160:<br>Transcriptomics Applications"
 subtitle: "Week 7.2: More Complex Designs (Part 2)"
 author: Some Genius
-date: "1^st^ May 2019"
+date: "1^st^ May 2020"
 output: 
   html_document: 
     toc: yes
