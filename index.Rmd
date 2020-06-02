@@ -52,7 +52,7 @@ pracs <- tribble(
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "WGCNA_part2", "practicals/10.2_WGCNA_part2.html",
     11, "2020-05-25", "Single Cell RNA-Seq", "Stephen Pederson", "lectures/10_scRNA.pdf", "scRNA", "practicals/11.1_scRNA.html",
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "scRNA", "practicals/11.1_scRNA.html#removing_other_low_quality_cells",
-    12, "2020-06-01", "Transcriptome Assembly", "Terry Bertozzi", "lectures/11_Transcriptome_Assembly.pdf", "Using StringTie to Define New Transcripts", "",
+    12, "2020-06-01", "Transcriptome Assembly", "Terry Bertozzi", "lectures/11_Transcriptome_Assembly.pdf", "Using StringTie to Define New Transcripts", "practicals/12_Stringtie.html",
     NA_integer_, NA_character_, NA_character_, NA_character_, NA_character_, "Assignment and Project Questions", "",
     13, "2020-06-07", "Cancer Applications", "Dan Thomas", "", "", ""
 )

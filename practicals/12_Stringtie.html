@@ -1515,6 +1515,13 @@ div.tocify {
 </div>
 
 
+<pre class="r"><code>knitr::opts_chunk$set(
+  echo = TRUE,
+  results = &quot;hide&quot;,
+  fig.show = &quot;hide&quot;,
+  message = FALSE,
+  warning = FALSE
+)</code></pre>
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
 <p>Today we’ll look at identifying transcripts which are not included in the reference transcriptome. This is a short-read specific technique and will use the <code>hisat2 -&gt; stringtie</code> workflow.</p>
@@ -1528,49 +1535,6 @@ tar -xzvf chrX_data.tar.gz
 rm chrX_data.tar.gz</code></pre>
 <p>This gives us the following structure</p>
 <pre class="bash"><code>tree chrX_data</code></pre>
-<pre><code>## chrX_data
-## ├── genes
-## │   └── chrX.gtf
-## ├── genome
-## │   └── chrX.fa
-## ├── geuvadis_phenodata.csv
-## ├── indexes
-## │   ├── chrX_tran.1.ht2
-## │   ├── chrX_tran.2.ht2
-## │   ├── chrX_tran.3.ht2
-## │   ├── chrX_tran.4.ht2
-## │   ├── chrX_tran.5.ht2
-## │   ├── chrX_tran.6.ht2
-## │   ├── chrX_tran.7.ht2
-## │   └── chrX_tran.8.ht2
-## ├── mergelist.txt
-## └── samples
-##     ├── ERR188044_chrX_1.fastq.gz
-##     ├── ERR188044_chrX_2.fastq.gz
-##     ├── ERR188104_chrX_1.fastq.gz
-##     ├── ERR188104_chrX_2.fastq.gz
-##     ├── ERR188234_chrX_1.fastq.gz
-##     ├── ERR188234_chrX_2.fastq.gz
-##     ├── ERR188245_chrX_1.fastq.gz
-##     ├── ERR188245_chrX_2.fastq.gz
-##     ├── ERR188257_chrX_1.fastq.gz
-##     ├── ERR188257_chrX_2.fastq.gz
-##     ├── ERR188273_chrX_1.fastq.gz
-##     ├── ERR188273_chrX_2.fastq.gz
-##     ├── ERR188337_chrX_1.fastq.gz
-##     ├── ERR188337_chrX_2.fastq.gz
-##     ├── ERR188383_chrX_1.fastq.gz
-##     ├── ERR188383_chrX_2.fastq.gz
-##     ├── ERR188401_chrX_1.fastq.gz
-##     ├── ERR188401_chrX_2.fastq.gz
-##     ├── ERR188428_chrX_1.fastq.gz
-##     ├── ERR188428_chrX_2.fastq.gz
-##     ├── ERR188454_chrX_1.fastq.gz
-##     ├── ERR188454_chrX_2.fastq.gz
-##     ├── ERR204916_chrX_1.fastq.gz
-##     └── ERR204916_chrX_2.fastq.gz
-## 
-## 4 directories, 36 files</code></pre>
 <ul>
 <li>The genes in the reference transcriptome are contained in <code>genes/chrX.gtf</code></li>
 <li>The sequence of the reference genome is in <code>genome/chrX.fa</code></li>
@@ -1578,12 +1542,443 @@ rm chrX_data.tar.gz</code></pre>
 <li>The <code>hisat2</code> indexes which we’ll use for alignment are in <code>indexes/</code></li>
 <li>Our raw fasta files are in <code>samples</code></li>
 </ul>
-<p>As we’ll be primarily in <code>bash</code> for today’s session, we’ll need to activate our <code>transcriptomics</code> conda enrivonment. We also need to install two key tools for today’s session: 1) The aligner <code>hisat2</code> and 2) The tool <code>stringtie</code> which we will use to identify new transcripts.</p>
+<p>As we’ll be primarily in <code>bash</code> for today’s session, we’ll need to activate our <code>transcriptomics</code> conda environment. We also need to install two key tools for today’s session: 1) The aligner <code>hisat2</code> and 2) The tool <code>stringtie</code> which we will use to identify new transcripts.</p>
 <pre><code>conda activate transcriptomics
-conda install -c bioconda hisat2</code></pre>
+conda install -c bioconda hisat2 stringtie gffcompare gffread</code></pre>
 <p>Choose <code>y</code> when prompted</p>
-<pre><code>conda install -c bioconda stringtie</code></pre>
-<p>Again, choose <code>y</code> when prompted</p>
+</div>
+</div>
+<div id="producing-alignments" class="section level1">
+<h1>Producing alignments</h1>
+<p>In previous sessions we’ve used the splice-aware aligner STAR which is one of the most popular RNA-Seq aligners. An alternative is the aligner <code>hisat2</code> and the two are essentially similar. We’ve downloaded the indexed ‘genome’ (i.e. chrX) for today’s smaller dataset so we can just jump straight into the alignments.</p>
+<p>First we’ll create a folder to write our alignments into:</p>
+<pre><code>mkdir chrX_data/bam</code></pre>
+<p>Now we can write a script to generate the alignments. In the interests of time, we’ll skip any checking steps, but <em>please make sure you check your file paths and all capitalisation.</em> Unfortunately, <code>hisat2</code> outputs to SAM format only. Whilst we could write to <code>stdout</code> and redirect to a BAM</p>
+<pre><code>for R1 in chrX_data/samples/*1.fastq.gz
+  do
+    echo -e &quot;Found ${R1}&quot;
+    R2=${R1%_1.fastq.gz}_2.fastq.gz
+    echo -e &quot;The R2 file should be ${R2}&quot;
+
+    ## Create output filenames
+    ALNOUT=chrX_data/bam/$(basename ${R1%_1.fastq.gz}.sam)
+    echo -e &quot;Alignments will be written to:\n${ALNOUT}&quot;
+
+    # Align using hisat2
+    hisat2 \
+      -p 2 \
+      --dta \
+      -x chrX_data/indexes/chrX_tran \
+      -1 ${R1} \
+      -2 ${R2} \
+      -S ${ALNOUT}
+      
+    # Sort the alignments and output as bam after sorting
+    echo -e &quot;Sorting ${ALNOUT}&quot;
+    samtools sort \
+      -@ 2 \
+      -o ${ALNOUT%.sam}.bam \
+      ${ALNOUT}
+      
+    # Index the alignments
+    echo -e &quot;Indexing ${ALNOUT%.sam}.bam&quot;
+    samtools index ${ALNOUT%.sam}.bam
+    
+    # Remove the original SAM
+    rm ${ALNOUT}
+    
+  done</code></pre>
+<p>An important thing about these alignments is that the option <code>--dta</code> was set. This changes the way <code>hisat2</code> creates alignments, and in particular requires a longer anchor sequence across spliced alignments. This will help reduce the number of potentially spurious alignments that may lead to the identification of poorly-supported transcripts.</p>
+</div>
+<div id="assembling-novel-transcripts" class="section level1">
+<h1>Assembling Novel Transcripts</h1>
+<p>Now that we have our alignments we can use them to generate a set of transcripts which are not represented in the reference. The reference as supplied with our data is given in <code>genes/chrX.gtf</code></p>
+<pre><code>head chrX_data/genes/chrX.gtf</code></pre>
+<p>In this file we have 1) the chromosome, 2) reference, 3) feature type, 4) start/end/score/strand with the final few columns containing the gene id, transcript id and other key information. We’ll use this file as a reference for known transcripts as this can help identify transcripts which are expressed at low levels.</p>
+<div id="running-the-process" class="section level2">
+<h2>Running the process</h2>
+<p>To create our ‘assembly’, let’s first create a directory</p>
+<pre><code>mkdir chrX_data/assembly</code></pre>
+<p>Now we can loop through our bam files to form a sample-specific assembly</p>
+<pre><code>for BAM in chrX_data/bam/*bam
+  do
+  
+    echo -e &quot;Creating assembly for ${BAM}&quot;
+    LB=$(basename ${BAM%_chrX.bam})
+    echo -e &quot;The output will be given the label ${LB}&quot;
+    GTF=chrX_data/assembly/$(basename ${BAM%.bam}.gtf)
+    echo -e &quot;The individual assembly will be written to\n${GTF}&quot;
+    
+    stringtie \
+      ${BAM} \
+      -l ${LB} \
+      -p 2 \
+      -G chrX_data/genes/chrX.gtf \
+      -o ${GTF}
+
+  done</code></pre>
+</div>
+<div id="checking-the-output" class="section level2">
+<h2>Checking the output</h2>
+<p>Now we have a new gtf file for each sample let’s quickly inspect these</p>
+<pre><code>head chrX_data/assembly/ERR188044_chrX.gtf</code></pre>
+<p>Notice that now we have <code>StringTie</code> as the reference in the second column and once we check the tags in the final column we can see gene ids associated with this sample along with coverage and other measures of expression. Let’s check the next file and see how they line up</p>
+<pre><code>head chrX_data/assembly/ERR188104_chrX.gtf</code></pre>
+<p>This has found another set of transcripts, which are unique to this sample. However, we can see from the first one that it existed in the previous reference gtf.</p>
+<p>The best practice is to merge transcripts across all samples, but let’s just quickly check out our first new transcripts in the sample ERR188044. We can use <code>Gviz</code> and a few other tools to do these.</p>
+<div id="visualising-new-transcripts" class="section level3">
+<h3>Visualising New Transcripts</h3>
+<p>Most people would simply load the reference gtf and a stringtie gtf into IGV Browser, which is a standalone java-based browser for inspecting alignments, variants, gene models etc. It’s a bit too difficult to run from the VMs, so we’ll use R instead, which is a bit slower to setup, but enables far easier automation across multiple regions.</p>
+<p>Start a new R Markdown:</p>
+<pre><code>---
+title: &quot;StringTie Visualisations&quot;
+author: &quot;Some Brilliant Student&quot;
+date: &quot;3^rd^ June, 2020&quot;
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---</code></pre>
+<pre class="r"><code>library(tidyverse)
+library(Gviz)
+library(plyranges)
+library(rtracklayer)
+library(GenomicAlignments)
+library(Rsamtools)
+library(edgeR)</code></pre>
+<p>First let’s set up an R object for the bam files, known as a <code>BamFileList</code>. This won’t load in any alignments, but sets up a connection to the directory on our disk. We can then use this to form a <code>SeqInfo</code> object which can form the cornerstone of our other <code>GenomicRanges</code> objects.</p>
+<pre class="r"><code>bfl &lt;- list.files(&quot;chrX_data/bam/&quot;, pattern = &quot;bam$&quot;, full.names = TRUE) %&gt;%
+  BamFileList()
+sq &lt;- seqinfo(bfl)</code></pre>
+<p>Now we can load in our reference gtf. We’re only really interested in exons, so let’s restrict our import to just these relevant features.</p>
+<pre class="r"><code>refGR &lt;- import.gff(&quot;chrX_data/genes/chrX.gtf&quot;, feature.type = &quot;exon&quot;)
+seqinfo(refGR) &lt;- sq
+refGR</code></pre>
+<p>For our comparison, we’ll just use the StringTie gtf from our first sample.</p>
+<pre class="r"><code>stGR &lt;- import.gff(&quot;chrX_data/assembly/ERR188044_chrX.gtf&quot;, feature.type = &quot;exon&quot;)
+seqinfo(stGR) &lt;- sq</code></pre>
+<p>Instead of loading the entire chromosome, let’s define a range to inspect.</p>
+<pre class="r"><code>filtRng &lt;- GRanges(&quot;chrX:250000-304000&quot;)
+seqinfo(filtRng) &lt;- sq</code></pre>
+<p>Let’s have a look at what we have in our reference</p>
+<pre class="r"><code>refGR %&gt;% find_overlaps(filtRng)</code></pre>
+<p>As you can see, this range contains the transcripts for the gene <em>PLCXD1</em>. Now we can check our StringTie output</p>
+<pre class="r"><code>stGR %&gt;% find_overlaps(filtRng)</code></pre>
+<p>This output shows us that:</p>
+<ul>
+<li>We have coverage across the exons</li>
+<li>Stringtie IDs have been automatically given</li>
+</ul>
+<p>Let’s compare these using Gviz, however we know that for a <code>GeneRegionTrack()</code>, <code>Gviz</code> is a bit fussy about the columns. Let’s rearrange these for easier plotting.</p>
+<pre class="r"><code>mcols(refGR) &lt;- mcols(refGR) %&gt;%
+  as.data.frame() %&gt;%
+  as_tibble() %&gt;%
+  group_by(transcript_id) %&gt;%
+  mutate(
+    exon = cumsum(type == &quot;exon&quot;)
+  ) %&gt;%
+  ungroup() %&gt;%
+  dplyr::select(
+    type, 
+    gene = gene_id, exon , transcript = transcript_id,
+    symbol = gene_name
+  )</code></pre>
+<pre class="r"><code>mcols(stGR) &lt;- mcols(stGR) %&gt;%
+  as.data.frame() %&gt;%
+  as_tibble() %&gt;%
+  mutate(
+    symbol = case_when(
+      is.na(ref_gene_name) ~ gene_id,
+      !is.na(ref_gene_name) ~ ref_gene_name
+    ),
+    tx = case_when(
+      is.na(ref_gene_name) ~ transcript_id,
+      !is.na(ref_gene_name) ~ reference_id
+    )
+  ) %&gt;%
+  dplyr::select(
+    type, 
+    gene = gene_id, exon = exon_number, transcript = tx,
+    symbol
+  )</code></pre>
+<p>Now we’ve tidied that up, let’s compare</p>
+<pre class="r"><code>gtrack &lt;- GenomeAxisTrack(as(seqinfo(bfl), &quot;GRanges&quot;))
+refTrack &lt;- GeneRegionTrack(
+  range = refGR, 
+  transcriptAnnotation = &quot;transcript&quot;,
+  name = &quot;Reference GTF&quot;
+)
+stTrack &lt;- GeneRegionTrack(
+  range = stGR, 
+  transcriptAnnotation = &quot;transcript&quot;,
+  name = &quot;StringTie GTF&quot;
+)
+plotTracks(
+  list(gtrack, refTrack, stTrack),
+  from = start(filtRng),
+  to = end(filtRng)
+)</code></pre>
+<p>So it appears we potentially have a novel transcript unrelated to any gene, along with one supported RefSeq transcript of the second gene (<em>PLCXD1</em>) and two novel transcripts. Let’s add alignments to the plot to see who much supporting evidence we have.</p>
+<pre class="r"><code>atrack &lt;- AlignmentsTrack(
+  range = bfl$ERR188044_chrX.bam$path,
+  chromosome = seqnames(sq)
+)
+plotTracks(
+  list(gtrack, atrack, stTrack),
+  from = start(filtRng),
+  to = end(filtRng)
+)</code></pre>
+<p>Perhaps zooming in on our novel gene might be easier.</p>
+<pre class="r"><code>plotTracks(
+  list(gtrack, atrack, stTrack),
+  from = start(filtRng),
+  to = 267000
+)</code></pre>
+<p>Now let’s try <em>PLCXD1</em></p>
+<pre class="r"><code>plotTracks(
+  list(gtrack, atrack, stTrack),
+  from = 276000,
+  to = end(filtRng)
+)</code></pre>
+<p>As you may see, some of these transcripts seem dubious, whilst others seem more reasonable. By default, for a single sample we only need one spliced read to generate a novel spliced-transcript. We can adjust this using the <code>-c</code> argument. As you can see in the <code>stringtie</code> manual there are multiple options for immediately throwing away spurious transcripts.</p>
+<pre><code>stringtie -h</code></pre>
+<p>The strategy we’re following today is to have an inclusive approach at the single sample level, but then set a higher bar to get over when we merge all of the individual GTF files.</p>
+</div>
+</div>
+<div id="merging-transcripts" class="section level2">
+<h2>Merging Transcripts</h2>
+<p>Let’s now merge all of the individual assemblies and repeat our checking. The data we downloaded already contains a file called <code>mergelist.txt</code>, however we have written our sample assemblies into the folder <code>assembly</code> so we need to recreate this file. You can use <code>bash</code> for this if you’re more comfortable, or you can use <code>R</code>. Here’s the <code>R</code> version, and you can just run this in the Console if you prefer.</p>
+<pre class="r"><code>list.files(&quot;chrX_data/assembly&quot;, pattern = &quot;^ERR&quot;, full.names = TRUE) %&gt;%
+  write_lines(&quot;chrX_data/mergelist.txt&quot;)</code></pre>
+<p>The final scripted <code>bash</code> operation is now quite simple.</p>
+<pre><code>stringtie \
+  --merge \
+  -p 2 \
+  -G chrX_data/genes/chrX.gtf \
+  -o chrX_data/assembly/stringtie_merged.gtf \
+  chrX_data/mergelist.txt</code></pre>
+<pre><code>head chrX_data/assembly/stringtie_merged.gtf</code></pre>
+<p>Let’s repeat the above process of comparing transcripts</p>
+<pre class="r"><code>stMergedGR &lt;- import.gff(&quot;chrX_data/assembly/stringtie_merged.gtf&quot;, feature.type = &quot;exon&quot;)
+seqinfo(stMergedGR) &lt;- sq
+mcols(stMergedGR) &lt;- mcols(stMergedGR) %&gt;%
+  as.data.frame() %&gt;%
+  as_tibble() %&gt;%
+  mutate(
+    gene_name = case_when(
+      is.na(gene_name) ~ gene_id,
+      !is.na(gene_name) ~ gene_name
+    )
+  ) %&gt;%
+  dplyr::select(
+    type, 
+    gene = gene_id, exon = exon_number, transcript = transcript_id,
+    symbol = gene_name
+  )</code></pre>
+<pre class="r"><code>stMergedTrack &lt;- GeneRegionTrack(
+  range = stMergedGR, 
+  transcriptAnnotation = &quot;transcript&quot;,
+  name = &quot;StringTie Merged GTF&quot;
+)
+plotTracks(
+  list(gtrack, refTrack, stMergedTrack),
+  from = start(filtRng),
+  to = end(filtRng)
+)</code></pre>
+<p>Clearly we have even more transcripts, so how do we measure these across an entire dataset? Let’s use the <code>bash</code> tool <code>gffcompare</code>.</p>
+<pre><code>mkdir chrX_data/gffcompare
+gffcompare \
+  -r chrX_data/genes/chrX.gtf \
+  -o chrX_data/gffcompare/merged \
+  chrX_data/assembly/stringtie_merged.gtf</code></pre>
+<p>The file <code>chrX_data/gffcompare/merged.stats</code> is the one we want to inspect</p>
+<pre class="bash"><code>cat chrX_data/gffcompare/merged.stats</code></pre>
+<pre><code>## # gffcompare v0.11.2 | Command line was:
+## #gffcompare -r chrX_data/genes/chrX.gtf -o chrX_data/gffcompare/merged chrX_data/assembly/stringtie_merged.gtf
+## #
+## 
+## #= Summary for dataset: chrX_data/assembly/stringtie_merged.gtf 
+## #     Query mRNAs :    4464 in    1394 loci  (4095 multi-exon transcripts)
+## #            (659 multi-transcript loci, ~3.2 transcripts per locus)
+## # Reference mRNAs :    2102 in    1086 loci  (1856 multi-exon)
+## # Super-loci w/ reference transcripts:     1065
+## #-----------------| Sensitivity | Precision  |
+##         Base level:   100.0     |    77.8    |
+##         Exon level:    98.3     |    74.9    |
+##       Intron level:   100.0     |    79.1    |
+## Intron chain level:   100.0     |    45.3    |
+##   Transcript level:    99.2     |    46.7    |
+##        Locus level:    98.9     |    75.6    |
+## 
+##      Matching intron chains:    1856
+##        Matching transcripts:    2085
+##               Matching loci:    1074
+## 
+##           Missed exons:       0/8804 (  0.0%)
+##            Novel exons:    1751/12160    ( 14.4%)
+##         Missed introns:       0/7946 (  0.0%)
+##          Novel introns:     732/10046    (  7.3%)
+##            Missed loci:       0/1086 (  0.0%)
+##             Novel loci:     329/1394 ( 23.6%)
+## 
+##  Total union super-loci across all input datasets: 1394 
+## 4464 out of 4464 consensus transcripts written in chrX_data/gffcompare/merged.annotated.gtf (0 discarded as redundant)</code></pre>
+<p>The values for Sensitivity and Precision need a little explaining and a detailed description is available at the <a href="https://ccb.jhu.edu/software/stringtie/gffcompare.shtml">gffcompare homepage</a> In short:</p>
+<ul>
+<li><em>Sensitivity</em> describes how much of the initial reference has been captured</li>
+<li><em>Precision</em> describes how much of the detail is unique to the StringTie gtf</li>
+</ul>
+</div>
+<div id="a-more-stringent-merge" class="section level2">
+<h2>A More Stringent Merge</h2>
+<p>Let’s try a more stringent merge, where we require higher coverage to consider a transcript as a true novel transcript. The most simple filtering step might be to only consider transcripts with <em>two or more</em> supporting reads from a given sample</p>
+<pre><code>stringtie \
+  --merge \
+  -p 2 \
+  -c 2 \
+  -G chrX_data/genes/chrX.gtf \
+  -o chrX_data/assembly/stringtie_merged_cov2.gtf \
+  chrX_data/mergelist.txt
+gffcompare \
+  -r chrX_data/genes/chrX.gtf \
+  -o chrX_data/gffcompare/merged_cov2 \
+  chrX_data/assembly/stringtie_merged_cov2.gtf</code></pre>
+<pre class="bash"><code>cat chrX_data/gffcompare/merged_cov2.stats</code></pre>
+<pre><code>## # gffcompare v0.11.2 | Command line was:
+## #gffcompare -r chrX_data/genes/chrX.gtf -o chrX_data/gffcompare/merged_cov2 chrX_data/assembly/stringtie_merged_cov2.gtf
+## #
+## 
+## #= Summary for dataset: chrX_data/assembly/stringtie_merged_cov2.gtf 
+## #     Query mRNAs :    3925 in    1302 loci  (3549 multi-exon transcripts)
+## #            (614 multi-transcript loci, ~3.0 transcripts per locus)
+## # Reference mRNAs :    2102 in    1086 loci  (1856 multi-exon)
+## # Super-loci w/ reference transcripts:     1071
+## #-----------------| Sensitivity | Precision  |
+##         Base level:   100.0     |    80.1    |
+##         Exon level:    98.4     |    79.9    |
+##       Intron level:   100.0     |    83.8    |
+## Intron chain level:   100.0     |    52.3    |
+##   Transcript level:    99.2     |    53.1    |
+##        Locus level:    98.9     |    81.4    |
+## 
+##      Matching intron chains:    1856
+##        Matching transcripts:    2085
+##               Matching loci:    1074
+## 
+##           Missed exons:       0/8804 (  0.0%)
+##            Novel exons:    1204/11319    ( 10.6%)
+##         Missed introns:       0/7946 (  0.0%)
+##          Novel introns:     476/9485 (  5.0%)
+##            Missed loci:       0/1086 (  0.0%)
+##             Novel loci:     231/1302 ( 17.7%)
+## 
+##  Total union super-loci across all input datasets: 1302 
+## 3925 out of 3925 consensus transcripts written in chrX_data/gffcompare/merged_cov2.annotated.gtf (0 discarded as redundant)</code></pre>
+<p>As you can see, there has been a significant reduction in novel exons and introns with no loss of Sensitivity</p>
+<pre class="r"><code>stCov2GR &lt;- import.gff(&quot;chrX_data/assembly/stringtie_merged_cov2.gtf&quot;, feature.type = &quot;exon&quot;)
+seqinfo(stCov2GR) &lt;- sq
+mcols(stCov2GR) &lt;- mcols(stCov2GR) %&gt;%
+  as.data.frame() %&gt;%
+  as_tibble() %&gt;%
+  mutate(
+    gene_name = case_when(
+      is.na(gene_name) ~ gene_id,
+      !is.na(gene_name) ~ gene_name
+    )
+  ) %&gt;%
+  dplyr::select(
+    type, 
+    gene = gene_id, exon = exon_number, transcript = transcript_id,
+    symbol = gene_name
+  )</code></pre>
+<pre class="r"><code>stCov2Track &lt;- GeneRegionTrack(
+  range = stCov2GR, 
+  transcriptAnnotation = &quot;transcript&quot;,
+  name = &quot;StringTie Coverage2 GTF&quot;
+)
+plotTracks(
+  list(gtrack, refTrack, stCov2Track, stMergedTrack),
+  from = start(filtRng),
+  to = end(filtRng)
+)</code></pre>
+<p>Be aware, strange things can happen.</p>
+<pre class="r"><code>filtRng &lt;- subset(stCov2GR, gene == &quot;MSTRG.11&quot;) %&gt;%
+  range()
+stCov2GR %&gt;% 
+  subset(gene == &quot;MSTRG.11&quot;) %&gt;%
+  mcols() %&gt;%
+  as.data.frame()
+plotTracks(
+  list(gtrack, refTrack, stCov2Track),
+  from = start(filtRng) - 5e3,
+  to = end(filtRng)
+)</code></pre>
+</div>
+</div>
+<div id="the-next-step" class="section level1">
+<h1>The next step</h1>
+<p>A key point to be aware of is that mostly, we’ve identified novel transcripts within pre-defined genes. If we quantify at the gene-level we may not see much change for these genes.</p>
+<p>If we’re interested in transcript-level expression, we can create new sequences for each transcript and export a complete transcriptome.</p>
+<div id="running-kallisto" class="section level2">
+<h2>Running kallisto</h2>
+<pre><code>gffread \
+  -w chrX_data/genome/transcripts.fa \
+  -g chrX_data/genome/chrX.fa \
+  chrX_data/assembly/stringtie_merged_cov2.gtf</code></pre>
+<p>From here, we could create an index for kallisto or salmon and use these tools to estimate transcript-level expression.</p>
+<pre><code>kallisto index -i chrX_data/genome/transcripts.idx chrX_data/genome/transcripts.fa</code></pre>
+<pre><code>mkdir chrX_data/kallisto
+
+for R1 in chrX_data/samples/*1.fastq.gz
+  do
+    echo -e &quot;Found ${R1}&quot;
+    R2=${R1%_1.fastq.gz}_2.fastq.gz
+    echo -e &quot;The R2 file should be ${R2}&quot;
+    SAMP=$(basename ${R1%_chrX_1.fastq.gz})
+    
+    kallisto quant \
+      -i chrX_data/genome/transcripts.idx \
+      -o chrX_data/kallisto/${SAMP} \
+      -b 50 \
+      -t 2 \
+      ${R1} ${R2}
+    
+  done</code></pre>
+</div>
+<div id="importing-transcript-level-counts" class="section level2">
+<h2>Importing Transcript-Level Counts</h2>
+<pre class="r"><code>counts &lt;- list.dirs(&quot;chrX_data/kallisto&quot;) %&gt;%
+  str_subset(pattern = &quot;ERR&quot;) %&gt;%
+  catchKallisto()</code></pre>
+<p>As we can see this is done quite easily and the raw estimates of transcript-level expression (i.e. pseudo-counts) are in the element <code>counts$counts</code>.</p>
+<pre class="r"><code>head(counts$counts)</code></pre>
+<p>Analysis at the transcript-level is an unsolved problem in bioinformatics as using pseudo-counts leads to a variance structure which is not yet understood. One recommended approach is to divide by a transcript-level overdispersion estimate, as advised in the <code>catchKallisto()</code> help page.</p>
+<p>An alternative is to simply sum the counts across all transcripts within a gene. Given the issues we’ve already seen above, this is not as clear-cut as one might expect. After running <code>stringtie</code> it’s very possible that transcripts from distinct genes have been merged into a single transcript.</p>
+<pre class="r"><code>tr2Gene &lt;- mcols(stCov2GR) %&gt;%
+  as.data.frame() %&gt;%
+  as_tibble() %&gt;%
+  distinct(gene, transcript)</code></pre>
+<pre class="r"><code>dge &lt;- counts$counts %&gt;%
+  as.data.frame() %&gt;%
+  rownames_to_column(&quot;transcript&quot;) %&gt;%
+  pivot_longer(
+    cols = starts_with(&quot;chrX&quot;),
+    names_to = &quot;sample&quot;,
+    values_to = &quot;counts&quot;
+  ) %&gt;%
+  mutate(sample = basename(sample)) %&gt;%
+  left_join(tr2Gene) %&gt;%
+  group_by(gene, sample) %&gt;%
+  summarise(counts = sum(counts)) %&gt;%
+  pivot_wider(
+    id_cols = gene,
+    names_from = sample,
+    values_from = counts
+  ) %&gt;%
+  as.data.frame() %&gt;%
+  column_to_rownames(&quot;gene&quot;) %&gt;%
+  DGEList() %&gt;%
+  calcNormFactors()</code></pre>
+<p>From here, we can treat this as a conventional DGE analysis, except we may have some new genes.</p>
 </div>
 </div>
 
