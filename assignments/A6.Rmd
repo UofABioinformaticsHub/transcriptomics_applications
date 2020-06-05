@@ -1,0 +1,161 @@
+---
+title: "Transcriptomics Applications"
+subtitle: "Assignment 6"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE, 
+    warning = FALSE,
+    message = FALSE
+)
+```
+
+```{r}
+library(tidyverse)
+```
+
+# Instructions
+
+## Submission Format [2 marks]
+
+This is assignment is due by 5pm, **Friday 19^th^ June**.
+
+- Submissions must be made as a *zip archive* containing 2 files:
+    1. Your **source R Markdown Document** (with an Rmd suffix)
+    2. A **compiled pdf**, showing all code
+- All file names **within the zip archive** must start with your student number.
+However the name of the zip archive is not important as myUni will likely modify this during submission. [See here for help creating a zip archive](#creating-a-zip-archive)
+    
+*All questions are to be answered on the same R Markdown / PDF, regardless of if they require a plain text answer, or require execution of code.*
+
+**Marks directly correspond to the amount of time and effort we expect for each question, so please answer with this is mind.**
+
+We **strongly advise** working within the folder `~/transcriptomics/assignment6` on your virtual machine.
+Using an R Project for each individual assignment is also strongly advised.
+
+## Creating a zip archive {.tabset}
+
+### On Your VM
+
+If all files required for submission *are contained on your VM*:
+
+1. Select both files using the **Files** pane in R Studio
+2. Click export
+3. They will automatically be placed into a single zip archive. Please name this in whatever informative name you decide is suitable, but it should contain the suffix `.zip`
+
+### Windows
+
+If all files are on your on your *local Windows machine*:
+
+1. Using File Explorer, enter the folder containing both files
+2. Select all files simultaneously by using <kbd>Ctrl</kbd> + Click
+3. Right click on one of the files and select `Send to > Compressed (zipped) folder`
+4. Rename as appropriate, ensuring the archive ends with the suffix `.zip`
+
+### Mac OS
+
+If all the files are on your *local macOS machine`:
+
+1. Locate the items to zip in the Mac Finder (file system)
+2. Right-click on a file, folder, or files you want to zip
+3. Select “Compress Items”
+4. Find the newly created .zip archive in the same directory and name as appropriate
+
+
+# Questions
+
+```{r}
+marks <- tibble(q = 0, marks = 2)
+q <- 1
+```
+
+## Question `r q` [10 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 10)
+    )
+```
+
+Transcriptome assembly and genome assembly may appear similar to those who have not undertaken either process.
+Provide details on some of the important differences between the two, specifically detailing the unique challenges faced when performing a transcriptome assembly.
+
+```{r}
+q <- q + 1
+```
+
+## Question `r q` [6 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 6)
+    )
+```
+
+Trinity is a common tool used for *de novo* transcriptome assembly, whilst StringTie is commonly used for reference guided assembly.
+Briefly describe the key steps involved in each method.
+
+
+```{r}
+q <- q + 1
+```
+
+## Question `r q` [10 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 10)
+    )
+```
+
+In the practicals from Week 12, several small scripts were used.
+Please assemble these into a complete pipeline including checking steps and error handling where appropriate.
+
+- Downloading data will not be required and you can start the process directly after completion of the download and extraction of the tarball.
+- The supplied `hisat2` indexes can be used without question
+- Your process should complete by generating transcript-level counts using `kallisto`.
+- Interpretation of any comparisons between your final stringtie-generated gtf and the reference gtf is **not required**.
+
+```{r}
+q <- q + 1
+```
+
+## Question `r q` [12 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 12)
+    )
+```
+
+For the data used in the Week 12 practicals, perform a gene-level differential expression analysis comparing the YRI and GBR populations using:
+
+1. The a) supplied reference chromosome, b) the supplied reference gtf, c) hisat2 aligned reads and d) `featureCounts`
+2. The custom gtf generated using our assembly and pseudo-counts produced by `kallisto`
+
+Compare the two sets of results and discuss.
+Some of the key points to address during the discussion are the detection of any novel genes, and comparison of logFC estimates obtained under both approaches.
+*No biological interpretation of results is required.*
+
+Please note the sample-phenotype information is included in the file `chrX-data/geuvadis_phenodata.csv`.
+
+```{r}
+q <- q + 1
+```
+
+
+# Total: `r sum(marks$marks)` marks
+
+```{r}
+write_csv(marks, here::here("assignments", "A6.csv"))
+```
