@@ -1,0 +1,374 @@
+---
+title: "Transcriptomics Applications"
+subtitle: "Assignment 4 Solutions"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: true
+---
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 8px; padding: 12px;}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE, 
+    warning = FALSE,
+    message = FALSE
+)
+```
+
+```{r}
+library(tidyverse)
+```
+
+# Instructions
+
+## Submission Format [3 marks]
+
+This is assignment is due by 5pm, **Tuesday 26^th^ May**.
+
+- Submissions must be made as a *zip archive* containing 2 files:
+    1. Your **source R Markdown Document** (with an Rmd suffix)
+    2. A **compiled pdf**, showing all code
+- All file names **within the zip archive** must start with your student number.
+However the name of the zip archive is not important as myUni will likely modify this during submission. [See here for help creating a zip archive](#creating-a-zip-archive)
+    
+*All questions are to be answered on the same R Markdown / PDF, regardless of if they require a plain text answer, or require execution of code.*
+
+**Marks directly correspond to the amount of time and effort we expect for each question, so please answer with this is mind.**
+
+We **strongly advise** working in the folder `~/transcriptomics/assignment4` on your virtual machine.
+Using an R Project for each individual assignment is also strongly advised.
+
+## Creating a zip archive {.tabset}
+
+### On Your VM
+
+If all files required for submission *are contained on your VM*:
+
+1. Select both files using the **Files** pane in R Studio
+2. Click export
+3. They will automatically be placed into a single zip archive. Please name this in whatever informative name you decide is suitable, but it should contain the suffix `.zip`
+
+### Windows
+
+If all files are on your on your *local Windows machine*:
+
+1. Using File Explorer, enter the folder containing both files
+2. Select all files simultaneously by using <kbd>Ctrl</kbd> + Click
+3. Right click on one of the files and select `Send to > Compressed (zipped) folder`
+4. Rename as appropriate, ensuring the archive ends with the suffix `.zip`
+
+### Mac OS
+
+If all the files are on your *local macOS machine`:
+
+1. Locate the items to zip in the Mac Finder (file system)
+2. Right-click on a file, folder, or files you want to zip
+3. Select “Compress Items”
+4. Find the newly created .zip archive in the same directory and name as appropriate
+
+
+# Questions
+
+```{r}
+marks <- tibble(q = 0, marks = 3)
+q <- 1
+```
+
+## Question `r q` [4 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 4)
+    )
+```
+
+For microarray data we are able to assume normality, whilst for RNA-seq we are not.
+Describe briefly why this is and what types of distributions and models we are able to use instead.
+
+```{r}
+q <- q + 1
+```
+
+
+<div class = "blue">
+
+- Microarray data is a continuous measurement whilst RNA-Seq is measured in counts
+- Counts can be modelled using either a Poisson or a Negative Binomial model to determine the rate of occurence in a fixed unit of measurement
+- For microarray data, the mean (i.e. expression level) and variance are able to be assumed as independent
+- For RNA-Seq the mean and variance are not independent under either a Poisson or Negative-Binomial model
+
+</div>
+
+
+## Question `r q` [4 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 4)
+    )
+```
+
+Normalisation in RNA-seq can be performed using offsets in the model fitting stages, with two of the most common approaches being TMM and CQN.
+Briefly describe which technical issues the two methods are attempting to overcome.
+Whilst there is much mathematical detail in these papers which is beyond the scope of this course, the papers describing the two approaches are available [here for TMM](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2010-11-3-r25) and [here for CQN](https://academic.oup.com/biostatistics/article/13/2/204/1746212).
+Feel free to use these papers whilst formulating your answer.
+
+```{r}
+q <- q + 1
+```
+
+<div class = "blue">
+
+- TMM normalisation helps to deal with variable library sizes. By trimming data, this also helps account for libraries which are dominated by one or two highly-expressed genes
+- CQN normalisation not only attempts to deal with the same issues as above, but also helps to account for any sample-specific biases due to GC-content or gene length.
+
+</div>
+
+## Question `r q` [8 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 8)
+    )
+```
+
+```{r, echo=TRUE, eval=TRUE}
+source("https://uofabioinformaticshub.github.io/transcriptomics_applications/assignments/A4Funs.R")
+makeGsTestData("a1234567")
+```
+
+For this question, please run the above code to generate your test dataset, using your own student ID instead of the one provided.
+This will place an object called `gsTestData` in your R Environment.
+Once you have this object, please perform the following tasks
+
+a. Manipulate the data to be a $2\times2$ matrix
+b. Print the matrix in your RMarkdown using `pander()`. Missing column names in the first printed column are expected
+c. Conduct Fisher's Exact Test on this matrix using `fisher.test()` and provide the output in your RMarkdown
+d. Interpret the results including a description of $H_0$ and your final conclusion regarding an enrichment of the gene-set in your DE genes.
+
+```{r}
+q <- q + 1
+```
+
+```{r}
+knitr::opts_chunk$set(
+  echo = TRUE
+)
+```
+
+
+<div class = "blue">
+
+```{r}
+library(tidyverse)
+library(pander)
+myMat <- gsTestData %>%
+  pivot_wider(
+    id_cols = inGeneSet,
+    names_from = DE,
+    values_from = Total,
+    names_prefix = "DE_"
+  ) %>%
+  as.data.frame() %>%
+  column_to_rownames("inGeneSet") %>%
+  as.matrix()
+myMat
+```
+
+
+```{r}
+pander(myMat)
+```
+
+```{r}
+fisher.test(myMat)
+```
+
+The above tests the hypothesis:  
+$H_0$: There is no association between DE status and the Gene Set, vs  
+$H_A$: There is an association between DE status and the Gene Set
+
+As $p \approx 1$ we would accept the null hypothesis and conclude that there is no association between this gene set and our set of DE genes.
+
+</div>
+
+## Question `r q` [15 marks]
+
+```{r, echo=FALSE}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 15)
+    )
+```
+
+For this question you will need the dataset provided for you [here](data/topTable.csv), which is a comparison of splenic and pancreatic Tregs from *Mus musculus*.
+
+a. Load this data into R as an object called `topTable`.
+b. Decide on which genes to consider as differentially expressed (DE). You may choose any suitable criteria such as an FDR, or an FDR in combination with filtering based on `logFC` or simply choose the top `n`-ranked genes by p-value. Explain your reasoning.
+c. Assess your DE genes for GC and Length bias as outlined in the `goseq` package. If any discernible pattern is present choose one of these as the bias you are choosing to offset and explain why.
+d. Conduct an enrichment analysis using `goseq()` choosing one of the collections available in the `msigdbr` package. Justify any filtering of gene-sets that you undertake, or why you have chosen not to. A list of possible collections is provided on the help page for `msigdbr`. Please note that is using the categories C2, C3 or C5 **you will be expected to choose only one of the subcategories.** A full list with complete descriptions is available [here](https://www.gsea-msigdb.org/gsea/msigdb/collections.jsp)
+e. Present your results as a table of the most highly-ranked genesets, and if possible provide the top `n`-ranked genes within each geneset as a separate column. Summarise your results very briefly in plain text.
+
+If working with others in a group, please ensure that you choose different gene-set collections for your submission.
+
+
+<div class = "blue">
+
+```{r}
+library(goseq)
+library(msigdbr)
+library(magrittr)
+topTable <- "https://uofabioinformaticshub.github.io/transcriptomics_applications/assignments/data/topTable.csv" %>%
+  url() %>%
+  read_csv()
+head(topTable)
+```
+
+```{r}
+minLFC <- 0.5
+fdr <- 0.01
+```
+
+
+In order to decide on which genes were DE, I first decided to make a volcano plot.
+After a few experiments, I decided on an FDR of `r fdr` and a logFC filter of `r minLFC` for considering a gene as DE.
+This seemed a fair compromise between accepting genes with a small amount of differential expression and being statistically conservative.
+
+```{r}
+topTable$DE <- topTable$FDR < fdr & abs(topTable$logFC) > minLFC
+topTable %>%
+  ggplot(aes(logFC, -log10(PValue), colour = DE)) +
+  geom_point() +
+  geom_vline(xintercept = c(-1, 1)* minLFC, linetype = 2) +
+  scale_colour_manual(values = c("grey", "red")) +
+  scale_x_continuous(breaks = seq(-4, 8, by = 2)) +
+  theme_bw()
+```
+
+This gave a total of `r sum(topTable$DE)` DE genes.
+
+```{r, fig.width=10, fig.cap="*Comparison of DE bias for genes using both a) gene length, and b) GC content. Both showed a little bias, however gene-length was chosen as the bias for the Wallenius Approximation in `goseq()`*"}
+deVec <- setNames(topTable$DE, topTable$gene_id)
+head(deVec)
+pwfLen <- nullp(deVec, bias.data = topTable$aveLen, plot.fit = FALSE)
+pwfGC <- nullp(deVec, bias.data = topTable$aveGc, plot.fit = FALSE)
+par(mfrow = c(1, 2))
+plotPWF(pwfLen, xlab = "Gene Length")
+plotPWF(pwfGC, xlab = "GC Content")
+par(mfrow = c(1, 1))
+```
+
+For enrichment analysis, I'm going to choose the KEGG gene-sets
+
+```{r}
+kg <- msigdbr(species = "Mus musculus", category = "C2", subcategory = "CP:KEGG") %>%
+  inner_join(
+    dplyr::select(topTable, gene_id, entrez_gene = entrezid)
+  )
+kgByGene <- kg %>%
+  dplyr::distinct(gs_name, gene_id) %>%
+  split(f = .$gene_id) %>%
+  lapply(extract2, "gs_name")
+head(kgByGene)
+goseqRes <- goseq(pwfLen, gene2cat = kgByGene) %>%
+  as_tibble() %>%
+  mutate(
+    Expected = round(sum(topTable$DE)*numInCat / length(kgByGene), 1),
+    FDR = p.adjust(over_represented_pvalue, "fdr")
+  ) %>%
+  dplyr::select(
+    category,
+    Expected,
+    nDE = numDEInCat, 
+    nGenes = numInCat, 
+    p = over_represented_pvalue,
+    FDR
+  ) 
+goseqRes %>%
+  dplyr::filter(FDR < 0.01) %>%
+  left_join(kg, by = c("category" = "gs_name")) %>%
+  dplyr::select(
+    any_of(colnames(goseqRes)), gene_symbol, gene_id
+  ) %>%
+  dplyr::filter(gene_id %in% names(which(deVec))) %>%
+  dplyr::select(-gene_id) %>%
+  chop(gene_symbol) %>%
+  mutate(
+    gene_symbol = vapply(gene_symbol, paste, character(1), collapse = "; "),
+    category = str_remove_all(category, "KEGG_"),
+    category = str_replace_all(category, "_", " "),
+    category = str_to_title(category),
+    p = sprintf("%.2e", p),
+    FDR = sprintf("%.2e", FDR)
+  ) %>%
+  dplyr::rename(
+    Category = category,
+    Genes = gene_symbol
+  ) %>%
+  pander(
+    justify = "lrrrrrl",
+    split.tables = Inf,
+    split.cells = 30,
+    caption = "Enriched KEGG pathways to an FDR of 0.01, with DE genes from each pathway shown in the final column"
+  )
+```
+
+
+</div>
+
+
+# Total: `r sum(marks$marks)` marks
+
+```{r results, results='as.is', echo=FALSE}
+late <- tibble(`Student ID` = c("a1678209", "a1724305", "a1705209"), Penalty = c(0.1, 0.4, 0.1))
+here::here("assignments", "A4.csv") %>%
+  read_csv() %>%
+  rename(points = marks) %>%
+  pivot_longer(
+    cols = starts_with("a"),
+    names_to = "Student ID",
+    values_to = "awarded"
+  ) %>%
+  dplyr::filter(!is.na(awarded)) %>%
+  group_by(`Student ID`) %>%
+  summarise(
+    Marks = sum(awarded),
+    Points = sum(points)
+  ) %>%
+  left_join(
+    here::here("practicals/VMs.csv") %>%
+      read_csv
+  ) %>%
+  dplyr::select(
+    contains("Student"), Marks, Points
+  ) %>%
+  left_join(late) %>%
+  mutate(
+    Penalty = ifelse(is.na(Penalty), 0, Penalty),
+    Total = Marks*(1 - Penalty),
+    Total = round(2*Total, 0) / 2,
+    `Scaled (10)` = round(10*Total / Points, 1),
+    Grade = cut(
+      `Scaled (10)`, 
+      breaks = c(0, 5, 6.5, 7.5, 8.5, 10), 
+      labels = c("F", "P", "C", "D", "HD"),
+      include.lowest = TRUE
+      )
+  ) %T>%
+  write_csv(here::here("assignments/A4_results.csv")) %>%
+  arrange(desc(Total)) %>%
+  # pander::pander(split.table = Inf)# %>%
+  summarise(
+    highest = max(`Scaled (10)`),
+    median = median(`Scaled (10)`)
+  ) %>%
+  pander::pander(caption = "Summary of grades for assessment 4 2020, scaled to be out of a possible 10 marks")
+```
