@@ -1,0 +1,631 @@
+---
+title: "Transcriptomics Applications"
+subtitle: "Assignment 5 Solutions"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: true
+---
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 8px; padding: 12px;}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE, 
+    warning = FALSE,
+    message = FALSE
+)
+```
+
+```{r}
+library(tidyverse)
+```
+
+# Instructions
+
+## Submission Format [3 marks]
+
+This is assignment is due by 5pm, **Tuesday 9^th^ June**.
+
+- Submissions must be made as a *zip archive* containing 2 files:
+    1. Your **source R Markdown Document** (with an Rmd suffix)
+    2. A **compiled pdf**, showing all code
+- All file names **within the zip archive** must start with your student number.
+However the name of the zip archive is not important as myUni will likely modify this during submission. [See here for help creating a zip archive](#creating-a-zip-archive)
+    
+*All questions are to be answered on the same R Markdown / PDF, regardless of if they require a plain text answer, or require execution of code.*
+
+**Marks directly correspond to the amount of time and effort we expect for each question, so please answer with this is mind.**
+
+We **strongly advise** working in the folder `~/transcriptomics/assignment4` on your virtual machine.
+Using an R Project for each individual assignment is also strongly advised.
+
+## Creating a zip archive {.tabset}
+
+### On Your VM
+
+If all files required for submission *are contained on your VM*:
+
+1. Select both files using the **Files** pane in R Studio
+2. Click export
+3. They will automatically be placed into a single zip archive. Please name this in whatever informative name you decide is suitable, but it should contain the suffix `.zip`
+
+### Windows
+
+If all files are on your on your *local Windows machine*:
+
+1. Using File Explorer, enter the folder containing both files
+2. Select all files simultaneously by using <kbd>Ctrl</kbd> + Click
+3. Right click on one of the files and select `Send to > Compressed (zipped) folder`
+4. Rename as appropriate, ensuring the archive ends with the suffix `.zip`
+
+### Mac OS
+
+If all the files are on your *local macOS machine`:
+
+1. Locate the items to zip in the Mac Finder (file system)
+2. Right-click on a file, folder, or files you want to zip
+3. Select “Compress Items”
+4. Find the newly created .zip archive in the same directory and name as appropriate
+
+
+# Questions
+
+```{r}
+marks <- tibble(q = 0, marks = 3)
+q <- 1
+```
+
+## Question `r q` [5 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 5)
+    )
+```
+
+A *Module Eigengene* (ME) is one of the fundamental concepts of gene co-expression network analysis using WGCNA. 
+
+i. Is ME one of the genes in a co-expression module? Explain your reasoning
+ii. Describe the roles (usage) of ME in gene co-expression network analysis
+
+```{r}
+q <- q + 1
+```
+
+<div class = "blue">
+i. No, the module eigengene is a combined representation of all genes in the module
+ii. The module eigengene has two primary functions, 1) to assess the relationship between modules and 2) to correlate the modules with clinical/phenotypic data
+</div>
+
+
+## Question `r q` [4 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 4)
+    )
+```
+
+We have discussed that the key point of WGCNA analysis is to discover biological significance.
+Describe how can we build the link between our co-expression network analysis and biological significance.
+
+```{r}
+q <- q + 1
+```
+
+<div class = "blue">
+- We are attempting to find the the co-expression modules which are highly correlated with phenotypic status of our samples
+- We can use enrichment analysis to unearth the biology related to each specific module
+- We can broadly define the gene expression patterns and how they relate to phenotypic conditions under investigation
+</div>
+
+
+## Question `r q` [4 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 4)
+    )
+```
+
+Bulk RNA-seq and scRNA-seq differ in many ways.
+Describe two common aspects shared between the two approaches, and provide details about two key differences between the two.
+
+```{r}
+q <- q + 1
+```
+
+
+<div class = "blue">
+- We are measuring abundances in both approaches using read counts aligned to each gene to represent this
+- Both approaches commonly use cDNA & reverse transcriptase to amplify the template RNA transcripts
+- We commonly measure reads across the length of the transcript for bulk-RNA< but this is not always the case in scRNA-Seq
+- We are able to assess cellular heterogeneity using scRNA-Seq, whilst this is not the primary purpose of bulk-RNA
+- Lack of detection for a gene within a cell is not evidence of lack of expression, whilst for bulk samples this can be assumed
+</div>
+
+## Question `r q` [12 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 12)
+    )
+```
+
+Use the given [gene expression dataset](data/WGCNA_rawCounts.tsv) and corresponding [clinical data](data/WGCNA_clinical_data.tsv) to identify co-expression module(s) with the strongest correlation with clinical data. 
+The gene expression dataset includes raw counts for human reference genes across 37 samples (skin cancer patients), and the clinical data includes diagnosed cancer stage status of 37 patients. 
+The results should minimally include:
+
+i. A figure showing which and how the power beta is selected.
+ii. A gene dendrogram and coloured co-expression modules detection using dynamic tree cut
+
+```{r}
+q <- q + 1
+```
+
+```{r}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  fig.width = 9,
+  fig.align = "center"
+)
+```
+
+
+<div class = "blue">
+```{r, fig.height=6}
+library(WGCNA)
+library(limma)
+library(ape)
+library(matrixStats)
+library(tidyverse)
+library(cowplot)
+theme_set(theme_bw())
+```
+
+First we need to load the data and transform using voom so we get manageable CPM values
+
+```{r}
+counts <- read_tsv("data/WGCNA_rawCounts.tsv") %>%
+  as.data.frame() %>%
+  column_to_rownames("geneID") %>%
+  as.matrix() %>%
+  .[rowSums(. > 0) > 0.8*ncol(.),]
+voomCounts <- voom(counts)$E
+```
+
+To find the most variables genes we can use the MAD (median absolute deviation).
+Let's select the most variable 5000, then check for outliers.
+
+```{r}
+mads <- rowMads(voomCounts)
+madCutoff <- quantile(mads, probs = 1 - 5000/length(mads))
+hist(mads, breaks = 100)
+abline(v = madCutoff, col = "red")
+mat <- t(voomCounts[mads > madCutoff,])
+mat %>%
+  dist %>%
+  hclust(method = "average") %>%
+  plot(
+    main = "Sample clustering to detect outliers", cex.main = 1.5,
+    sub = "",
+    xlab = ""
+  )
+```
+
+Next we need to find our soft-thresholding power
+
+```{r}
+powers <- c(c(1:10), seq(from = 12, to = 20, by = 2))
+sft <- pickSoftThreshold(mat, powerVector = powers, verbose = 0)
+a <- sft$fitIndices %>%
+  mutate(y = -sign(slope)*SFT.R.sq) %>%
+  ggplot(aes(Power, y, label = Power)) +
+  geom_text(colour = "red") +
+  geom_hline(yintercept = 0.9, colour = "red") +
+  labs(
+    x = "Soft Threshold (power)", 
+    y = "Scale Free Topology Model Fit,signed R^2"
+  )
+b <- sft$fitIndices %>%
+  ggplot(aes(Power, mean.k., label= Power)) +
+  geom_text(colour = "red") +
+  labs(
+    x = "Soft Threshold (power)", 
+    y = "Mean Connectivity"
+  )
+plot_grid(a, b, nrow = 1)
+```
+
+Let's choose the power $\beta = 4$ as that is where the signed $R^2$ value is large enough, but significant connectivity is still retained.
+Then we'll obtain our adjacency matrix & dissimilarity.
+
+```{r}
+adjMat <- adjacency(mat, type = "signed", power = 4)
+TOM <- TOMsimilarity(adjMat)
+dissTOM <- 1 - TOM
+```
+
+Now we can detect modules
+
+```{r}
+geneTree <- dissTOM %>%
+  as.dist %>%
+  hclust(method = "average")
+plot(
+  geneTree, 
+  xlab = "", sub = "", main = "Gene clustering on TOM-based dissimilarity",
+  labels = FALSE, 
+  hang = 0.04
+  )
+```
+
+Module identification using dynamic tree cut
+
+```{r}
+minModuleSize <- 30
+dynamicMods <- cutreeDynamic(
+  dendro = geneTree, 
+  distM = dissTOM, 
+  deepSplit = 4,
+  pamRespectsDendro = FALSE,
+  minClusterSize = minModuleSize
+)
+table(dynamicMods)
+```
+
+Assign module colours and plot the dendrogram and corresponding colour bars underneath
+
+```{r}
+dynamicColors <- labels2colors(dynamicMods)
+table(dynamicColors)
+plotDendroAndColors(
+  dendro = geneTree, 
+  colors = dynamicColors, 
+  groupLabels = "Dynamic Tree Cut",
+  dendroLabels = FALSE, 
+  hang = 0.03,
+  addGuide = TRUE, 
+  guideHang = 0.05, 
+  main = ""
+  )
+```
+
+Find the eigengenes and check how similar they are to each other
+
+```{r}
+MEList <- moduleEigengenes(mat, colors = dynamicColors)
+MEs <- MEList$eigengenes
+MEDiss <- 1 - cor(MEs)
+par(
+  mfrow = c(1, 1),
+  mar = c(2,2,2,2)
+)
+MEDiss %>%
+  as.dist() %>%
+  hclust(method = "average") %>%
+  as.phylo() %>%
+  plot.phylo(
+    type = "fan",
+    tip.color = dynamicColors %>%
+      as.factor() %>%
+      levels(), 
+    label.offset = 0.06,
+    main = "Clustering of module eigengenes"
+  )
+tiplabels(
+  frame = "circle", 
+  col = "black",
+  text = rep("", length(unique(dynamicMods))),
+  bg = levels(as.factor(dynamicColors))
+  )
+```
+
+Our final step is to associate each module with the clinical traits
+
+```{r}
+traits <- read_tsv("data/WGCNA_clinical_data.tsv") %>%
+  as.data.frame() %>%
+  column_to_rownames("sampleID") %>%
+  as.matrix() %>%
+  .[rownames(mat),] %>%
+  as.factor()
+```
+
+```{r}
+meCors <- MEs %>%
+  cor(
+    as.integer(traits),
+    use = "p"
+  ) %>%
+  as.data.frame() %>%
+  setNames("Correlation") %>%
+  rownames_to_column("ME") %>%
+  as_tibble() %>%
+  mutate(
+    p = corPvalueStudent(Correlation, nSamples = nrow(mat))
+  ) %>%
+  arrange(p)
+head(meCors)
+```
+
+It appears that for my parameters no modules show any compelling correlations.
+For my analysis, *darkgrey* appears to most correlated with the tumour stage, so let's check the eigengene and overall gene expression patterns.
+To be honest, they don't look really that exciting.
+
+
+```{r}
+modName <- "darkgrey"
+meName <- paste("ME", modName, sep = "")
+a <- mat[, dynamicColors == modName] %>%
+  scale() %>%
+  as.data.frame() %>%
+  rownames_to_column("sample") %>%
+  pivot_longer(
+    cols = -sample,
+    values_to = "scaledExp",
+    names_to = "gene"
+  ) %>%
+  mutate(
+    Stage = traits[sample]
+  ) %>%
+  ggplot(
+    aes(sample, gene, fill = scaledExp)
+  ) +
+  geom_raster() +
+  scale_fill_gradient2(low = "green", mid = "black", high = "red") +
+  facet_grid(.~Stage, scales = "free_x", space = "free_x") +
+  labs(y = "Gene") +
+  ggtitle(paste("Expression patterns for the", modName, "module")) +
+  theme(
+    axis.text.y = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title.x = element_blank(),
+    legend.position = "none",
+    plot.title  = element_text(hjust = 0.5)
+  )
+b <- MEs %>%
+  as.data.frame() %>%
+  rownames_to_column("sample") %>%
+  dplyr::select(sample, one_of(meName)) %>%
+  rename_all(
+    str_replace_all, pattern = meName, replacement = "ME"
+  ) %>%
+  mutate(
+    Stage = traits[sample]
+  ) %>%
+  ggplot(
+    aes(sample, ME)
+  ) +
+  geom_col() +
+  facet_grid(.~Stage, scales = "free_x", space = "free_x") +
+  labs(
+    x = "Sample",
+    y = "ME Expression"
+  ) +
+  theme(
+    axis.text.y = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks = element_blank()
+  )
+plot_grid(
+  a, b, nrow = 2, rel_heights = c(7, 3)
+)
+```
+
+
+
+
+```{r, echo=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE
+)
+```
+
+
+</div>
+
+## Question `r q` [12 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 12)
+    )
+```
+
+
+Using the [SingleCellExperiment](data/sce.rds) object provided, perform the following steps.
+Please note that undetectable genes and low quality cells have already been removed from this dataset.
+Counts are already normalised and log transformed, and contain expression patterns from 622 mouse neuronal cells.
+
+i. Perform PCA and generate a plot of the cells using PC1 and PC2
+ii. Choosing a suitable method, define clusters of cell types
+iii. Visualise your clusters using **only one** of either a PCA, UMAP or tSNE plot
+iv. Find the top 10 marker genes for **one** of your clusters and visualise the expression patterns
+v. Discuss your clusters and comment on how effective your approach was
+
+```{r}
+q <- q + 1
+```
+
+```{r, echo=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE
+)
+```
+
+
+<div class = "blue">
+
+Load the data, then we can define the most variable 1000 genes and see what range of expression values they come from
+
+```{r}
+library(scran)
+library(scater)
+sce <- read_rds("data/sce.rds")
+geneVars <- modelGeneVar(sce)
+hvg <- getTopHVGs(geneVars, n = 1000)
+geneVars %>%
+  metadata() %>%
+  with(
+    tibble(gene = names(mean), mean, var, trend = trend(mean))
+  ) %>%
+  mutate(hvg = gene %in% hvg) %>%
+  ggplot(aes(mean, var, colour = hvg)) +
+  geom_point() +
+  geom_line(aes(y = trend), colour = "blue") +
+  scale_colour_manual(values = c("black", "red"))
+```
+
+Use the highly-variable genes to perform a PCA, and decide how many PCs to keep.
+I've chosen 8, but any number around 7-8 would be acceptable.
+Now we can plot the data, before clustering just to see how similar our cells are.
+
+```{r}
+sce <- runPCA(sce, subset_row = hvg)
+sce %>%
+  reducedDim("PCA") %>%
+  attr("percentVar") %>%
+  enframe(value = "Var (%)", name = c()) %>%
+  mutate(PC = seq_along(`Var (%)`)) %>%
+  ggplot(aes(PC, `Var (%)`)) +
+  geom_point()
+reducedDim(sce, "PCA") <- reducedDim(sce, "PCA")[,1:8]
+plotReducedDim(sce, dimred = "PCA")
+```
+
+Using a shared-neighbour graph, let's form clusters and see where they are on our PCA plot
+
+```{r}
+g <- buildSNNGraph(sce, k = 15, use.dimred = "PCA")
+sce$snnCluster <- igraph::cluster_walktrap(g)$membership %>%
+  as.factor()
+table(sce$snnCluster)
+plotReducedDim(sce, dimred = "PCA", colour_by = "snnCluster", text_by = "snnCluster") 
+```
+
+The clusters don't appear well defined using PCA, so for this dataset a TSNE looks to be a better visualisation.
+
+```{r}
+sce <- runTSNE(sce, dimred = "PCA")
+plotReducedDim(sce, dimred = "TSNE", colour_by = "snnCluster", text_by = "snnCluster") 
+```
+
+Find the marker genes.
+For this approach, we'll choose the genes from each cluster which are always more highly expressed in comparison to other clusters
+
+```{r}
+markersAll <- findMarkers(sce, groups = sce$snnCluster, direction = "up", pval.type = "all")
+markersAll %>%
+  lapply(subset, FDR < 0.05) %>% 
+  sapply(nrow)
+```
+
+Let's explore cluster 1.
+
+```{r}
+markersAll$`1`[1:10,]
+gn <- markersAll$`1` %>%
+  subset(FDR < 0.01) %>%
+  rownames() %>%
+  .[1:10]
+plotExpression(sce, features = gn, x = "snnCluster", colour_by = "snnCluster")
+```
+
+These look really unconvincing.
+The issue here is the use of the argument `pval.type = "all"` argument. 
+Given that cluster 1 appears closely connected to clusters 4 & 6 there may be no consistent marker which separates these.
+Cluster 2 however is highly distinct and should produce more compelling results from this strategy.
+
+```{r}
+gn <- markersAll$`2` %>%
+  subset(FDR < 0.01) %>%
+  rownames() %>%
+  .[1:10]
+plotExpression(sce, features = gn, x = "snnCluster", colour_by = "snnCluster")
+```
+
+This approach does need further refinement.
+Whilst the clusters look OK, finding key marker genes may prove difficult.
+Changing to `pval.type = "some"` may be advantageous and allow for identification of common markers across cluster 1, 4 & 6.
+Re-clustering may also be viable.
+
+```{r}
+plotExpression(
+  sce,
+  features = findMarkers(sce, groups = sce$snnCluster, direction = "up", pval.type = "some")$`1` %>%
+  rownames() %>%
+  .[1:10],
+  x = "snnCluster",
+  colour_by = "snnCluster"
+  )
+```
+
+
+</div>
+
+```{r, echo=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE
+)
+```
+
+
+
+# Total: `r sum(marks$marks)` marks
+
+```{r results, results='as.is', echo=FALSE}
+late <- tibble(`Student ID` = c("a1678209", "a1705209"), Penalty = c(0.1, 0.1))
+here::here("assignments", "A5.csv") %>%
+  read_csv() %>%
+  dplyr::rename(points = marks) %>%
+  pivot_longer(
+    cols = starts_with("a"),
+    names_to = "Student ID",
+    values_to = "awarded"
+  ) %>%
+  dplyr::filter(!is.na(awarded)) %>%
+  group_by(`Student ID`) %>%
+  summarise(
+    Marks = sum(awarded),
+    Points = sum(points)
+  ) %>%
+  left_join(
+    here::here("practicals/VMs.csv") %>%
+      read_csv
+  ) %>%
+  dplyr::select(
+    contains("Student"), Marks, Points
+  ) %>%
+  left_join(late) %>%
+  mutate(
+    Penalty = ifelse(is.na(Penalty), 0, Penalty),
+    Total = Marks*(1 - Penalty),
+    Total = round(2*Total, 0) / 2,
+    `Scaled (10)` = round(10*Total / Points, 1),
+    Grade = cut(
+      `Scaled (10)`, 
+      breaks = c(0, 5, 6.5, 7.5, 8.5, 10), 
+      labels = c("F", "P", "C", "D", "HD"),
+      include.lowest = TRUE
+      )
+  ) %T>%
+  # write_csv(here::here("assignments/A5_results.csv")) %>%
+  arrange(desc(Total)) %>%
+  # pander::pander(split.table = Inf)# %>%
+  summarise(
+    highest = max(`Scaled (10)`),
+    median = median(`Scaled (10)`)
+  ) %>%
+  pander::pander(caption = "Summary of grades for assessment 4 2020, scaled to be out of a possible 10 marks")
+```
