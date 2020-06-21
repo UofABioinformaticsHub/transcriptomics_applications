@@ -627,5 +627,5 @@ here::here("assignments", "A5.csv") %>%
     highest = max(`Scaled (10)`),
     median = median(`Scaled (10)`)
   ) %>%
-  pander::pander(caption = "Summary of grades for assessment 4 2020, scaled to be out of a possible 10 marks")
+  pander::pander(caption = "Summary of grades for assessment 5 2020, scaled to be out of a possible 10 marks")
 ```
