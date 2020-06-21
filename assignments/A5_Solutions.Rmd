@@ -620,7 +620,7 @@ here::here("assignments", "A5.csv") %>%
       include.lowest = TRUE
       )
   ) %T>%
-  # write_csv(here::here("assignments/A5_results.csv")) %>%
+  write_csv(here::here("assignments/A5_results.csv")) %>%
   arrange(desc(Total)) %>%
   # pander::pander(split.table = Inf)# %>%
   summarise(
