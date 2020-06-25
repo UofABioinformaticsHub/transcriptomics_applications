@@ -1,0 +1,267 @@
+---
+title: "Transcriptomics Applications"
+subtitle: "Assignment 6 Solutions"
+output: 
+  html_document: 
+    toc: yes
+    toc_depth: 2
+    toc_float: true
+---
+
+<style>
+div.blue { background-color:#e6f0ff; border-radius: 8px; padding: 12px;}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo = FALSE, 
+    warning = FALSE,
+    message = FALSE
+)
+```
+
+```{r}
+library(tidyverse)
+```
+
+# Instructions
+
+## Submission Format [2 marks]
+
+This is assignment is due by 5pm, **Friday 19^th^ June**.
+
+- Submissions must be made as a *zip archive* containing 2 files:
+    1. Your **source R Markdown Document** (with an Rmd suffix)
+    2. A **compiled pdf**, showing all code
+- All file names **within the zip archive** must start with your student number.
+However the name of the zip archive is not important as myUni will likely modify this during submission. [See here for help creating a zip archive](#creating-a-zip-archive)
+    
+*All questions are to be answered on the same R Markdown / PDF, regardless of if they require a plain text answer, or require execution of code.*
+
+**Marks directly correspond to the amount of time and effort we expect for each question, so please answer with this is mind.**
+
+We **strongly advise** working within the folder `~/transcriptomics/assignment6` on your virtual machine.
+Using an R Project for each individual assignment is also strongly advised.
+
+## Creating a zip archive {.tabset}
+
+### On Your VM
+
+If all files required for submission *are contained on your VM*:
+
+1. Select both files using the **Files** pane in R Studio
+2. Click export
+3. They will automatically be placed into a single zip archive. Please name this in whatever informative name you decide is suitable, but it should contain the suffix `.zip`
+
+### Windows
+
+If all files are on your on your *local Windows machine*:
+
+1. Using File Explorer, enter the folder containing both files
+2. Select all files simultaneously by using <kbd>Ctrl</kbd> + Click
+3. Right click on one of the files and select `Send to > Compressed (zipped) folder`
+4. Rename as appropriate, ensuring the archive ends with the suffix `.zip`
+
+### Mac OS
+
+If all the files are on your *local macOS machine`:
+
+1. Locate the items to zip in the Mac Finder (file system)
+2. Right-click on a file, folder, or files you want to zip
+3. Select “Compress Items”
+4. Find the newly created .zip archive in the same directory and name as appropriate
+
+
+# Questions
+
+```{r}
+marks <- tibble(q = 0, marks = 2)
+q <- 1
+```
+
+## Question `r q` [10 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 10)
+    )
+```
+
+Transcriptome assembly and genome assembly may appear similar to those who have not undertaken either process.
+Provide details on some of the important differences between the two, specifically detailing the unique challenges faced when performing a transcriptome assembly.
+
+```{r}
+q <- q + 1
+```
+
+<div class = "blue">
+- The DNA template molecules used in genome assembly has roughly even coverage across the entire genome
+- The RNA template molecules will vary significantly in coverage depending on expression levels
+- Genome assembly will use double stranded molecules as the source material, whilst transcriptome assemblies use single-stranded molecules (i.e. expressed transcripts)
+- Transcriptome assemblies are *tissue specific*, whilst genome assemblies are mostly independent of the source tissue
+- Some genes may not be expressed in the tissue the assembly is for
+- Multiple contigs (i.e. transcripts) can be formed per locus
+- Identifying separate genes from the same gene family as being distinct from transcripts of a single locus can be difficult to confidently identify
+- Allelic variation may also be confounded with isoforms
+- The ideal genome assembly will be few extremely long chromosomes, whilst the ideal transcriptome assembly will be thousands of shorter transcripts and genes
+</div>
+
+
+## Question `r q` [6 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 6)
+    )
+```
+
+Trinity is a common tool used for *de novo* transcriptome assembly, whilst StringTie is commonly used for reference guided assembly.
+Briefly describe the key steps involved in each method.
+
+
+```{r}
+q <- q + 1
+```
+
+
+<div class = "blue">
+- Both will require pre-processing, such as removal of adapter sequences etc
+- Trinity assembles *de novo* from the trimmed reads by forming a *de Bruijn* graph based on observed kmers 
+    + No alignment is required for this
+    + A genome-guided approach is also available with Trinity. Under this approach alignments are used to group reads into clusters based on each locus, with *de novo* assembly performed within each locus
+    + Transcripts can then be clustered after either approach to try remove redundancy
+    + Classical Assembly statistics (BUSCO, longest contig etc) are used to assess quality of the transcriptome
+- StringTie works by aligning reads to a reference, with a pre-defined gtf
+    + First we align to the genome, so a referece genome is required
+    + Sample-specific novel transcripts are first defined based on alignments which do not match the supplied gtf
+    + Novel transcripts are identified using both coverage and splice sites, not a *de Bruijn* graph
+    + All sample-specific transcripts are merged to create a final list of experiment-wide novel transcripts based on the appropriate parameterisations
+    + Validity of novel transcripts is essentially performed by random visualisation
+</div>
+
+
+## Question `r q` [10 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 10)
+    )
+```
+
+In the practicals from Week 12, several small scripts were used.
+Please assemble these into a complete pipeline including checking steps and error handling where appropriate.
+
+- Downloading data will not be required and you can start the process directly after completion of the download and extraction of the tarball.
+- The supplied `hisat2` indexes can be used without question
+- Your process should complete by generating transcript-level counts using `kallisto`.
+- Interpretation of any comparisons between your final stringtie-generated gtf and the reference gtf is **not required**.
+
+```{r}
+q <- q + 1
+```
+
+
+<div class = "blue">
+This simply involves collating the practical material into a single process able to be run.
+A script that runs will be the required minimum to pass this question.
+Key points being considered during marking
+
+- Checks that files or directories exist
+- Defining variables and file paths appropriately
+- An understanding of absolute Vs relative paths
+</div>
+
+
+## Question `r q` [12 marks]
+
+```{r}
+marks <- marks %>%
+    bind_rows(
+        tibble(q = q, marks = 12)
+    )
+```
+
+For the data used in the Week 12 practicals, perform a gene-level differential expression analysis comparing the YRI and GBR populations using:
+
+1. The a) supplied reference chromosome, b) the supplied reference gtf, c) hisat2 aligned reads and d) `featureCounts`
+2. The custom gtf generated using our assembly and pseudo-counts produced by `kallisto`
+
+Compare the two sets of results and discuss.
+Some of the key points to address during the discussion are the detection of any novel genes, and comparison of logFC estimates obtained under both approaches.
+*No biological interpretation of results is required.*
+
+Please note the sample-phenotype information is included in the file `chrX-data/geuvadis_phenodata.csv`.
+
+```{r}
+q <- q + 1
+```
+
+
+<div class = "blue">
+- No comparison of coverage was requested
+
+1. Load kallisto counts as a `DGEList` including sample metadata
+    + Map transcript counts to genes
+    + Show a PCA to check sample groups
+    + Perform DE analysis at the gene level
+    + Show volcano plots & a table of top-ranked genes
+2. Load featureCounts counts as a `DGEList` including sample metadata
+    + Repeat the above analysis
+    
+Points of interest:
+
+- How many novel genes were identified using `stringtie` and `kallisto`
+- Did the logFC change for genes shared between the two approaches?
+
+</div>
+
+# Total: `r sum(marks$marks)` marks
+
+```{r results, results='as.is', echo=FALSE}
+late <- tibble(`Student ID` = c("a1678209", "a1792442"), Penalty = c(0.1, 0.1))
+here::here("assignments", "A6.csv") %>%
+  read_csv() %>%
+  dplyr::rename(points = marks) %>%
+  pivot_longer(
+    cols = starts_with("a"),
+    names_to = "Student ID",
+    values_to = "awarded"
+  ) %>%
+  dplyr::filter(!is.na(awarded)) %>%
+  group_by(`Student ID`) %>%
+  summarise(
+    Marks = sum(awarded),
+    Points = sum(points)
+  ) %>%
+  left_join(
+    here::here("practicals/VMs.csv") %>%
+      read_csv
+  ) %>%
+  dplyr::select(
+    contains("Student"), Marks, Points
+  ) %>%
+  left_join(late) %>%
+  mutate(
+    Penalty = ifelse(is.na(Penalty), 0, Penalty),
+    Total = Marks*(1 - Penalty),
+    Total = round(2*Total, 0) / 2,
+    `Scaled (10)` = round(10*Total / Points, 1),
+    Grade = cut(
+      `Scaled (10)`, 
+      breaks = c(0, 5, 6.5, 7.5, 8.5, 10), 
+      labels = c("F", "P", "C", "D", "HD"),
+      include.lowest = TRUE
+      )
+  ) %T>%
+  write_csv(here::here("assignments/A6_results.csv")) %>%
+  # arrange(desc(Total)) %>%
+  # pander::pander(split.table = Inf)# %>%
+  summarise(
+    highest = max(`Scaled (10)`),
+    median = median(`Scaled (10)`)
+  ) %>%
+  pander::pander(caption = "Summary of grades for assessment 6 2020, scaled to be out of a possible 10 marks")
+```
