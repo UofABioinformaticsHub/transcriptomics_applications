@@ -221,7 +221,7 @@ Points of interest:
 # Total: `r sum(marks$marks)` marks
 
 ```{r results, results='as.is', echo=FALSE}
-late <- tibble(`Student ID` = c("a1678209", "a1792442"), Penalty = c(0.1, 0.1))
+late <- tibble(`Student ID` = c("a1678209"), Penalty = c(0.1))
 here::here("assignments", "A6.csv") %>%
   read_csv() %>%
   dplyr::rename(points = marks) %>%
