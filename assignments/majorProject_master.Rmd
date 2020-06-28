@@ -7,7 +7,7 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, results = 'hide')
 library(tidyverse)
 library(pander)
 ```
@@ -21,10 +21,11 @@ marks <- tribble(
   "Results and Discussion", 30, NA_real_,
   "References", 5, NA_real_,
   "Analysis Scripts", 30, NA_real_
-)
+) 
+mutate(marks, `%` = scales::percent(Awarded/Possible))
 ```
 
-```{r}
+```{r, results='asis'}
 marks %>%
   bind_rows(
     tibble(
