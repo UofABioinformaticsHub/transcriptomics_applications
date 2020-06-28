@@ -1,0 +1,52 @@
+---
+title: "Major Project"
+subtitle: "Feedback and description of marks"
+author: "Steve Pederson"
+date: "28/06/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(pander)
+```
+
+```{r}
+marks <- tribble(
+  ~Section, ~Possible, ~Awarded,
+  "Abstract", 5, NA_real_,
+  "Introduction and Hypothesis", 10, NA_real_,
+  "Methods", 20, NA_real_, 
+  "Results and Discussion", 30, NA_real_,
+  "References", 5, NA_real_,
+  "Analysis Scripts", 30, NA_real_
+)
+```
+
+```{r}
+marks %>%
+  bind_rows(
+    tibble(
+      Section = "Total",
+      Possible = sum(.$Possible),
+      Awarded = sum(.$Awarded)
+    )
+  ) %>%
+  pander(
+    justify = "lrr",
+    emphasize.strong.rows = nrow(.)
+  )
+```
+
+# Abstract
+
+# Introduction and Hypothesis
+
+# Methods
+
+# Results and Discussion
+
+# References
+
+# Analysis Scripts
