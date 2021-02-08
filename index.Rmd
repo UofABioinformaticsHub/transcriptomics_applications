@@ -2,9 +2,10 @@
 title: "BIOINF3005/7160: Transcriptomics Applications"
 subtitle: "Course Homepage"
 output: 
-  html_document:
+  html_document: 
     toc: yes
     toc_float: yes
+    keep_md: yes
 ---
 
 ```{r setup, include=FALSE}
